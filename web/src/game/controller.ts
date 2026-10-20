@@ -4,7 +4,8 @@
  * - NetworkController (giai đoạn 1): phòng đấu qua WebSocket, cùng giao diện này.
  */
 import { chooseMove } from "./bot";
-import { applyMove, createGame, winner, type GameState, type Player } from "./rules";
+import { createGameForMap, DEFAULT_MAP_ID, resolveMapId } from "./maps";
+import { applyMove, winner, type GameState, type Player } from "./rules";
 
 export type EndReason = "complete" | "resign" | "afk" | "abandon";
 
@@ -14,6 +15,17 @@ export interface MoveInfo {
   captured: number[];
 }
 
+/** Các cạnh một người vẽ trong lượt gần nhất (một lượt = các nước liên tiếp của cùng người). */
+export interface TurnMark {
+  by: Player;
+  edges: number[];
+}
+
+/** Cập nhật lượt gần nhất sau khi `by` vẽ `edge`. */
+export function nextLastTurn(prev: TurnMark | null, by: Player, edge: number): TurnMark {
+  return prev?.by === by ? { by, edges: [...prev.edges, edge] } : { by, edges: [edge] };
+}
+
 export interface GameResult {
   winner: Player | null;
   reason: EndReason;
@@ -21,10 +33,15 @@ export interface GameResult {
 
 /** Ảnh chụp bất biến của ván đấu — mỗi thay đổi tạo object mới (hợp với useSyncExternalStore). */
 export interface GameSession {
+  /** Id map đã chốt (không bao giờ là "random"). */
+  mapId: string;
   state: GameState;
   human: Player;
   bot: Player;
   lastMove: MoveInfo | null;
+  lastTurn: TurnMark | null;
+  /** Đánh dấu các cạnh đối thủ vừa vẽ (luật phòng riêng / cài đặt chơi với máy). */
+  showLastMove: boolean;
   /** Số ô người đang có lượt đã ăn liên tiếp trong lượt này (cho "COMBO ×n"). */
   combo: number;
   thinking: boolean;
@@ -57,23 +74,24 @@ export interface GameController {
 }
 
 export interface NewGameOptions {
-  rows: number;
-  cols: number;
+  /** Id map trong bể hoặc "random" (bốc lại mỗi ván mới). */
+  mapId: string;
   /** Người chơi đi trước? */
   humanFirst: boolean;
 }
 
 export interface LocalBotOptions extends NewGameOptions {
   strength: number;
+  showLastMove: boolean;
   /** Độ trễ "suy nghĩ" của bot [min, max] ms. */
   delayMs: [number, number];
   random: () => number;
 }
 
 const DEFAULTS: LocalBotOptions = {
-  rows: 5,
-  cols: 5,
+  mapId: DEFAULT_MAP_ID,
   humanFirst: true,
+  showLastMove: true,
   strength: 0.7,
   delayMs: [450, 900],
   random: Math.random,
@@ -94,11 +112,15 @@ export class LocalBotController implements GameController {
 
   private freshSession(): GameSession {
     const human: Player = this.opts.humanFirst ? 0 : 1;
+    const mapId = resolveMapId(this.opts.mapId, this.opts.random);
     return {
-      state: createGame(this.opts.rows, this.opts.cols),
+      mapId,
+      state: createGameForMap(mapId),
       human,
       bot: human === 0 ? 1 : 0,
       lastMove: null,
+      lastTurn: null,
+      showLastMove: this.opts.showLastMove,
       combo: 0,
       thinking: false,
       result: null,
@@ -140,6 +162,7 @@ export class LocalBotController implements GameController {
     this.emit({
       state: res.state,
       lastMove: { edge, by: player, captured },
+      lastTurn: nextLastTurn(s.lastTurn, player, edge),
       combo,
       result,
       thinking: false,
@@ -183,8 +206,19 @@ export class LocalBotController implements GameController {
     this.scheduleBot();
   }
 
+  /** Map người chơi đã chọn (có thể là "random"); map đang chơi nằm ở session.mapId. */
+  get mapChoice(): string {
+    return this.opts.mapId;
+  }
+
   setStrength(strength: number) {
     this.opts.strength = Math.min(1, Math.max(0, strength));
+  }
+
+  /** Bật/tắt đánh dấu nước bot vừa đi — đổi ngay, không cần ván mới. */
+  setShowLastMove(on: boolean) {
+    this.opts.showLastMove = on;
+    if (this.session.showLastMove !== on) this.emit({ showLastMove: on });
   }
 
   private clearTimer() {

@@ -5,23 +5,26 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LuLogIn, LuPlus } from "react-icons/lu";
 import { TextInput } from "@/components/auth/account-tab";
+import { MapPicker, ShowLastMoveToggle } from "@/components/play/map-picker";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
+import { DEFAULT_MAP_ID } from "@/game/maps";
 import type { ServerMsg } from "@/game/ws-types";
 import { useRouter } from "@/i18n/navigation";
 import { useConnection, wsClient } from "@/net/ws-client";
 
-type Board = "3x3" | "5x5" | "7x7";
 type Turn = 15 | 30 | 60 | null;
-const BOARDS: Board[] = ["3x3", "5x5", "7x7"];
 const TURNS: Turn[] = [15, 30, 60, null];
 
 // Sảnh phòng riêng (P1-19): tạo phòng (cỡ bàn, giờ mỗi lượt) hoặc vào bằng mã. Khách chơi được.
 export function RoomLobby() {
   const t = useTranslations("Room");
+  const tm = useTranslations("Maps");
   const router = useRouter();
   const status = useConnection((s) => s.status);
-  const [board, setBoard] = useState<Board>("5x5");
+  // Id map hoặc "random" — server chốt map cụ thể khi tạo phòng.
+  const [board, setBoard] = useState(DEFAULT_MAP_ID);
+  const [showLastMove, setShowLastMove] = useState(true);
   const [turn, setTurn] = useState<Turn>(30);
   const [creating, setCreating] = useState(false);
 
@@ -59,7 +62,7 @@ export function RoomLobby() {
             reject(new Error(m.message));
           }
         });
-        wsClient.send({ t: "room_create", board, turnSeconds: turn });
+        wsClient.send({ t: "room_create", board, turnSeconds: turn, showLastMove });
       });
       router.push(`/r/${roomId}`);
     } catch (e) {
@@ -95,21 +98,8 @@ export function RoomLobby() {
             {t("create")}
           </Heading>
           <Stack gap={1}>
-            <Text fontWeight="700">{t("board")}</Text>
-            <HStack gap={2} role="group" aria-label={t("board")}>
-              {BOARDS.map((b) => (
-                <Button
-                  key={b}
-                  variant="sticker"
-                  size="sm"
-                  bg={board === b ? "mint" : "paper"}
-                  aria-pressed={board === b}
-                  onClick={() => setBoard(b)}
-                >
-                  {b.replace("x", "×")}
-                </Button>
-              ))}
-            </HStack>
+            <Text fontWeight="700">{tm("board")}</Text>
+            <MapPicker value={board} onChange={setBoard} label={tm("board")} />
           </Stack>
           <Stack gap={1}>
             <Text fontWeight="700">{t("turnTime")}</Text>
@@ -128,6 +118,7 @@ export function RoomLobby() {
               ))}
             </HStack>
           </Stack>
+          <ShowLastMoveToggle checked={showLastMove} onChange={setShowLastMove} />
           <Button
             variant="sticker"
             bg="mint"

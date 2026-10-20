@@ -10,6 +10,7 @@
     "STALE_SEQ": "Trạng thái đã cũ, đang đồng bộ lại.",
     "ROOM_NOT_FOUND": "Không tìm thấy phòng.",
     "ROOM_FULL": "Phòng đã đủ người.",
+    "INVALID_BOARD": "Bàn chơi không hợp lệ.",
     "ALREADY_IN_GAME": "Bạn đang ở một trận khác.",
     "RATE_LIMITED": "Thao tác quá nhanh, thử lại sau {retryAfter} giây.",
     "INSUFFICIENT_FUNDS": "Không đủ Ruột chì.",

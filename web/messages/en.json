@@ -112,8 +112,6 @@
     "yourTurn": "Your turn — tap a line",
     "botThinking": "Bot is thinking…",
     "combo": "COMBO ×{n}",
-    "boardSize": "Board size",
-    "size": "{n}×{n}",
     "newGame": "New game",
     "resign": "Resign",
     "resignTitle": "Resign this game?",
@@ -219,7 +217,6 @@
     "codeLabel": "Room code",
     "codePlaceholder": "e.g. K7PX3Q",
     "joinButton": "Join",
-    "board": "Board size",
     "turnTime": "Time per turn",
     "noLimit": "No limit",
     "seconds": "{n} seconds",
@@ -254,5 +251,15 @@
     "shareText": "Come play Dots & Boxes with me! Room code: {code}",
     "errorBack": "Back to rooms",
     "noConnection": "Cannot reach the server."
+  },
+  "Maps": {
+    "board": "Board",
+    "random": "Random",
+    "current": "Board: {name}",
+    "change": "Change board",
+    "optionsTitle": "Choose a board",
+    "showLastMove": "Highlight opponent's last move",
+    "apply": "Play this board",
+    "randomHint": "A surprise board every game"
   }
 }

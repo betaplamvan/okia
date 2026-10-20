@@ -19,7 +19,7 @@ class Match(Base, CreatedAtMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     mode: Mapped[str] = mapped_column(String(16), nullable=False)  # casual | ranked | private
-    board: Mapped[str] = mapped_column(String(8), nullable=False)  # 3x3 | 5x5 | 7x7
+    board: Mapped[str] = mapped_column(String(32), nullable=False)  # id map (app/game/maps.json)
     season_id: Mapped[int | None] = mapped_column(Integer)
     player0: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")

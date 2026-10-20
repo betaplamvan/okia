@@ -243,3 +243,46 @@ def test_timeout_moves_and_afk(client: TestClient) -> None:
             over = m
             break
     assert over is not None and over["reason"] == "afk"
+
+
+# ---------- Bể map (docs/03 — Map) ----------
+
+
+def test_room_create_map_hinh_thu_va_luat_phong(client: TestClient) -> None:
+    a = open_ws(client, guest(client, "device-map-a-0123456789"))
+    recv(a, "welcome")
+    send(a, t="room_create", board="khung-long", turnSeconds=None, showLastMove=False)
+    rs = recv(a, "room_state")
+    assert rs["board"] == "khung-long" and rs["showLastMove"] is False
+    st = rs["state"]
+    # Ô / cạnh ngoài mặt nạ là VOID (-2) → client dựng được hình từ chính trạng thái.
+    assert -2 in st["owners"] and -2 in st["edges"]
+    assert sum(1 for o in st["owners"] if o != -2) == 41
+
+
+def test_room_create_random_chot_map_trong_be(client: TestClient) -> None:
+    from app.game import maps
+
+    pool = {m.id for m in maps.pool()}
+    for i in range(3):
+        ws = open_ws(client, guest(client, f"device-rand-{i}-0123456789"))
+        recv(ws, "welcome")
+        send(ws, t="room_create", board="random", turnSeconds=30)
+        rs = recv(ws, "room_state")
+        assert rs["board"] in pool and rs["showLastMove"] is True
+
+
+def test_room_create_board_khong_hop_le(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    a = open_ws(client, guest(client, "device-bad-0123456789"))
+    recv(a, "welcome")
+    send(a, t="room_create", board="khong-co-map-nay", turnSeconds=30)
+    e = recv(a, "error")
+    assert e["code"] == "INVALID_BOARD" and e["ref"] == "room_create"
+    # Map ẩn (3x3, chỉ cho test) bị từ chối ở production.
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "env", "production")
+    send(a, t="room_create", board="3x3", turnSeconds=30)
+    assert recv(a, "error")["code"] == "INVALID_BOARD"

@@ -1,11 +1,11 @@
-// Smoke test màn chơi với máy: tự chơi hết một ván 3×3 bằng cách bấm lên canvas,
+// Smoke test màn chơi với máy: chọn bàn 5×5 qua hộp thoại "Đổi bàn", tự chơi hết ván bằng cách bấm canvas,
 // kiểm tra điểm, hộp thoại kết quả và lỗi console. Dùng Edge đã cài (channel msedge).
 //
 //   node scripts/smoke-play.mjs http://localhost:3000
 import { chromium } from "playwright";
 
 const [base = "http://localhost:3000"] = process.argv.slice(2);
-const N = 3;
+const N = 5;
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const page = await browser.newPage({ locale: "vi-VN", viewport: { width: 390, height: 844 } });
 // REDUCED=1: kiểm tra đường prefers-reduced-motion (không hiệu ứng, kết quả hiện ngay).
@@ -13,7 +13,8 @@ if (process.env.REDUCED) await page.emulateMedia({ reducedMotion: "reduce" });
 
 const problems = [];
 page.on("console", (m) => {
-  if (m.type() === "error")
+  // 401 của /auth/refresh khi chưa có cookie (rồi tự đăng nhập khách) là bình thường.
+  if (m.type() === "error" && !/status of 401/.test(m.text()))
     problems.push(`[console.error] ${m.text().split("\n")[0].slice(0, 200)}`);
 });
 page.on("pageerror", (e) => problems.push(`[pageerror] ${String(e.message).slice(0, 200)}`));
@@ -22,7 +23,10 @@ await page.goto(base + "/", { waitUntil: "networkidle" });
 await page.getByRole("link", { name: /Chơi với máy/ }).click();
 await page.waitForURL(/\/play$/);
 await page.getByRole("application").locator("canvas").waitFor({ timeout: 20000 });
-await page.getByRole("button", { name: `${N}×${N}` }).click();
+await page.getByRole("button", { name: "Đổi bàn" }).click();
+await page.getByRole("radio", { name: `${N}×${N}` }).click();
+await page.getByRole("button", { name: "Chơi bàn này" }).click();
+await page.getByRole("dialog").waitFor({ state: "hidden" });
 await page.waitForTimeout(300);
 
 // Hình học y như BoardRenderer.layout(): size = min(w,h), pad = 9%, cell = (size - 2pad)/N.
@@ -91,14 +95,18 @@ if (finished) {
   );
 }
 
-// Đổi kích thước liên tiếp sau khi đã chơi (từng gây lỗi khi renderer bị tạo lại).
-for (const n of [7, 3, 7, 5]) {
-  await page.getByRole("button", { name: `${n}×${n}` }).click();
-  await page.waitForTimeout(250);
+// Đổi bàn liên tiếp sau khi đã chơi, qua lại bàn vuông ↔ map hình thù (renderer phải dựng lại giấy).
+const switches = ["7×7", "Khủng long", "Bông hoa", "5×5"];
+for (const name of switches) {
+  await page.getByRole("button", { name: "Đổi bàn" }).click();
+  await page.getByRole("radio", { name }).click();
+  await page.getByRole("button", { name: "Chơi bàn này" }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await page.getByText(`Bàn: ${name}`).waitFor();
   await page.mouse.click(offX + cell * 0.5, offY);
   await page.waitForTimeout(200);
 }
-console.log(`đổi kích thước 7/3/7/5: lỗi=${problems.length}`);
+console.log(`đổi bàn ${switches.join(" / ")}: lỗi=${problems.length}`);
 
 await browser.close();
 const ok = finished && you + bot === N * N && problems.length === 0;

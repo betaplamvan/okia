@@ -4,6 +4,6 @@ Mỗi file `*.json` là một kịch bản được **cả** Vitest (`web/src/ga
 
 Định dạng và danh sách nhóm fixture tối thiểu: [`docs/03-luat-choi.md#fixtures-dùng-chung`](../../docs/03-luat-choi.md#fixtures-dùng-chung).
 
-Đặt tên file: `<kích thước>-<mô tả-ngắn>.json`, ví dụ `2x2-an-mot-o-di-tiep.json`.
+Đặt tên file: `<kích thước | mask | id-map>-<mô tả-ngắn>.json`, ví dụ `2x2-an-mot-o-di-tiep.json`. Fixture có trường `cells` là bàn có mặt nạ (map hình thù, xem docs/03 — Map).
 
-Fixture "ván ngẫu nhiên đầy đủ" (`*-van-ngau-nhien-seed*.json`) do `web/scripts/gen-fixtures.mts` sinh từ engine TS với RNG có seed; chạy lại cho ra đúng cùng file. Các fixture còn lại viết tay và đã kiểm tra từng nước.
+Fixture "ván ngẫu nhiên đầy đủ" (`*-van-ngau-nhien-seed*.json`) do `web/scripts/gen-fixtures.mts` sinh từ engine TS với RNG có seed; chạy lại cho ra đúng cùng file. Map trong bể: `node scripts/gen-fixtures.mts map <id> <seed>`. Các fixture còn lại viết tay và đã kiểm tra từng nước.

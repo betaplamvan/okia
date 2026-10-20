@@ -665,19 +665,17 @@
           "type": "string"
         },
         "board": {
-          "enum": [
-            "3x3",
-            "5x5",
-            "7x7"
-          ],
+          "default": "random",
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
           "title": "Board",
           "type": "string"
         }
       },
       "required": [
         "t",
-        "mode",
-        "board"
+        "mode"
       ],
       "title": "Queue",
       "type": "object"
@@ -709,11 +707,9 @@
           "type": "string"
         },
         "board": {
-          "enum": [
-            "3x3",
-            "5x5",
-            "7x7"
-          ],
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
           "title": "Board",
           "type": "string"
         },
@@ -758,11 +754,9 @@
         },
         "board": {
           "default": "5x5",
-          "enum": [
-            "3x3",
-            "5x5",
-            "7x7"
-          ],
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
           "title": "Board",
           "type": "string"
         },
@@ -782,6 +776,11 @@
           ],
           "default": 30,
           "title": "Turnseconds"
+        },
+        "showLastMove": {
+          "default": true,
+          "title": "Showlastmove",
+          "type": "boolean"
         }
       },
       "required": [
@@ -853,11 +852,9 @@
           "type": "string"
         },
         "board": {
-          "enum": [
-            "3x3",
-            "5x5",
-            "7x7"
-          ],
+          "maxLength": 32,
+          "minLength": 1,
+          "pattern": "^[a-z0-9-]+$",
           "title": "Board",
           "type": "string"
         },
@@ -876,6 +873,11 @@
             }
           ],
           "title": "Turnseconds"
+        },
+        "showLastMove": {
+          "default": true,
+          "title": "Showlastmove",
+          "type": "boolean"
         },
         "status": {
           "enum": [

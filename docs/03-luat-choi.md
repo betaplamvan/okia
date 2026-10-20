@@ -46,12 +46,30 @@ Một cạnh thuộc tối đa **2 ô**.
  •──4──•──5──•
 ```
 
+## Map: lưới + mặt nạ ô
+
+Quyết định: [ADR-0009](adr/0009-be-map-hinh-thu.md). Mỗi bàn là lưới `R × C` (khung bao khít) kèm **mặt nạ ô**: ô nào thuộc bàn. Bàn chữ nhật là mặt nạ đầy. Cách đánh số cạnh/ô ở trên **giữ nguyên**.
+
+- Ô ngoài mặt nạ: `owners = VOID (-2)` — không bao giờ có chủ.
+- Cạnh không kề ô nào thuộc bàn: `edges = VOID (-2)` — không vẽ được. Cạnh kề ít nhất một ô thuộc bàn (kể cả mép hình, viền "lỗ") vẽ được bình thường.
+- Một "lỗ" (ô ngoài mặt nạ nằm giữa hình) có thể đủ 4 cạnh vẽ được nhưng vẫn **không bị ăn**.
+- Ván kết thúc khi mọi cạnh **vẽ được** đã vẽ (`moveNo` = số cạnh khác VOID).
+
+Bể map: `shared/maps/maps.json` (`'#'` thuộc bàn, `'.'` trống) — sửa xong chạy `node web/scripts/gen-maps.mjs` để sinh bản cho web (`maps.data.ts`) và api (`app/game/maps.json`). Ràng buộc thiết kế (test kiểm tra): **số ô lẻ** (không thể hòa), các ô **liền nhau theo cạnh**, khung bao khít, có tên vi/en. Map `3x3` là map ẩn chỉ dùng cho test (server production từ chối).
+
+| Chế độ | Chọn map |
+|---|---|
+| Chơi với máy, phòng riêng | Người chơi chọn một map hoặc "Ngẫu nhiên" |
+| Xếp hạng | Luôn ngẫu nhiên (server bốc) |
+
+**Đánh dấu nước vừa đi** (chơi với máy, phòng riêng): tùy chọn tô quầng các cạnh đối thủ vẽ trong lượt gần nhất (cả chuỗi ăn liên tiếp). Phòng riêng: luật của phòng do chủ phòng chọn (`showLastMove`), áp dụng cho cả hai; chơi với máy: cài đặt cá nhân. Mặc định bật.
+
 ## Trạng thái ván
 
 ```
 rows, cols
-edges:   E phần tử, mỗi phần tử là -1 (chưa vẽ) hoặc chỉ số người vẽ (0|1)
-owners:  R×C phần tử, -1 (chưa ai) hoặc 0|1
+edges:   E phần tử, mỗi phần tử là -1 (chưa vẽ), chỉ số người vẽ (0|1) hoặc VOID (-2, không thuộc bàn)
+owners:  R×C phần tử, -1 (chưa ai), 0|1 hoặc VOID (-2, ô ngoài mặt nạ)
 scores:  [s0, s1]
 turn:    0|1  — người đang có lượt
 moveNo:  số nước đã đi
@@ -64,18 +82,18 @@ Người đi trước là `0`. Trong trận online, server chọn ngẫu nhiên 
 
 `applyMove(state, player, edge)`:
 
-1. **Hợp lệ khi:** `!finished`, `player == turn`, `0 ≤ edge < E`, `edges[edge] == -1`. Ngược lại trả lỗi (`GAME_OVER`, `NOT_YOUR_TURN`, `INVALID_EDGE`, `EDGE_TAKEN`) và **không đổi** trạng thái.
+1. **Hợp lệ khi:** `!finished`, `player == turn`, `0 ≤ edge < E`, `edges[edge] == -1`. Cạnh VOID → `INVALID_EDGE`. Ngược lại trả lỗi (`GAME_OVER`, `NOT_YOUR_TURN`, `INVALID_EDGE`, `EDGE_TAKEN`) và **không đổi** trạng thái.
 2. Gán `edges[edge] = player`, `moveNo += 1`.
-3. Với mỗi ô kề cạnh vừa vẽ (1 hoặc 2 ô): nếu đủ 4 cạnh và `owners == -1` → `owners = player`, cộng 1 điểm. Danh sách ô vừa ăn sắp **tăng dần theo id ô**.
+3. Với mỗi ô **thuộc bàn** kề cạnh vừa vẽ (1 hoặc 2 ô): nếu đủ 4 cạnh và `owners == -1` → `owners = player`, cộng 1 điểm. Danh sách ô vừa ăn sắp **tăng dần theo id ô**.
 4. Nếu ăn được ≥ 1 ô → `turn` giữ nguyên (đi tiếp). Nếu không → `turn = 1 - turn`.
-5. Nếu mọi cạnh đã vẽ → `finished = true`.
+5. Nếu mọi cạnh vẽ được đã vẽ → `finished = true`.
 
 Kết quả trả về: `{ state, captured: number[] }`.
 
 ## Kết thúc & thắng thua
 
 - Thắng: điểm cao hơn. Hòa khi bằng điểm (chỉ xảy ra với bàn có số ô chẵn, ví dụ 4×4).
-- Bàn 3×3, 5×5, 7×7 có số ô lẻ nên **không thể hòa** khi chơi hết ván.
+- Mọi map trong bể có số ô lẻ nên **không thể hòa** khi chơi hết ván.
 - **Đầu hàng:** người đầu hàng thua ngay, không phụ thuộc điểm.
 
 ## Timer & bỏ lượt (chỉ chế độ online)
@@ -115,6 +133,7 @@ Kết quả trả về: `{ state, captured: number[] }`.
 }
 ```
 
+- `cells` (tùy chọn): mặt nạ ô dạng chuỗi như `shared/maps` — fixture cho map hình thù.
 - `expectCaptured` (tùy chọn): danh sách ô phải ăn được ở nước đó.
 - `expectError` (tùy chọn): mã lỗi nước đó phải trả về; trạng thái không đổi.
 - Nhóm fixture tối thiểu cần có:
@@ -125,6 +144,7 @@ Kết quả trả về: `{ state, captured: number[] }`.
   - mọi loại lỗi (`NOT_YOUR_TURN`, `INVALID_EDGE`, `EDGE_TAKEN`, `GAME_OVER`)
   - chơi hết một ván 2×2 và 3×3
   - ván hòa 2×2
+  - mặt nạ: cạnh VOID → `INVALID_EDGE`, ăn ô sát mép, kết thúc khi hết cạnh vẽ được, lỗ không bị ăn; một ván ngẫu nhiên trọn vẹn trên map hình thù
 
 ## Bot
 

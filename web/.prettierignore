@@ -3,3 +3,4 @@ node_modules
 next-env.d.ts
 pnpm-lock.yaml
 public/assets
+src/game/maps.data.ts

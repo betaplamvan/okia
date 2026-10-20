@@ -28,6 +28,8 @@ interface Fixture {
   name: string;
   rows: number;
   cols: number;
+  /** Mặt nạ ô (map hình thù): '#' thuộc bàn, '.' trống. */
+  cells?: string[];
   moves: FixtureMove[];
   expect: {
     scores: [number, number];
@@ -51,7 +53,8 @@ describe("fixtures dùng chung", () => {
     const fixture = JSON.parse(readFileSync(join(fixturesDir, file), "utf8")) as Fixture;
 
     it(`${file}: ${fixture.name}`, () => {
-      let state = createGame(fixture.rows, fixture.cols);
+      const mask = fixture.cells?.flatMap((row) => [...row].map((ch) => ch === "#"));
+      let state = createGame(fixture.rows, fixture.cols, mask);
 
       fixture.moves.forEach((move, i) => {
         const result = applyMove(state, move.player, move.edge);

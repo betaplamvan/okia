@@ -23,7 +23,8 @@
     "chakra:typegen": "chakra typegen src/theme/index.ts",
     "smoke:auth": "node scripts/smoke-auth.mjs",
     "gen:ws": "node scripts/gen-ws-types.mjs",
-    "smoke:room": "node scripts/smoke-room.mjs"
+    "smoke:room": "node scripts/smoke-room.mjs",
+    "gen:maps": "node scripts/gen-maps.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.37.0",

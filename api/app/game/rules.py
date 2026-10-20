@@ -6,11 +6,13 @@ Trạng thái bất biến (frozen dataclass, tuple); apply_move trả về tr�
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from typing import Literal
 
 Player = Literal[0, 1]
-Owner = int  # -1 | 0 | 1
+Owner = int  # VOID (-2) | -1 | 0 | 1
+VOID = -2  # cạnh / ô không thuộc bàn (map hình thù: ngoài mặt nạ) — không bao giờ vẽ / ăn được
 MoveErrorCode = Literal["GAME_OVER", "NOT_YOUR_TURN", "INVALID_EDGE", "EDGE_TAKEN"]
 
 
@@ -98,14 +100,28 @@ def edge_endpoints(rows: int, cols: int, edge: int) -> tuple[tuple[int, int], tu
 # ---------- Trạng thái ----------
 
 
-def create_game(rows: int, cols: int) -> GameState:
+def create_game(rows: int, cols: int, mask: Sequence[bool] | None = None) -> GameState:
+    """Ván mới trên lưới R×C. `mask` (R×C, tùy chọn): ô nào thuộc bàn — map hình thù.
+
+    Ô ngoài mặt nạ và cạnh không kề ô nào thuộc bàn mang giá trị VOID.
+    """
     if rows < 1 or cols < 1:
         raise ValueError(f"Kích thước bàn không hợp lệ: {rows}x{cols}")
+    if mask is not None and (len(mask) != rows * cols or not any(mask)):
+        raise ValueError(f"Mặt nạ không hợp lệ cho bàn {rows}x{cols}")
+    owners = [-1] * (rows * cols)
+    edges = [-1] * edge_count(rows, cols)
+    if mask is not None:
+        owners = [-1 if mask[b] else VOID for b in range(rows * cols)]
+        edges = [
+            -1 if any(mask[b] for b in edge_boxes(rows, cols, e)) else VOID
+            for e in range(len(edges))
+        ]
     return GameState(
         rows=rows,
         cols=cols,
-        edges=(-1,) * edge_count(rows, cols),
-        owners=(-1,) * (rows * cols),
+        edges=tuple(edges),
+        owners=tuple(owners),
         scores=(0, 0),
         turn=0,
         move_no=0,
@@ -113,8 +129,23 @@ def create_game(rows: int, cols: int) -> GameState:
     )
 
 
+def playable_edge_count(state: GameState) -> int:
+    """Số cạnh vẽ được (không tính VOID) = số nước của cả ván."""
+    return sum(1 for e in state.edges if e != VOID)
+
+
+def playable_box_count(state: GameState) -> int:
+    return sum(1 for o in state.owners if o != VOID)
+
+
+def live_boxes(state: GameState, edge: int) -> list[int]:
+    """Các ô THUỘC BÀN kề một cạnh (bỏ ô VOID — ví dụ "lỗ" trong map hình thù)."""
+    return [b for b in edge_boxes(state.rows, state.cols, edge) if state.owners[b] != VOID]
+
+
 def box_side_count(state: GameState, box: int) -> int:
-    return sum(1 for e in box_edges(state.rows, state.cols, box) if state.edges[e] != -1)
+    """Số cạnh đã vẽ của ô (VOID không tính là đã vẽ)."""
+    return sum(1 for e in box_edges(state.rows, state.cols, box) if state.edges[e] >= 0)
 
 
 def legal_moves(state: GameState) -> list[int]:
@@ -129,6 +160,8 @@ def validate_move(state: GameState, player: int, edge: int) -> MoveErrorCode | N
     if player != state.turn:
         return "NOT_YOUR_TURN"
     if not isinstance(edge, int) or edge < 0 or edge >= len(state.edges):
+        return "INVALID_EDGE"
+    if state.edges[edge] == VOID:
         return "INVALID_EDGE"
     if state.edges[edge] != -1:
         return "EDGE_TAKEN"
@@ -149,13 +182,13 @@ def apply_move(state: GameState, player: int, edge: int) -> tuple[GameState, lis
     probe = replace(state, edges=tuple(edges), owners=tuple(owners), move_no=move_no)
 
     captured: list[int] = []
-    for box in edge_boxes(state.rows, state.cols, edge):
+    for box in live_boxes(state, edge):
         if owners[box] == -1 and box_side_count(probe, box) == 4:
             owners[box] = player
             scores[player] += 1
             captured.append(box)
 
-    finished = move_no == len(edges)
+    finished = move_no == playable_edge_count(probe)
     turn: Player = player if captured else (1 if player == 0 else 0)  # type: ignore[assignment]
     new_state = GameState(
         rows=state.rows,

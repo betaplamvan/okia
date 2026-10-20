@@ -1,0 +1,19 @@
+{
+  "name": "Mặt nạ vòng 3×3 có lỗ giữa: 4 cạnh quanh lỗ vẽ được nhưng lỗ không bao giờ bị ăn",
+  "rows": 3,
+  "cols": 3,
+  "cells": ["###", "#.#", "###"],
+  "moves": [
+    { "player": 0, "edge": 4, "expectCaptured": [] },
+    { "player": 1, "edge": 7, "expectCaptured": [] },
+    { "player": 0, "edge": 17, "expectCaptured": [] },
+    { "player": 1, "edge": 18, "expectCaptured": [] }
+  ],
+  "expect": {
+    "scores": [0, 0],
+    "turn": 0,
+    "finished": false,
+    "moveNo": 4,
+    "owners": [-1, -1, -1, -1, -2, -1, -1, -1, -1]
+  }
+}

@@ -24,7 +24,8 @@ FIXTURES = sorted((Path(__file__).resolve().parents[2] / "shared" / "fixtures").
 @pytest.mark.parametrize("path", FIXTURES, ids=[p.name for p in FIXTURES])
 def test_fixture(path: Path) -> None:
     fx = json.loads(path.read_text(encoding="utf-8"))
-    state = create_game(fx["rows"], fx["cols"])
+    mask = [ch == "#" for row in fx["cells"] for ch in row] if "cells" in fx else None
+    state = create_game(fx["rows"], fx["cols"], mask)
     for i, mv in enumerate(fx["moves"], start=1):
         label = f"nước #{i} (p{mv['player']} cạnh {mv['edge']})"
         if "expectError" in mv:

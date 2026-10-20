@@ -5,7 +5,7 @@
  * Chỉ chạy ở trình duyệt: pixi.js và gsap được import động trong `create()`.
  */
 import type { GameResult, GameSession } from "../controller";
-import { edgeCount, edgeEndpoints, horizontalEdgeCount, type Player } from "../rules";
+import { edgeCount, edgeEndpoints, horizontalEdgeCount, VOID, type Player } from "../rules";
 
 type Pixi = typeof import("pixi.js");
 type Gsap = typeof import("gsap").gsap;
@@ -18,6 +18,8 @@ export interface RendererColors {
   pens: [number, number];
   /** Màu chữ COMBO / tia lấp lánh. */
   accent: number;
+  /** Quầng đánh dấu các cạnh đối thủ vừa vẽ. */
+  mark: number;
 }
 
 export const DEFAULT_COLORS: RendererColors = {
@@ -27,6 +29,7 @@ export const DEFAULT_COLORS: RendererColors = {
   ink: 0x1a2826,
   pens: [0x1e4fd8, 0xd8341e],
   accent: 0xffd93d,
+  mark: 0xffd93d,
 };
 
 /** Sự kiện hiệu ứng phát ra từ renderer (để màn chơi phát tiếng / hiện kết quả đúng lúc). */
@@ -70,6 +73,7 @@ export class BoardRenderer {
     this.layers = {
       paper: new C(),
       boxes: new C(),
+      marks: new C(),
       edges: new C(),
       preview: new C(),
       dots: new C(),
@@ -80,6 +84,7 @@ export class BoardRenderer {
     this.world.addChild(
       this.layers.paper,
       this.layers.boxes,
+      this.layers.marks,
       this.layers.edges,
       this.layers.preview,
       this.layers.dots,
@@ -111,7 +116,7 @@ export class BoardRenderer {
 
   private readonly colors: RendererColors;
   private readonly layers: Record<
-    "paper" | "boxes" | "edges" | "preview" | "dots" | "fx",
+    "paper" | "boxes" | "marks" | "edges" | "preview" | "dots" | "fx",
     InstanceType<Pixi["Container"]>
   >;
   private readonly world: InstanceType<Pixi["Container"]>;
@@ -122,6 +127,8 @@ export class BoardRenderer {
   private edgeG = new Map<number, InstanceType<Pixi["Graphics"]>>();
   private boxG = new Map<number, InstanceType<Pixi["Container"]>>();
   private previewEdge: number | null = null;
+  /** Khóa của quầng đánh dấu đang vẽ (tránh vẽ lại khi không đổi). */
+  private marksKey = "";
   private interactive = true;
   private destroyed = false;
   /** Timeline đang chạy của phần đếm ô cuối ván (hủy khi ván mới). */
@@ -202,7 +209,18 @@ export class BoardRenderer {
     return { x: g.offX + c * g.cell, y: g.offY + r * g.cell };
   }
 
+  /** Ô (r, c) có thuộc bàn không (map hình thù: ngoài mặt nạ là VOID). */
+  private isLive(r: number, c: number): boolean {
+    const g = this.geo!;
+    if (r < 0 || r >= g.rows || c < 0 || c >= g.cols) return false;
+    return this.session!.state.owners[r * g.cols + c] !== VOID;
+  }
+
   private drawPaper() {
+    if (this.session!.state.owners.includes(VOID)) {
+      this.drawShapedPaper();
+      return;
+    }
     const g = this.geo!;
     const { rows, cols, cell } = g;
     const paper = this.layers.paper;
@@ -235,6 +253,54 @@ export class BoardRenderer {
     paper.addChild(gfx);
   }
 
+  /**
+   * Giấy theo hình map: mỗi ô thuộc bàn là một mảnh giấy nới lề `m`; các mảnh chồng nhau thành hình
+   * liền. Viền mực = cùng các mảnh nới thêm bề dày nét, vẽ bên dưới. Lề < nửa ô nên lỗ 1 ô vẫn hở
+   * giữa (thấy rõ là lỗ). Lưới ô li cắt theo hình bằng mask.
+   */
+  private drawShapedPaper() {
+    const g = this.geo!;
+    const { rows, cols, cell } = g;
+    const paper = this.layers.paper;
+    paper.removeChildren();
+    const m = cell * 0.3;
+    const ink = 3;
+    const radius = Math.min(14, cell * 0.3);
+    const shadow = Math.max(3, cell * 0.08);
+    const live: { x: number; y: number }[] = [];
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) if (this.isLive(r, c)) live.push(this.dot(r, c));
+    const pieces = (gfx: InstanceType<Pixi["Graphics"]>, grow: number, dx = 0, dy = 0) => {
+      for (const p of live) {
+        gfx.roundRect(
+          p.x - m - grow + dx,
+          p.y - m - grow + dy,
+          cell + (m + grow) * 2,
+          cell + (m + grow) * 2,
+          radius + grow,
+        );
+      }
+      return gfx;
+    };
+    const shadowG = pieces(new this.px.Graphics(), ink, shadow, shadow).fill(
+      this.colors.paperShadow,
+    );
+    const inkG = pieces(new this.px.Graphics(), ink).fill(this.colors.ink);
+    const sheet = pieces(new this.px.Graphics(), 0).fill(this.colors.paper);
+    const clip = pieces(new this.px.Graphics(), 0).fill(0xffffff);
+    const grid = new this.px.Graphics();
+    const x0 = g.offX - m;
+    const y0 = g.offY - m;
+    const w = cols * cell + m * 2;
+    const h = rows * cell + m * 2;
+    const step = cell / 2;
+    for (let gx = x0 + step / 2; gx < x0 + w; gx += step) grid.moveTo(gx, y0).lineTo(gx, y0 + h);
+    for (let gy = y0 + step / 2; gy < y0 + h; gy += step) grid.moveTo(x0, gy).lineTo(x0 + w, gy);
+    grid.stroke({ width: 1, color: this.colors.grid, alpha: 0.6 });
+    grid.mask = clip;
+    paper.addChild(shadowG, inkG, sheet, grid, clip);
+  }
+
   private drawDots() {
     const g = this.geo!;
     const dots = this.layers.dots;
@@ -243,6 +309,13 @@ export class BoardRenderer {
     const r = Math.max(2.5, g.cell * 0.085);
     for (let i = 0; i <= g.rows; i++) {
       for (let j = 0; j <= g.cols; j++) {
+        // Chỉ chấm là góc của ít nhất một ô thuộc bàn.
+        const touches =
+          this.isLive(i - 1, j - 1) ||
+          this.isLive(i - 1, j) ||
+          this.isLive(i, j - 1) ||
+          this.isLive(i, j);
+        if (!touches) continue;
         const p = this.dot(i, j);
         gfx.circle(p.x, p.y, r);
       }
@@ -262,6 +335,8 @@ export class BoardRenderer {
     this.layers.fx.removeChildren();
     this.layers.edges.removeChildren();
     this.layers.boxes.removeChildren();
+    this.layers.marks.removeChildren();
+    this.marksKey = "";
     this.edgeG.clear();
     this.boxG.clear();
     this.previewEdge = null;
@@ -280,15 +355,47 @@ export class BoardRenderer {
     const animate = !instant && !this.opts.reducedMotion;
     for (let e = 0; e < state.edges.length; e++) {
       const owner = state.edges[e];
-      if (owner === -1 || this.edgeG.has(e)) continue;
+      if (owner === -1 || owner === VOID || this.edgeG.has(e)) continue;
       const isLast = lastMove?.edge === e;
       this.addEdge(e, owner, animate && isLast);
     }
     for (let b = 0; b < state.owners.length; b++) {
       const owner = state.owners[b];
-      if (owner === -1 || this.boxG.has(b)) continue;
+      if (owner === -1 || owner === VOID || this.boxG.has(b)) continue;
       const isLast = lastMove?.captured.includes(b) ?? false;
       this.addBox(b, owner, animate && isLast);
+    }
+    this.drawMarks();
+  }
+
+  /** Quầng dưới các cạnh đối thủ vẽ trong lượt gần nhất (nếu luật phòng / cài đặt cho phép). */
+  private drawMarks() {
+    const s = this.session!;
+    const turn = s.lastTurn;
+    const on = s.showLastMove && !s.result && !!turn && turn.by !== s.human;
+    const key = on ? `${this.geo!.cell}|${turn!.edges.join(",")}` : "";
+    if (key === this.marksKey) return;
+    this.marksKey = key;
+    const layer = this.layers.marks;
+    layer.removeChildren();
+    if (!on) return;
+    const gfx = new this.px.Graphics();
+    for (const edge of turn!.edges) {
+      const pts = this.strokePoints(edge);
+      gfx.moveTo(pts[0].x, pts[0].y);
+      for (const pt of pts.slice(1)) gfx.lineTo(pt.x, pt.y);
+    }
+    gfx.stroke({
+      width: Math.max(8, this.geo!.cell * 0.3),
+      color: this.colors.mark,
+      alpha: 0.7,
+      cap: "round",
+      join: "round",
+    });
+    layer.addChild(gfx);
+    if (!this.opts.reducedMotion) {
+      gfx.alpha = 0;
+      this.gsap.to(gfx, { alpha: 1, duration: 0.25, delay: 0.1 });
     }
   }
 
@@ -537,7 +644,7 @@ export class BoardRenderer {
     const g = this.geo;
     const owners = s.state.owners;
     const order: Player[] = [s.human, s.bot];
-    const total = owners.filter((o) => o !== -1).length;
+    const total = owners.filter((o) => o >= 0).length;
     const step = Math.max(0.024, Math.min(0.08, 1.3 / Math.max(1, total)));
     const counter = this.makeText("", this.colors.pens[s.human], Math.max(28, g.cell * 1.1));
     counter.position.set(g.width / 2, g.height / 2);
@@ -633,7 +740,25 @@ export class BoardRenderer {
     for (const e of order) {
       if (e >= 0 && e < edgeCount(rows, cols) && s.state.edges[e] === -1) return e;
     }
-    return null;
+    // Map hình thù: hai ứng viên có thể là cạnh ngoài bàn (VOID) → lấy cạnh trống gần nhất
+    // trong bán kính 0.6 ô để chạm sát mép hình vẫn trúng.
+    let best: number | null = null;
+    let bestDist = cell * 0.6;
+    for (let e = 0; e < s.state.edges.length; e++) {
+      if (s.state.edges[e] !== -1) continue;
+      const [a, b] = edgeEndpoints(rows, cols, e);
+      const mx = offX + ((a.c + b.c) / 2) * cell;
+      const my = offY + ((a.r + b.r) / 2) * cell;
+      // Khoảng cách tới đoạn thẳng (ngang/dọc, dài 1 ô).
+      const dx = a.r === b.r ? Math.max(0, Math.abs(x - mx) - cell / 2) : Math.abs(x - mx);
+      const dy = a.r === b.r ? Math.abs(y - my) : Math.max(0, Math.abs(y - my) - cell / 2);
+      const d = Math.hypot(dx, dy);
+      if (d < bestDist) {
+        bestDist = d;
+        best = e;
+      }
+    }
+    return best;
   }
 
   private setPreview(edge: number | null) {

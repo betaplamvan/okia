@@ -1,5 +1,5 @@
 // Smoke test phòng riêng (M1.5–M1.7) trên Edge thật với HAI trình duyệt độc lập:
-// A tạo phòng ở /room → lấy mã → B mở link /r/<mã> → hai bên thay nhau bấm cạnh tới hết ván 3×3 →
+// A tạo phòng ở /room → lấy mã → B mở link /r/<mã> → hai bên thay nhau bấm cạnh tới hết ván 5×5 →
 // hộp thoại kết quả cả hai bên. Giữa chừng B tải lại trang (kết nối lại) và A thấy báo mất kết nối.
 // Cần web (3000) và api (8000) đang chạy.
 //
@@ -7,7 +7,7 @@
 import { chromium } from "playwright";
 
 const [base = "http://localhost:3000"] = process.argv.slice(2);
-const N = 3;
+const N = 5;
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const problems = [];
 const mk = async (name) => {
@@ -26,9 +26,9 @@ const mk = async (name) => {
 const A = await mk("A");
 const B = await mk("B");
 
-// A: tạo phòng 3×3, 15 giây/lượt.
+// A: tạo phòng 5×5, 15 giây/lượt.
 await A.goto(base + "/room", { waitUntil: "networkidle" });
-await A.getByRole("button", { name: "3×3" }).click();
+await A.getByRole("radio", { name: "5×5" }).click();
 await A.getByRole("button", { name: "15 giây" }).click();
 await A.getByRole("button", { name: "Tạo phòng mới" }).click();
 await A.waitForURL(/\/r\/[A-Z2-9]{6}$/, { timeout: 15000 });

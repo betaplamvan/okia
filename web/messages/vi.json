@@ -112,8 +112,6 @@
     "yourTurn": "Đến lượt bạn — chạm vào một cạnh",
     "botThinking": "Máy đang nghĩ…",
     "combo": "COMBO ×{n}",
-    "boardSize": "Kích thước bàn",
-    "size": "{n}×{n}",
     "newGame": "Ván mới",
     "resign": "Đầu hàng",
     "resignTitle": "Đầu hàng ván này?",
@@ -219,7 +217,6 @@
     "codeLabel": "Mã phòng",
     "codePlaceholder": "VD: K7PX3Q",
     "joinButton": "Vào phòng",
-    "board": "Cỡ bàn",
     "turnTime": "Thời gian mỗi lượt",
     "noLimit": "Không giới hạn",
     "seconds": "{n} giây",
@@ -254,5 +251,15 @@
     "shareText": "Vào chơi ăn ô với mình nhé! Mã phòng: {code}",
     "errorBack": "Về sảnh phòng",
     "noConnection": "Không kết nối được máy chủ."
+  },
+  "Maps": {
+    "board": "Bàn chơi",
+    "random": "Ngẫu nhiên",
+    "current": "Bàn: {name}",
+    "change": "Đổi bàn",
+    "optionsTitle": "Chọn bàn chơi",
+    "showLastMove": "Đánh dấu nước đối thủ vừa đi",
+    "apply": "Chơi bàn này",
+    "randomHint": "Mỗi ván bốc một bàn bất kỳ"
   }
 }

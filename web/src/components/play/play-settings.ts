@@ -2,11 +2,13 @@
  * Cài đặt màn chơi với máy, lưu localStorage, đọc qua useSyncExternalStore
  * (server snapshot = mặc định → không lệch hydration; client đọc giá trị đã lưu sau khi mount).
  */
-export const SIZES = [3, 5, 7] as const;
-export type Size = (typeof SIZES)[number];
+import { DEFAULT_MAP_ID, POOL, RANDOM_MAP } from "@/game/maps";
 
 export interface PlaySettings {
-  size: Size;
+  /** Id map trong bể hoặc "random" (bốc lại mỗi ván). */
+  mapId: string;
+  /** Đánh dấu các cạnh máy vừa vẽ. */
+  showLastMove: boolean;
   /** Độ mạnh bot hiện tại (ẩn với người chơi), tự điều chỉnh theo chuỗi thắng/thua. */
   strength: number;
   /** Chuỗi thắng (+) / thua (−) liên tiếp với bot. */
@@ -14,15 +16,28 @@ export interface PlaySettings {
 }
 
 const KEY = "okia-play";
-export const DEFAULT_SETTINGS: PlaySettings = { size: 5, strength: 0.65, streak: 0 };
+export const DEFAULT_SETTINGS: PlaySettings = {
+  mapId: DEFAULT_MAP_ID,
+  showLastMove: true,
+  strength: 0.65,
+  streak: 0,
+};
 
 let cached: PlaySettings | null = null;
 const listeners = new Set<() => void>();
 
+function sanitizeMapId(p: Partial<PlaySettings> & { size?: unknown }): string {
+  if (p.mapId === RANDOM_MAP || POOL.some((m) => m.id === p.mapId)) return p.mapId!;
+  // Bản cũ lưu `size: 3 | 5 | 7` (3×3 đã bỏ khỏi bể).
+  if (p.size === 7) return "7x7";
+  return DEFAULT_SETTINGS.mapId;
+}
+
 function sanitize(raw: unknown): PlaySettings {
-  const p = (raw ?? {}) as Partial<PlaySettings>;
+  const p = (raw ?? {}) as Partial<PlaySettings> & { size?: unknown };
   return {
-    size: SIZES.includes(p.size as Size) ? (p.size as Size) : DEFAULT_SETTINGS.size,
+    mapId: sanitizeMapId(p),
+    showLastMove: typeof p.showLastMove === "boolean" ? p.showLastMove : true,
     strength:
       typeof p.strength === "number"
         ? Math.min(1, Math.max(0.2, p.strength))

@@ -124,7 +124,12 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
 
         case m.RoomCreate():
             room = await rooms.create(
-                redis, user_id=uid, name=name, board=msg.board, turn_seconds=msg.turn_seconds
+                redis,
+                user_id=uid,
+                name=name,
+                board=msg.board,
+                turn_seconds=msg.turn_seconds,
+                show_last_move=msg.show_last_move,
             )
             await _presence_join(hub, conn, room.id)
             await conn.send(rooms.room_state_msg(room, await rooms.online_map(redis, room.id)))

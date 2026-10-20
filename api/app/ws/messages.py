@@ -8,7 +8,8 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from pydantic.alias_generators import to_camel
 
-Board = Literal["3x3", "5x5", "7x7"]
+# Id map trong bể (app/game/maps.json) hoặc "random"; server kiểm tra, chốt map cụ thể lúc tạo ván.
+Board = Annotated[str, Field(min_length=1, max_length=32, pattern=r"^[a-z0-9-]+$")]
 TurnSeconds = Literal[15, 30, 60] | None
 Seat = Literal[0, 1]
 
@@ -23,7 +24,8 @@ class Msg(BaseModel):
 class Queue(Msg):
     t: Literal["queue"]
     mode: Literal["casual", "ranked"]
-    board: Board
+    # Xếp hạng luôn bốc ngẫu nhiên (bỏ qua giá trị gửi lên); thường: id map hoặc "random".
+    board: Board = "random"
 
 
 class QueueCancel(Msg):
@@ -34,6 +36,8 @@ class RoomCreate(Msg):
     t: Literal["room_create"]
     board: Board = "5x5"
     turn_seconds: TurnSeconds = 30
+    # Luật phòng: đánh dấu các cạnh đối thủ vừa vẽ trong lượt gần nhất (áp dụng cho cả hai người).
+    show_last_move: bool = True
 
 
 class RoomJoin(Msg):
@@ -125,6 +129,7 @@ class RoomState(Msg):
     mode: Literal["casual", "ranked", "private"]
     board: Board
     turn_seconds: TurnSeconds
+    show_last_move: bool = True
     status: Literal["waiting", "playing", "over"]
     host_id: str
     players: list[PlayerOut]

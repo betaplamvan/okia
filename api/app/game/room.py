@@ -16,9 +16,10 @@ from typing import Any, Literal
 
 from redis.asyncio import Redis
 
+from app.config import get_settings
 from app.db import get_session_factory
 from app.errors import AppError
-from app.game import rules
+from app.game import maps, rules
 from app.models import Match
 from app.ws import messages as m
 
@@ -36,10 +37,6 @@ def now_ms() -> int:
     return int(time.time() * 1000)
 
 
-def board_size(board: str) -> int:
-    return int(board.split("x")[0])
-
-
 @dataclass
 class Player:
     user_id: str
@@ -55,7 +52,7 @@ class Player:
 class Room:
     id: str
     mode: str
-    board: str
+    board: str  # id map đã chốt (không bao giờ là "random")
     turn_seconds: int | None
     host_id: str
     status: Status
@@ -66,6 +63,7 @@ class Room:
     started_at: int | None = None
     result: dict[str, Any] | None = None
     created_at: int = field(default_factory=now_ms)
+    show_last_move: bool = True
 
     # ----- (de)serialize -----
 
@@ -192,12 +190,26 @@ async def active_room_id(redis: Redis, user_id: str) -> str | None:
     return rid
 
 
+def pick_map(board: str) -> maps.GameMap:
+    """Chốt map: id trong bể hoặc "random". Map ẩn (3x3 cho test) chỉ dùng ngoài production."""
+    m = maps.resolve(board, allow_hidden=get_settings().env != "production")
+    if m is None:
+        raise AppError("INVALID_BOARD", 400)
+    return m
+
+
 async def create(
-    redis: Redis, *, user_id: str, name: str, board: str, turn_seconds: int | None
+    redis: Redis,
+    *,
+    user_id: str,
+    name: str,
+    board: str,
+    turn_seconds: int | None,
+    show_last_move: bool = True,
 ) -> Room:
     if await active_room_id(redis, user_id):
         raise AppError("ALREADY_IN_GAME", 409)
-    n = board_size(board)
+    game_map = pick_map(board)
     for _ in range(10):
         rid = "".join(secrets.choice(ROOM_ALPHABET) for _ in range(6))
         if not await redis.exists(key(rid)):
@@ -207,12 +219,13 @@ async def create(
     room = Room(
         id=rid,
         mode="private",
-        board=board,
+        board=game_map.id,
         turn_seconds=turn_seconds,
         host_id=user_id,
         status="waiting",
         players=[Player(user_id=user_id, name=name, seat=0)],
-        state=rules.create_game(n, n),
+        state=maps.create_game(game_map),
+        show_last_move=show_last_move,
     )
     await save(redis, room)
     return room
@@ -424,6 +437,7 @@ def room_state_msg(room: Room, online: dict[str, bool]) -> m.RoomState:
         mode=room.mode,  # type: ignore[arg-type]
         board=room.board,  # type: ignore[arg-type]
         turn_seconds=room.turn_seconds,  # type: ignore[arg-type]
+        show_last_move=room.show_last_move,
         status=room.status,
         host_id=room.host_id,
         players=[

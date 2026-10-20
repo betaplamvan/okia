@@ -4,8 +4,15 @@
  *   trả `error` (ref = "move") thì hoàn tác về trạng thái server cuối cùng.
  * - `room_state` là ảnh chụp đầy đủ (vào phòng / kết nối lại).
  */
-import type { GameController, GameResult, GameSession, OnlineInfo } from "./controller";
-import { applyMove, createGame, type GameState, type Player } from "./rules";
+import {
+  nextLastTurn,
+  type GameController,
+  type GameResult,
+  type GameSession,
+  type OnlineInfo,
+} from "./controller";
+import { createGameForMap, DEFAULT_MAP_ID } from "./maps";
+import { applyMove, type GameState, type Player } from "./rules";
 import type { GameOver, GameStateOut, RoomState, ServerMsg } from "./ws-types";
 import { useConnection, type WsClient } from "@/net/ws-client";
 
@@ -43,12 +50,15 @@ export class NetworkController implements GameController {
     private readonly roomId: string,
     private readonly onEvent: (e: NetworkEvent) => void = () => {},
   ) {
-    this.serverState = createGame(5, 5);
+    this.serverState = createGameForMap(DEFAULT_MAP_ID);
     this.session = {
+      mapId: DEFAULT_MAP_ID,
       state: this.serverState,
       human: 0,
       bot: 1,
       lastMove: null,
+      lastTurn: null,
+      showLastMove: true,
       combo: 0,
       thinking: false,
       result: null,
@@ -128,6 +138,8 @@ export class NetworkController implements GameController {
             state: res.state,
             // Nước của mình đã animate lúc bấm → không animate lại (lastMove giữ nguyên edge).
             lastMove: { edge: m.edge, by, captured: res.captured },
+            // Nước của mình đã được thêm lúc bấm (lạc quan) → không thêm lần nữa.
+            lastTurn: wasPending ? prev.lastTurn : nextLastTurn(prev.lastTurn, by, m.edge),
             combo,
           },
           {
@@ -148,7 +160,10 @@ export class NetworkController implements GameController {
       case "error":
         if (m.ref === "move") {
           // Hoàn tác nước lạc quan.
-          this.emit({ state: this.serverState, lastMove: null }, { pendingEdge: null });
+          this.emit(
+            { state: this.serverState, lastMove: null, lastTurn: null },
+            { pendingEdge: null },
+          );
         }
         this.onEvent({ type: "error", code: m.code, message: m.message, ref: m.ref });
         return;
@@ -171,10 +186,13 @@ export class NetworkController implements GameController {
     this.serverState = fromServer(rs.state);
     this.emit(
       {
+        mapId: rs.board,
         state: this.serverState,
         human: seat,
         bot: (1 - seat) as Player,
         lastMove: null,
+        lastTurn: null,
+        showLastMove: rs.showLastMove ?? true,
         combo: 0,
         result: rs.result ? resultOf(rs.result) : null,
       },
@@ -203,7 +221,12 @@ export class NetworkController implements GameController {
     const combo =
       res.captured.length > 0 ? (sameTurnStreak ? s.combo : 0) + res.captured.length : 0;
     this.emit(
-      { state: res.state, lastMove: { edge, by: this.mySeat, captured: res.captured }, combo },
+      {
+        state: res.state,
+        lastMove: { edge, by: this.mySeat, captured: res.captured },
+        lastTurn: nextLastTurn(s.lastTurn, this.mySeat, edge),
+        combo,
+      },
       { pendingEdge: edge },
     );
     return true;

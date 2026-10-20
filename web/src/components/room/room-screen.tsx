@@ -17,6 +17,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { LuCheck, LuCopy, LuFlag, LuShare2, LuUser, LuWifiOff } from "react-icons/lu";
 import { BoardCanvas } from "@/components/play/board-canvas";
+import { useMapName } from "@/components/play/map-picker";
 import { PlayerChip } from "@/components/play/player-chip";
 import { useGameSounds } from "@/components/play/use-game-sounds";
 import { toaster } from "@/components/ui/toaster";
@@ -32,6 +33,8 @@ import { serverNow, useConnection, wsClient } from "@/net/ws-client";
 export function RoomScreen({ code }: { code: string }) {
   const t = useTranslations("Room");
   const tp = useTranslations("Play");
+  const tm = useTranslations("Maps");
+  const mapName = useMapName();
   const locale = useLocale();
   const router = useRouter();
   const [fatal, setFatal] = useState<string | null>(null);
@@ -195,7 +198,7 @@ export function RoomScreen({ code }: { code: string }) {
             session={session}
             onSelectEdge={onSelectEdge}
             onEvent={onRendererEvent}
-            twoTapTouch={state.rows === 7}
+            twoTapTouch={Math.max(state.rows, state.cols) >= 7}
             label={tp("board")}
             comboLabel={comboLabel}
           />
@@ -215,6 +218,9 @@ export function RoomScreen({ code }: { code: string }) {
           </HStack>
           <Text textAlign="center" color="cream" opacity={0.7} fontSize="sm">
             {t("codeLabel")}: <b>{code}</b>
+          </Text>
+          <Text textAlign="center" color="cream" fontWeight="700" data-testid="map-name">
+            {tm("current", { name: mapName(session.mapId) })}
           </Text>
         </Stack>
       </Flex>

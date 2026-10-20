@@ -20,15 +20,16 @@ export interface OkiaWs {
 export interface Queue {
   t: "queue";
   mode: "casual" | "ranked";
-  board: "3x3" | "5x5" | "7x7";
+  board?: string;
 }
 export interface QueueCancel {
   t: "queue_cancel";
 }
 export interface RoomCreate {
   t: "room_create";
-  board?: "3x3" | "5x5" | "7x7";
+  board?: string;
   turnSeconds?: (15 | 30 | 60) | null;
+  showLastMove?: boolean;
 }
 export interface RoomJoin {
   t: "room_join";
@@ -68,7 +69,7 @@ export interface Welcome {
 export interface Queued {
   t: "queued";
   mode: string;
-  board: "3x3" | "5x5" | "7x7";
+  board: string;
   since: number;
 }
 export interface Matched {
@@ -79,8 +80,9 @@ export interface RoomState {
   t: "room_state";
   roomId: string;
   mode: "casual" | "ranked" | "private";
-  board: "3x3" | "5x5" | "7x7";
+  board: string;
   turnSeconds: (15 | 30 | 60) | null;
+  showLastMove?: boolean;
   status: "waiting" | "playing" | "over";
   hostId: string;
   players: PlayerOut[];

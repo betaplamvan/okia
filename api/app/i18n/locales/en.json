@@ -10,6 +10,7 @@
     "STALE_SEQ": "State is out of date, syncing.",
     "ROOM_NOT_FOUND": "Room not found.",
     "ROOM_FULL": "The room is full.",
+    "INVALID_BOARD": "Invalid board.",
     "ALREADY_IN_GAME": "You are already in another game.",
     "RATE_LIMITED": "Too fast, try again in {retryAfter} seconds.",
     "INSUFFICIENT_FUNDS": "Not enough Lead.",

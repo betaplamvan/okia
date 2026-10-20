@@ -10,6 +10,7 @@ on:
     paths:
       - "api/**"
       - "shared/fixtures/**"
+      - "shared/maps/**"
       - ".github/workflows/api.yml"
       - ".github/actions/api-ci/**"
       - "deploy/deploy-container.sh"
@@ -17,6 +18,7 @@ on:
     paths:
       - "api/**"
       - "shared/fixtures/**"
+      - "shared/maps/**"
       - ".github/workflows/api.yml"
       - ".github/actions/api-ci/**"
   workflow_dispatch:

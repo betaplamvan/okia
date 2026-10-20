@@ -1,0 +1,29 @@
+{
+  "name": "Mặt nạ chữ L (3 ô): cạnh ngoài bàn là INVALID_EDGE, ăn ô sát mép, hết cạnh vẽ được thì kết thúc",
+  "rows": 2,
+  "cols": 2,
+  "cells": ["##", "#."],
+  "moves": [
+    { "player": 0, "edge": 5, "expectError": "INVALID_EDGE" },
+    { "player": 0, "edge": 11, "expectError": "INVALID_EDGE" },
+    { "player": 0, "edge": 3, "expectCaptured": [] },
+    { "player": 1, "edge": 10, "expectCaptured": [] },
+    { "player": 0, "edge": 1 },
+    { "player": 1, "edge": 8 },
+    { "player": 0, "edge": 7, "expectCaptured": [1] },
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 6 },
+    { "player": 0, "edge": 2, "expectCaptured": [0] },
+    { "player": 0, "edge": 4 },
+    { "player": 1, "edge": 9, "expectCaptured": [2] },
+    { "player": 1, "edge": 0, "expectError": "GAME_OVER" }
+  ],
+  "expect": {
+    "scores": [2, 1],
+    "turn": 1,
+    "finished": true,
+    "moveNo": 10,
+    "owners": [0, 0, 1, -2],
+    "winner": 0
+  }
+}

@@ -9,7 +9,7 @@
 import {
   applyMove,
   boxSideCount,
-  edgeBoxes,
+  liveBoxes,
   legalMoves,
   type GameState,
   type Player,
@@ -35,7 +35,7 @@ export function classifyMoves(state: GameState): MoveClasses {
   const classes: MoveClasses = { capturing: [], safe: [], risky: [] };
   for (const edge of legalMoves(state)) {
     let maxSides = 0;
-    for (const box of edgeBoxes(state.rows, state.cols, edge)) {
+    for (const box of liveBoxes(state, edge)) {
       maxSides = Math.max(maxSides, boxSideCount(state, box));
     }
     if (maxSides === 3) classes.capturing.push(edge);
@@ -48,7 +48,7 @@ export function classifyMoves(state: GameState): MoveClasses {
 /** Số ô một cạnh ăn được ngay (0, 1 hoặc 2). */
 export function captureCount(state: GameState, edge: number): number {
   let n = 0;
-  for (const box of edgeBoxes(state.rows, state.cols, edge)) {
+  for (const box of liveBoxes(state, edge)) {
     if (boxSideCount(state, box) === 3) n++;
   }
   return n;

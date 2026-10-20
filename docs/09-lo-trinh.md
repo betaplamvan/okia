@@ -47,7 +47,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M0.4 Vòng lặp chơi với bot tạm
 - [x] **P0-11** Interface `GameController` (để sau này thay bằng bản online); `LocalBotController`: người chơi click → `applyMove` → renderer; **bot tạm** (ăn ô nếu có, còn lại ngẫu nhiên) đi với độ trễ tự nhiên
-- [x] **P0-12** HUD theo bố cục dọc/ngang ở [11](11-responsive-i18n.md#bố-cục-màn-hình-chơi): tên, điểm, lượt; màn hình kết thúc; chơi lại; chọn bàn 3×3 / 5×5 / 7×7
+- [x] **P0-12** HUD theo bố cục dọc/ngang ở [11](11-responsive-i18n.md#bố-cục-màn-hình-chơi): tên, điểm, lượt; màn hình kết thúc; chơi lại; chọn bàn 3×3 / 5×5 / 7×7 (sau thay bằng bể map, P1-25)
 
 ✅ *Demo: chơi hết ván với bot tạm trên điện thoại, xoay màn hình không mất ván.*
 
@@ -118,6 +118,12 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [x] **P1-18** `NetworkController` (cùng interface `GameController`): animate lạc quan, hoàn tác khi lỗi; hiển thị lỗi theo `code` đã dịch
 - [x] **P1-19** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger. *Còn lại:* ảnh OG (hiện mới có tiêu đề + mô tả theo ngôn ngữ)
 - [x] **P1-20** Thanh đếm giờ lượt, báo đối thủ rớt mạng, màn hình kết thúc online
+
+### M1.7b Bể map ([ADR-0009](adr/0009-be-map-hinh-thu.md))
+- [x] **P1-24** Luật có mặt nạ ô (`VOID`) ở `rules.ts` / `rules.py` + fixtures dùng chung (cạnh ngoài bàn, lỗ, ván trọn vẹn trên map hình thù); bot bỏ qua ô ngoài bàn
+- [x] **P1-25** Bể map `shared/maps/maps.json` (5×5, 7×7, 5 map hình thù, số ô lẻ) + script sinh cho web/api; bỏ 3×3 khỏi giao diện (còn là map ẩn cho test)
+- [x] **P1-26** Server: `board` = id map hoặc `random`, `INVALID_BOARD`, `matches.board` 32 ký tự; luật phòng `showLastMove`
+- [x] **P1-27** Renderer: giấy theo hình (viền, lỗ, ô li cắt theo hình), chấm/cạnh chỉ trong bàn, quầng đánh dấu nước đối thủ vừa đi; bộ chọn map có hình thu nhỏ + "Ngẫu nhiên" ở chơi với máy và phòng riêng
 
 ### M1.8 Triển khai
 - [ ] **P1-21** VPS + Docker Compose production (container `api` chạy `alembic upgrade head` khi khởi động), Caddy, Cloudflare, tên miền; cấu hình SPF/DKIM cho email

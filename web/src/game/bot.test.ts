@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { captureCount, chooseMove, classifyMoves, giftSize } from "./bot";
 import { applyMove, createGame, legalMoves, type GameState, type Player } from "./rules";
+import { createGameForMap } from "./maps";
 
 const never = () => 0; // random() = 0 → không bao giờ "lỗi", luôn chọn phần tử đầu
 
@@ -131,6 +132,31 @@ describe("chooseMove", () => {
       checked++;
     }
     expect(checked).toBeGreaterThan(0);
+  });
+
+  it("map có lỗ: 3 cạnh quanh lỗ không bị coi là sắp ăn được", () => {
+    // Vòng 3×3, lỗ ở giữa (ô 4). Vẽ 3 cạnh quanh lỗ: cạnh thứ 4 không ăn được gì.
+    let state = createGame(3, 3, [true, true, true, true, false, true, true, true, true]);
+    for (const edge of [4, 7, 17]) {
+      const r = applyMove(state, state.turn, edge);
+      if (!r.ok) throw new Error(r.error);
+      state = r.state;
+    }
+    const { capturing } = classifyMoves(state);
+    expect(capturing).not.toContain(18);
+    expect(captureCount(state, 18)).toBe(0);
+  });
+
+  it("map hình thù: bot luôn đi hợp lệ tới hết ván", () => {
+    let state = createGameForMap("khung-long");
+    const random = mulberry32(3);
+    while (!state.finished) {
+      const edge = chooseMove(state, { strength: 0.8, random });
+      const r = applyMove(state, state.turn, edge);
+      if (!r.ok) throw new Error(`${edge}: ${r.error}`);
+      state = r.state;
+    }
+    expect(state.finished).toBe(true);
   });
 
   it("strength 0: vẫn đi hợp lệ và không ném lỗi", () => {

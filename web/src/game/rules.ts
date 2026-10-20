@@ -8,14 +8,17 @@
 export type Player = 0 | 1;
 /** -1: chưa ai; 0 | 1: chỉ số người chơi. */
 export type Owner = -1 | Player;
+/** Cạnh / ô không thuộc bàn (map hình thù: ngoài mặt nạ). Không bao giờ vẽ / ăn được. */
+export const VOID = -2;
+export type Slot = Owner | typeof VOID;
 
 export interface GameState {
   readonly rows: number;
   readonly cols: number;
-  /** E phần tử: người vẽ cạnh hoặc -1. */
-  readonly edges: readonly Owner[];
-  /** R×C phần tử: chủ ô hoặc -1. */
-  readonly owners: readonly Owner[];
+  /** E phần tử: người vẽ cạnh, -1 (chưa vẽ) hoặc VOID (không thuộc bàn). */
+  readonly edges: readonly Slot[];
+  /** R×C phần tử: chủ ô, -1 (chưa ai) hoặc VOID (ô ngoài mặt nạ). */
+  readonly owners: readonly Slot[];
   readonly scores: readonly [number, number];
   readonly turn: Player;
   readonly moveNo: number;
@@ -115,29 +118,55 @@ export function edgeEndpoints(rows: number, cols: number, edge: number): [DotPos
 
 // ---------- Trạng thái ----------
 
-export function createGame(rows: number, cols: number): GameState {
+/**
+ * Ván mới trên lưới R×C. `mask` (R×C, tùy chọn): ô nào thuộc bàn — map hình thù. Ô ngoài mặt nạ
+ * và cạnh không kề ô nào thuộc bàn mang giá trị VOID. Không có mask = bàn chữ nhật đầy đủ.
+ */
+export function createGame(rows: number, cols: number, mask?: readonly boolean[]): GameState {
   if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1) {
     throw new RangeError(`Kích thước bàn không hợp lệ: ${rows}x${cols}`);
   }
-  return {
-    rows,
-    cols,
-    edges: new Array<Owner>(edgeCount(rows, cols)).fill(-1),
-    owners: new Array<Owner>(rows * cols).fill(-1),
-    scores: [0, 0],
-    turn: 0,
-    moveNo: 0,
-    finished: false,
-  };
+  if (mask && (mask.length !== rows * cols || !mask.some(Boolean))) {
+    throw new RangeError(`Mặt nạ không hợp lệ cho bàn ${rows}x${cols}`);
+  }
+  const owners: Slot[] = new Array<Slot>(rows * cols).fill(-1);
+  const edges: Slot[] = new Array<Slot>(edgeCount(rows, cols)).fill(-1);
+  if (mask) {
+    for (let b = 0; b < owners.length; b++) if (!mask[b]) owners[b] = VOID;
+    for (let e = 0; e < edges.length; e++) {
+      if (!edgeBoxes(rows, cols, e).some((b) => mask[b])) edges[e] = VOID;
+    }
+  }
+  return { rows, cols, edges, owners, scores: [0, 0], turn: 0, moveNo: 0, finished: false };
 }
 
+/** Số cạnh vẽ được của bàn (không tính VOID) = số nước của cả ván. */
+export function playableEdgeCount(state: GameState): number {
+  let n = 0;
+  for (const e of state.edges) if (e !== VOID) n++;
+  return n;
+}
+
+/** Số ô thuộc bàn (không tính VOID). */
+export function playableBoxCount(state: GameState): number {
+  let n = 0;
+  for (const o of state.owners) if (o !== VOID) n++;
+  return n;
+}
+
+/** Các ô THUỘC BÀN kề một cạnh (bỏ ô VOID — ví dụ "lỗ" trong map hình thù). */
+export function liveBoxes(state: GameState, edge: number): number[] {
+  return edgeBoxes(state.rows, state.cols, edge).filter((b) => state.owners[b] !== VOID);
+}
+
+/** Số cạnh đã vẽ của ô (VOID không tính là đã vẽ). */
 export function boxSideCount(state: GameState, box: number): number {
   const e = boxEdges(state.rows, state.cols, box);
   let n = 0;
-  if (state.edges[e.top] !== -1) n++;
-  if (state.edges[e.bottom] !== -1) n++;
-  if (state.edges[e.left] !== -1) n++;
-  if (state.edges[e.right] !== -1) n++;
+  if (state.edges[e.top] >= 0) n++;
+  if (state.edges[e.bottom] >= 0) n++;
+  if (state.edges[e.left] >= 0) n++;
+  if (state.edges[e.right] >= 0) n++;
   return n;
 }
 
@@ -152,26 +181,27 @@ export function validateMove(state: GameState, player: Player, edge: number): Mo
   if (state.finished) return "GAME_OVER";
   if (player !== state.turn) return "NOT_YOUR_TURN";
   if (!Number.isInteger(edge) || edge < 0 || edge >= state.edges.length) return "INVALID_EDGE";
+  if (state.edges[edge] === VOID) return "INVALID_EDGE";
   if (state.edges[edge] !== -1) return "EDGE_TAKEN";
   return null;
 }
 
 /**
  * Áp dụng một nước đi. Thuần: trả về trạng thái mới, không sửa `state`.
- * Ăn ≥ 1 ô → giữ lượt; không → đổi lượt. Hết cạnh → finished.
+ * Ăn ≥ 1 ô → giữ lượt; không → đổi lượt. Hết cạnh vẽ được → finished.
  */
 export function applyMove(state: GameState, player: Player, edge: number): ApplyMoveResult {
   const error = validateMove(state, player, edge);
   if (error) return { ok: false, error };
 
-  const edges = state.edges.slice();
+  const edges: Slot[] = state.edges.slice();
   edges[edge] = player;
-  const owners = state.owners.slice();
+  const owners: Slot[] = state.owners.slice();
   const scores: [number, number] = [state.scores[0], state.scores[1]];
   const next: GameState = { ...state, edges, owners, scores, moveNo: state.moveNo + 1 };
 
   const captured: number[] = [];
-  for (const box of edgeBoxes(state.rows, state.cols, edge)) {
+  for (const box of liveBoxes(state, edge)) {
     if (owners[box] === -1 && boxSideCount(next, box) === 4) {
       owners[box] = player;
       scores[player]++;
@@ -179,7 +209,7 @@ export function applyMove(state: GameState, player: Player, edge: number): Apply
     }
   }
 
-  const finished = next.moveNo === edges.length;
+  const finished = next.moveNo === playableEdgeCount(next);
   const turn: Player = captured.length > 0 ? player : player === 0 ? 1 : 0;
 
   return { ok: true, state: { ...next, turn, finished }, captured };

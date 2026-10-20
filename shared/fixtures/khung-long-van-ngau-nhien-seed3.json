@@ -1,0 +1,713 @@
+{
+  "name": "khung-long: ván ngẫu nhiên đầy đủ (seed 3), sinh bởi scripts/gen-fixtures.mts",
+  "rows": 8,
+  "cols": 10,
+  "cells": [
+    "......####",
+    ".....##.##",
+    ".....#####",
+    "#....###..",
+    "##..#####.",
+    ".#######..",
+    "..######..",
+    "..##..##.."
+  ],
+  "moves": [
+    {
+      "player": 0,
+      "edge": 134,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 15,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 77,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 19,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 140,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 86,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 87,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 38,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 51,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 108,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 41,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 25,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 136,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 96,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 148,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 160,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 58,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 129,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 54,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 124,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 100,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 151,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 106,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 6,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 159,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 56,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 169,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 141,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 67,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 131,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 35,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 63,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 135,
+      "expectCaptured": [
+        41
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 7,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 8,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 82,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 158,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 117,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 123,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 146,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 109,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 107,
+      "expectCaptured": [
+        15
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 26,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 62,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 97,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 153,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 65,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 74,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 76,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 111,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 147,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 162,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 121,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 53,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 128,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 130,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 66,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 174,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 163,
+      "expectCaptured": [
+        66
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 122,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 119,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 171,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 139,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 17,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 18,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 73,
+      "expectCaptured": [
+        63
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 152,
+      "expectCaptured": [
+        56
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 47,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 72,
+      "expectCaptured": [
+        62
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 44,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 57,
+      "expectCaptured": [
+        57
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 83,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 98,
+      "expectCaptured": [
+        7
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 48,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 143,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 30,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 173,
+      "expectCaptured": [
+        76
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 110,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 142,
+      "expectCaptured": [
+        47,
+        48
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 138,
+      "expectCaptured": [
+        44
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 16,
+      "expectCaptured": [
+        6,
+        16
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 50,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 29,
+      "expectCaptured": [
+        19
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 118,
+      "expectCaptured": [
+        25
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 150,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 75,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 175,
+      "expectCaptured": [
+        77
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 170,
+      "expectCaptured": [
+        72,
+        73
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 164,
+      "expectCaptured": [
+        67
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 52,
+      "expectCaptured": [
+        52
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 149,
+      "expectCaptured": [
+        53
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 161,
+      "expectCaptured": [
+        65
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 64,
+      "expectCaptured": [
+        54,
+        64
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 37,
+      "expectCaptured": [
+        37
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 46,
+      "expectCaptured": [
+        46
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 120,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 36,
+      "expectCaptured": [
+        26,
+        36
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 45,
+      "expectCaptured": [
+        35
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 27,
+      "expectCaptured": [
+        27
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 55,
+      "expectCaptured": [
+        45,
+        55
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 40,
+      "expectCaptured": [
+        30,
+        40
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 28,
+      "expectCaptured": [
+        18,
+        28
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 99,
+      "expectCaptured": [
+        8
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 9,
+      "expectCaptured": [
+        9
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 61,
+      "expectCaptured": [
+        51
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 39,
+      "expectCaptured": [
+        29
+      ]
+    }
+  ],
+  "expect": {
+    "scores": [
+      20,
+      21
+    ],
+    "turn": 1,
+    "finished": true,
+    "moveNo": 106,
+    "owners": [
+      -2,
+      -2,
+      -2,
+      -2,
+      -2,
+      -2,
+      1,
+      1,
+      1,
+      1,
+      -2,
+      -2,
+      -2,
+      -2,
+      -2,
+      0,
+      1,
+      -2,
+      1,
+      0,
+      -2,
+      -2,
+      -2,
+      -2,
+      -2,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      -2,
+      -2,
+      -2,
+      -2,
+      1,
+      1,
+      0,
+      -2,
+      -2,
+      1,
+      0,
+      -2,
+      -2,
+      1,
+      1,
+      0,
+      1,
+      1,
+      -2,
+      -2,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -2,
+      -2,
+      -2,
+      -2,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -2,
+      -2,
+      -2,
+      -2,
+      0,
+      0,
+      -2,
+      -2,
+      0,
+      0,
+      -2,
+      -2
+    ],
+    "winner": 1
+  }
+}
