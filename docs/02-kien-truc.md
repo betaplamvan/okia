@@ -37,9 +37,9 @@
 | Nét vẽ tay | rough.js hoặc shader tự viết |
 | UI | Chakra UI v3 (style props responsive, color mode) |
 | Đa ngôn ngữ | next-intl (`vi` mặc định, `en`) |
-| State | Zustand |
-| Gọi REST | TanStack Query |
-| Type từ API | `openapi-typescript` (REST), `json-schema-to-typescript` (tin nhắn WS) |
+| State client (ván đang chơi, kết nối, cài đặt) | Zustand — không dùng Redux, thừa cho quy mô này |
+| Dữ liệu server (hồ sơ, shop, BXH) | SWR (cùng hệ sinh thái Vercel, thay TanStack Query) |
+| Type từ API | `openapi-typescript` + `openapi-fetch` (REST), `json-schema-to-typescript` (tin nhắn WS) |
 | Test | Vitest |
 
 Engine game là **class TypeScript thuần** trong `web/src/game/`, mount vào một client component ở `/play` qua `useEffect`. React không re-render theo frame.
