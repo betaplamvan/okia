@@ -1,0 +1,158 @@
+# CI/CD backend (api/). Chỉ chạy khi api/ hoặc shared/fixtures đổi — thay đổi chỉ ở web/ không kích hoạt luồng này.
+# Build ưu tiên ubuntu-latest của GitHub; job đó KHÔNG khởi động được (hết quota phút) → build lại trên
+# minisforum. Deploy luôn chạy trên minisforum, dùng Postgres/Redis có sẵn trên máy (không tạo mới).
+# Chi tiết: deploy/README.md.
+name: API (BE)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - "shared/fixtures/**"
+      - ".github/workflows/api.yml"
+      - ".github/actions/api-ci/**"
+      - "deploy/deploy-container.sh"
+  pull_request:
+    paths:
+      - "api/**"
+      - "shared/fixtures/**"
+      - ".github/workflows/api.yml"
+      - ".github/actions/api-ci/**"
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Nơi build (auto = GitHub trước, hết quota thì minisforum)"
+        type: choice
+        options: [auto, github, minisforum]
+        default: auto
+
+concurrency:
+  group: api-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build (GitHub)
+    if: ${{ (inputs.runner || vars.CI_RUNNER || 'auto') != 'minisforum' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      started: ${{ steps.mark.outputs.started }}
+    # Postgres/Redis tạm cho pytest, tự hủy khi job xong (runner GitHub không với tới DB trên minisforum).
+    # Cổng khớp mặc định của tests/conftest.py.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: okia
+          POSTGRES_USER: okia
+          POSTGRES_PASSWORD: okia
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U okia -d okia" --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6380:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - id: mark
+        run: echo "started=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/api-ci
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-fallback:
+    name: Build (minisforum, dự phòng)
+    needs: build
+    if: >-
+      ${{ !cancelled() && (inputs.runner || vars.CI_RUNNER || 'auto') != 'github' && (
+        needs.build.result == 'skipped' ||
+        (needs.build.result == 'failure' && needs.build.outputs.started != 'true')
+      ) }}
+    runs-on: [self-hosted, minisforum]
+    timeout-minutes: 45
+    steps:
+      - name: Kiểm tra DB test
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_REDIS_URL: ${{ secrets.TEST_REDIS_URL }}
+        run: |
+          # Không dựng Postgres/Redis trên minisforum — pytest dùng bản đã chuẩn bị sẵn.
+          if [ -z "$TEST_DATABASE_URL" ] || [ -z "$TEST_REDIS_URL" ]; then
+            echo "::error::Đặt secret TEST_DATABASE_URL và TEST_REDIS_URL (xem deploy/README.md)"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/api-ci
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          self-hosted: "true"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          test-database-url: ${{ secrets.TEST_DATABASE_URL }}
+          test-redis-url: ${{ secrets.TEST_REDIS_URL }}
+
+  deploy:
+    name: Deploy (minisforum)
+    needs: [build, build-fallback]
+    if: >-
+      ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      (needs.build.result == 'success' || needs.build-fallback.result == 'success') }}
+    runs-on: [self-hosted, minisforum]
+    environment: production
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-api
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: deploy
+
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Deploy okia-api
+        env:
+          NAME: okia-api
+          IMAGE: ghcr.io/${{ github.repository_owner }}/okia-api:${{ github.sha }}
+          PORT_MAP: ${{ vars.API_PORT || '8000' }}:8000
+          NETWORK: ${{ vars.DOCKER_NETWORK || 'okia' }}
+          REQUIRED_ENV: DATABASE_URL REDIS_URL JWT_SECRET
+          PASS_ENV: >-
+            DATABASE_URL REDIS_URL JWT_SECRET APP_BASE_URL API_BASE_URL CORS_ORIGINS COOKIE_SECURE
+            COOKIE_DOMAIN GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET EMAIL_PROVIDER RESEND_API_KEY EMAIL_FROM
+            RESEND_WEBHOOK_SECRET
+          # Bí mật → secrets; cấu hình không nhạy cảm → vars (Environment "production").
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_WEBHOOK_SECRET: ${{ secrets.RESEND_WEBHOOK_SECRET }}
+          APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+          COOKIE_SECURE: ${{ vars.COOKIE_SECURE }}
+          COOKIE_DOMAIN: ${{ vars.COOKIE_DOMAIN }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          EMAIL_PROVIDER: ${{ vars.EMAIL_PROVIDER }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+        run: |
+          export IMAGE="${IMAGE,,}"
+          bash deploy/deploy-container.sh
+
+      - name: Dọn image cũ trên GHCR (giữ 10 bản)
+        uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with:
+          package-name: okia-api
+          package-type: container
+          min-versions-to-keep: 10

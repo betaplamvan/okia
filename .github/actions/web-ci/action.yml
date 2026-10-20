@@ -1,0 +1,100 @@
+name: Web CI + image
+description: Lint, typecheck, test web/ rồi build image Docker (push lên GHCR nếu push=true).
+
+inputs:
+  push:
+    description: "true → push image lên GHCR"
+    default: "false"
+  self-hosted:
+    description: "true → chạy trên minisforum: dùng cache layer của Docker trên máy, không dùng cache GHA"
+    default: "false"
+  token:
+    description: GITHUB_TOKEN để đăng nhập GHCR
+    required: true
+  api-url:
+    description: NEXT_PUBLIC_API_URL nhúng vào bundle (rỗng → <hostname-của-trang>:8000)
+    default: ""
+  ws-url:
+    description: NEXT_PUBLIC_WS_URL (rỗng → suy ra từ API URL)
+    default: ""
+
+outputs:
+  image:
+    description: Image đã build kèm tag sha
+    value: ${{ steps.meta.outputs.image }}
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        package_json_file: web/package.json
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+        cache-dependency-path: web/pnpm-lock.yaml
+
+    - name: Cài dependency
+      shell: bash
+      working-directory: web
+      run: pnpm install --frozen-lockfile
+
+    - name: Lint
+      shell: bash
+      working-directory: web
+      run: pnpm lint
+
+    - name: Prettier
+      shell: bash
+      working-directory: web
+      run: pnpm format:check
+
+    - name: Typecheck
+      shell: bash
+      working-directory: web
+      # chakra typegen sinh type cho recipe tùy biến (variant "sticker"...) vào node_modules.
+      run: pnpm chakra:typegen && pnpm typecheck
+
+    - name: Test (Vitest)
+      shell: bash
+      working-directory: web
+      run: pnpm test
+
+    - name: Tên image
+      id: meta
+      shell: bash
+      run: |
+        repo="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/okia-web"
+        echo "repo=$repo" >> "$GITHUB_OUTPUT"
+        echo "image=$repo:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Buildx
+      if: inputs.self-hosted != 'true'
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login GHCR
+      if: inputs.push == 'true'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+
+    - name: Build${{ inputs.push == 'true' && ' & push' || '' }} image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: web/Dockerfile
+        push: ${{ inputs.push == 'true' }}
+        provenance: false
+        tags: |
+          ${{ steps.meta.outputs.image }}
+          ${{ steps.meta.outputs.repo }}:latest
+        labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        build-args: |
+          NEXT_PUBLIC_API_URL=${{ inputs.api-url }}
+          NEXT_PUBLIC_WS_URL=${{ inputs.ws-url }}
+        cache-from: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=web' || '' }}
+        cache-to: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=web,mode=max' || '' }}

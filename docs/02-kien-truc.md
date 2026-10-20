@@ -108,6 +108,11 @@ okia/                        # repo (monorepo)
 
 ## Triển khai
 
+> **Hiện tại** ([ADR-0008](adr/0008-ci-cd-minisforum.md)): GitHub Actions build image (ưu tiên runner GitHub,
+> hết quota thì minisforum) → GHCR → deploy container `web`, `api` trên máy minisforum; Postgres/Redis có sẵn
+> trên máy, không do CI/CD tạo. Hướng dẫn: [deploy/README.md](../deploy/README.md). Phần dưới là kế hoạch
+> VPS ban đầu, giữ làm hướng đi khi cần chuyển lên VPS.
+
 - Một VPS (Việt Nam hoặc Singapore, ~2 vCPU / 4 GB RAM) chạy **Docker Compose**: `caddy`, `web`, `api`, `postgres`, `redis`.
 - **Caddy**: reverse proxy, HTTPS tự động, hỗ trợ WebSocket.
 - **Cloudflare** (gói miễn phí) phía trước: DNS, CDN cho asset skin, chống DDoS. Asset lớn đặt trên **Cloudflare R2**.

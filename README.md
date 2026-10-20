@@ -35,6 +35,12 @@ uv run pytest
 
 Yêu cầu Python 3.13, [uv](https://docs.astral.sh/uv/) và Docker.
 
+## CI/CD
+
+GitHub Actions: [`web.yml`](.github/workflows/web.yml) chạy khi đổi `web/`, [`api.yml`](.github/workflows/api.yml)
+khi đổi `api/`. Build trên `ubuntu-latest` (hết quota thì self-hosted runner minisforum), deploy container lên
+minisforum. Cài runner, secret, biến môi trường: [deploy/README.md](deploy/README.md).
+
 ## Chơi thử với máy khác trong mạng LAN
 
 1. Chạy API mở ra mạng: `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` (CORS dev đã chấp nhận dải IP riêng).

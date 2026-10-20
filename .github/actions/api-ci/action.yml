@@ -1,0 +1,94 @@
+name: API CI + image
+description: Ruff, mypy (chưa chặn), pytest cho api/ rồi build image Docker (push lên GHCR nếu push=true).
+
+inputs:
+  push:
+    description: "true → push image lên GHCR"
+    default: "false"
+  self-hosted:
+    description: "true → chạy trên minisforum: dùng cache layer của Docker trên máy, không dùng cache GHA"
+    default: "false"
+  token:
+    description: GITHUB_TOKEN để đăng nhập GHCR
+    required: true
+  test-database-url:
+    description: Postgres cho pytest (tests/conftest.py tự tạo DB okia_test); rỗng → localhost:5433
+    default: ""
+  test-redis-url:
+    description: Redis cho pytest (bị FLUSHDB mỗi test → KHÔNG trỏ vào db production); rỗng → localhost:6380/1
+    default: ""
+
+outputs:
+  image:
+    description: Image đã build kèm tag sha
+    value: ${{ steps.meta.outputs.image }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+      with:
+        version: "0.12.10"
+        python-version: "3.13"
+        enable-cache: true
+        cache-dependency-glob: api/uv.lock
+
+    - name: Cài dependency
+      shell: bash
+      working-directory: api
+      run: uv sync --frozen
+
+    - name: Ruff
+      shell: bash
+      working-directory: api
+      run: uv run ruff check . && uv run ruff format --check .
+
+    - name: Mypy (chưa chặn CI)
+      shell: bash
+      working-directory: api
+      run: uv run mypy app || echo "::warning::mypy còn lỗi — chưa chặn CI, sửa dần rồi bỏ '|| echo'"
+
+    - name: Pytest
+      shell: bash
+      working-directory: api
+      env:
+        TEST_DATABASE_URL: ${{ inputs.test-database-url }}
+        TEST_REDIS_URL: ${{ inputs.test-redis-url }}
+      run: |
+        # conftest dùng os.environ.get(..., mặc định) → bỏ biến rỗng để rơi về mặc định localhost.
+        [ -n "$TEST_DATABASE_URL" ] || unset TEST_DATABASE_URL
+        [ -n "$TEST_REDIS_URL" ] || unset TEST_REDIS_URL
+        uv run pytest -q
+
+    - name: Tên image
+      id: meta
+      shell: bash
+      run: |
+        repo="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/okia-api"
+        echo "repo=$repo" >> "$GITHUB_OUTPUT"
+        echo "image=$repo:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Buildx
+      if: inputs.self-hosted != 'true'
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login GHCR
+      if: inputs.push == 'true'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+
+    - name: Build${{ inputs.push == 'true' && ' & push' || '' }} image
+      uses: docker/build-push-action@v6
+      with:
+        context: api
+        push: ${{ inputs.push == 'true' }}
+        provenance: false
+        tags: |
+          ${{ steps.meta.outputs.image }}
+          ${{ steps.meta.outputs.repo }}:latest
+        labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        cache-from: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=api' || '' }}
+        cache-to: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=api,mode=max' || '' }}

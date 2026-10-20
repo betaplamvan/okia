@@ -1,0 +1,117 @@
+# CI/CD frontend (web/). Chỉ chạy khi web/ hoặc shared/ đổi — thay đổi chỉ ở api/ không kích hoạt luồng này.
+# Build ưu tiên ubuntu-latest của GitHub; job đó KHÔNG khởi động được (hết quota phút) → build lại trên
+# minisforum. Deploy luôn chạy trên minisforum. Chi tiết: deploy/README.md.
+name: Web (FE)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "shared/**"
+      - ".github/workflows/web.yml"
+      - ".github/actions/web-ci/**"
+      - "deploy/deploy-container.sh"
+  pull_request:
+    paths:
+      - "web/**"
+      - "shared/**"
+      - ".github/workflows/web.yml"
+      - ".github/actions/web-ci/**"
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Nơi build (auto = GitHub trước, hết quota thì minisforum)"
+        type: choice
+        options: [auto, github, minisforum]
+        default: auto
+
+# Không hủy run đang deploy trên main; PR thì chỉ giữ run mới nhất.
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build (GitHub)
+    # Biến repo CI_RUNNER=minisforum → bỏ hẳn GitHub-hosted (đỡ thấy job đỏ khi biết chắc đã hết quota).
+    if: ${{ (inputs.runner || vars.CI_RUNNER || 'auto') != 'minisforum' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      # Có giá trị = job đã thật sự chạy. Job hỏng vì hết quota thì không có bước nào chạy → rỗng.
+      started: ${{ steps.mark.outputs.started }}
+    steps:
+      - id: mark
+        run: echo "started=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/web-ci
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          api-url: ${{ vars.NEXT_PUBLIC_API_URL }}
+          ws-url: ${{ vars.NEXT_PUBLIC_WS_URL }}
+
+  build-fallback:
+    name: Build (minisforum, dự phòng)
+    needs: build
+    # Chạy khi: GitHub-hosted bị tắt (skipped), hoặc job GitHub thất bại mà CHƯA chạy bước nào
+    # (không nhận được runner — hết quota/spending limit). Lỗi code thật (lint/test đỏ) thì không chạy lại.
+    if: >-
+      ${{ !cancelled() && (inputs.runner || vars.CI_RUNNER || 'auto') != 'github' && (
+        needs.build.result == 'skipped' ||
+        (needs.build.result == 'failure' && needs.build.outputs.started != 'true')
+      ) }}
+    runs-on: [self-hosted, minisforum]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/web-ci
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          self-hosted: "true"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          api-url: ${{ vars.NEXT_PUBLIC_API_URL }}
+          ws-url: ${{ vars.NEXT_PUBLIC_WS_URL }}
+
+  deploy:
+    name: Deploy (minisforum)
+    needs: [build, build-fallback]
+    if: >-
+      ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      (needs.build.result == 'success' || needs.build-fallback.result == 'success') }}
+    runs-on: [self-hosted, minisforum]
+    environment: production
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-web
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: deploy
+
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Deploy okia-web
+        env:
+          NAME: okia-web
+          IMAGE: ghcr.io/${{ github.repository_owner }}/okia-web:${{ github.sha }}
+          PORT_MAP: ${{ vars.WEB_PORT || '3000' }}:3000
+          NETWORK: ${{ vars.DOCKER_NETWORK || 'okia' }}
+        run: |
+          export IMAGE="${IMAGE,,}"
+          bash deploy/deploy-container.sh
+
+      - name: Dọn image cũ trên GHCR (giữ 10 bản)
+        uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with:
+          package-name: okia-web
+          package-type: container
+          min-versions-to-keep: 10

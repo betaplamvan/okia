@@ -1,0 +1,13 @@
+# BuildKit dùng file này cho web/Dockerfile (context là gốc repo).
+**/node_modules
+**/.next
+**/.env
+**/.env.*
+.git
+.github
+api
+docs
+web/.shots
+web/public/assets
+web/test-results
+**/*.tsbuildinfo

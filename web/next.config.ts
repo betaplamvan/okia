@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   // (RFC 1918) + tên máy .local. Kèm theo: NEXT_PUBLIC_API_URL=http://<ip>:8000 trong .env.local
   // và CORS_ORIGINS bên api/.env (xem README).
   allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "172.*.*.*", "*.local"],
+  // Image Docker (web/Dockerfile) build với NEXT_OUTPUT=standalone → .next/standalone/server.js.
+  // Không bật mặc định: trên Windows tạo standalone có thể cần quyền symlink.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {

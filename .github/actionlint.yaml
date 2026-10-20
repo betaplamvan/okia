@@ -1,0 +1,4 @@
+# Label của self-hosted runner (deploy/README.md) để actionlint không báo "unknown label".
+self-hosted-runner:
+  labels:
+    - minisforum
