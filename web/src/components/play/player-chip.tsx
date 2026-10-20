@@ -22,6 +22,7 @@ export function PlayerChip({ icon, name, score, tone, active, reverse }: PlayerC
       boxShadow={active ? "sticker" : "stickerSm"}
       px={2}
       py={1}
+      maxW="full"
       opacity={active ? 1 : 0.75}
       transform={active ? "translate(0,0)" : "translate(2px,2px)"}
       transition="all 0.15s"
@@ -29,6 +30,7 @@ export function PlayerChip({ icon, name, score, tone, active, reverse }: PlayerC
       <Flex
         align="center"
         justify="center"
+        flexShrink={0}
         boxSize="8"
         borderRadius="full"
         bg={tone}
@@ -38,7 +40,9 @@ export function PlayerChip({ icon, name, score, tone, active, reverse }: PlayerC
       >
         {icon}
       </Flex>
-      <Text fontWeight="600">{name}</Text>
+      <Text fontWeight="600" truncate minW={0} title={name}>
+        {name}
+      </Text>
       <Text fontWeight="700" fontSize="xl" px={2} minW="8" textAlign="center">
         {score}
       </Text>

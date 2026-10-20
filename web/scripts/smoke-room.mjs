@@ -50,8 +50,8 @@ console.log("B vào phòng: cả hai thấy bàn + đồng hồ");
 const geom = async (page) => {
   const box = await page.getByRole("application").locator("canvas").boundingBox();
   const size = Math.min(box.width, box.height);
-  const pad = size * 0.09;
-  const cell = (size - pad * 2) / N;
+  const pad = size * 0.02;
+  const cell = (size - pad * 2) / (N + 1.3);
   const offX = box.x + (box.width - N * cell) / 2;
   const offY = box.y + (box.height - N * cell) / 2;
   const edges = [];

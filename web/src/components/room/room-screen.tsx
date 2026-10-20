@@ -6,7 +6,6 @@ import {
   CloseButton,
   Container,
   Dialog,
-  Flex,
   Heading,
   HStack,
   Portal,
@@ -17,6 +16,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { LuCheck, LuCopy, LuFlag, LuShare2, LuUser, LuWifiOff } from "react-icons/lu";
 import { BoardCanvas } from "@/components/play/board-canvas";
+import { GameLayout } from "@/components/play/game-layout";
 import { useMapName } from "@/components/play/map-picker";
 import { PlayerChip } from "@/components/play/player-chip";
 import { useGameSounds } from "@/components/play/use-game-sounds";
@@ -132,15 +132,8 @@ export function RoomScreen({ code }: { code: string }) {
 
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
-      <Flex direction={{ base: "column", md: "row" }} gap={{ base: 3, md: 6 }} align="flex-start">
-        <Stack
-          direction={{ base: "row", md: "column" }}
-          justify={{ base: "space-between", md: "flex-start" }}
-          align={{ base: "center", md: "stretch" }}
-          w={{ base: "full", md: "56" }}
-          flexShrink={0}
-          gap={3}
-        >
+      <GameLayout
+        me={
           <PlayerChip
             icon={<LuUser />}
             name={myName}
@@ -148,7 +141,19 @@ export function RoomScreen({ code }: { code: string }) {
             tone={human === 0 ? "pen.blue" : "pen.red"}
             active={yourTurn}
           />
-          <Box textAlign="center" flex="1" color="cream" fontWeight="600" minH="6" role="status">
+        }
+        opponent={
+          <PlayerChip
+            icon={<LuUser />}
+            name={theirName}
+            score={numberFormat.format(state.scores[bot])}
+            tone={bot === 0 ? "pen.blue" : "pen.red"}
+            active={!yourTurn && !result}
+            reverse
+          />
+        }
+        status={
+          <Box textAlign="center" color="cream" fontWeight="600" minH="6" role="status">
             {result
               ? resultTitle
               : connection !== "online"
@@ -167,45 +172,37 @@ export function RoomScreen({ code }: { code: string }) {
               </Text>
             ) : null}
           </Box>
-          <PlayerChip
-            icon={<LuUser />}
-            name={theirName}
-            score={numberFormat.format(state.scores[bot])}
-            tone={bot === 0 ? "pen.blue" : "pen.red"}
-            active={!yourTurn && !result}
-            reverse
-          />
-        </Stack>
-
-        <Box flex="1" minW={0} w="full">
-          {online.turnSeconds ? (
-            <TurnTimer
-              deadline={result ? null : online.deadline}
-              turnSeconds={online.turnSeconds}
-              tone={
-                state.turn === human
-                  ? human === 0
-                    ? "pen.blue"
-                    : "pen.red"
-                  : bot === 0
-                    ? "pen.blue"
-                    : "pen.red"
-              }
-              label={t("timeLeft")}
+        }
+        board={
+          <>
+            {online.turnSeconds ? (
+              <TurnTimer
+                deadline={result ? null : online.deadline}
+                turnSeconds={online.turnSeconds}
+                tone={
+                  state.turn === human
+                    ? human === 0
+                      ? "pen.blue"
+                      : "pen.red"
+                    : bot === 0
+                      ? "pen.blue"
+                      : "pen.red"
+                }
+                label={t("timeLeft")}
+              />
+            ) : null}
+            <BoardCanvas
+              session={session}
+              onSelectEdge={onSelectEdge}
+              onEvent={onRendererEvent}
+              twoTapTouch={Math.max(state.rows, state.cols) >= 7}
+              label={tp("board")}
+              comboLabel={comboLabel}
             />
-          ) : null}
-          <BoardCanvas
-            session={session}
-            onSelectEdge={onSelectEdge}
-            onEvent={onRendererEvent}
-            twoTapTouch={Math.max(state.rows, state.cols) >= 7}
-            label={tp("board")}
-            comboLabel={comboLabel}
-          />
-        </Box>
-
-        <Stack w={{ base: "full", md: "48" }} flexShrink={0} gap={3}>
-          <HStack justify="center" gap={2}>
+          </>
+        }
+        controls={
+          <Stack gap={2} align="center">
             <Button
               variant="sticker"
               size="sm"
@@ -215,15 +212,15 @@ export function RoomScreen({ code }: { code: string }) {
             >
               <LuFlag /> {tp("resign")}
             </Button>
-          </HStack>
-          <Text textAlign="center" color="cream" opacity={0.7} fontSize="sm">
-            {t("codeLabel")}: <b>{code}</b>
-          </Text>
-          <Text textAlign="center" color="cream" fontWeight="700" data-testid="map-name">
-            {tm("current", { name: mapName(session.mapId) })}
-          </Text>
-        </Stack>
-      </Flex>
+            <Text textAlign="center" color="cream" fontWeight="700" data-testid="map-name">
+              {tm("current", { name: mapName(session.mapId) })}
+            </Text>
+            <Text textAlign="center" color="cream" opacity={0.7} fontSize="sm">
+              {t("codeLabel")}: <b>{code}</b>
+            </Text>
+          </Stack>
+        }
+      />
 
       <Dialog.Root
         role="alertdialog"

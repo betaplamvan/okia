@@ -188,8 +188,9 @@ export class BoardRenderer {
     const width = this.app.screen.width;
     const height = this.app.screen.height;
     const size = Math.min(width, height);
-    const pad = size * 0.09;
-    const cell = (size - pad * 2) / Math.max(rows, cols);
+    // Chừa lề giấy (0.55 ô mỗi bên, xem drawPaper) + bóng để giấy không bị cắt ở mép canvas.
+    const pad = size * 0.02;
+    const cell = (size - pad * 2) / (Math.max(rows, cols) + 1.3);
     this.geo = {
       rows,
       cols,

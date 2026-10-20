@@ -29,11 +29,11 @@ await page.getByRole("button", { name: "Chơi bàn này" }).click();
 await page.getByRole("dialog").waitFor({ state: "hidden" });
 await page.waitForTimeout(300);
 
-// Hình học y như BoardRenderer.layout(): size = min(w,h), pad = 9%, cell = (size - 2pad)/N.
+// Hình học y như BoardRenderer.layout(): size = min(w,h), pad = 2%, cell = (size - 2pad)/(N + 1.3).
 const box = await page.getByRole("application").locator("canvas").boundingBox();
 const size = Math.min(box.width, box.height);
-const pad = size * 0.09;
-const cell = (size - pad * 2) / N;
+const pad = size * 0.02;
+const cell = (size - pad * 2) / (N + 1.3);
 const offX = box.x + (box.width - N * cell) / 2;
 const offY = box.y + (box.height - N * cell) / 2;
 const edges = [];

@@ -6,7 +6,6 @@ import {
   CloseButton,
   Container,
   Dialog,
-  Flex,
   HStack,
   Portal,
   Stack,
@@ -16,6 +15,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { LuBot, LuFlag, LuMap, LuRotateCcw, LuUser } from "react-icons/lu";
 import { BoardCanvas } from "@/components/play/board-canvas";
+import { GameLayout } from "@/components/play/game-layout";
 import { MapPicker, ShowLastMoveToggle, useMapName } from "@/components/play/map-picker";
 import { PlayerChip } from "@/components/play/player-chip";
 import {
@@ -132,16 +132,8 @@ export function PlayScreen() {
 
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
-      <Flex direction={{ base: "column", md: "row" }} gap={{ base: 3, md: 6 }} align="flex-start">
-        {/* HUD: trên điện thoại nằm ngang phía trên bàn; md+ thành cột bên trái (bề rộng cố định). */}
-        <Stack
-          direction={{ base: "row", md: "column" }}
-          justify={{ base: "space-between", md: "flex-start" }}
-          align={{ base: "center", md: "stretch" }}
-          w={{ base: "full", md: "56" }}
-          flexShrink={0}
-          gap={3}
-        >
+      <GameLayout
+        me={
           <PlayerChip
             icon={<LuUser />}
             name={t("you")}
@@ -149,14 +141,8 @@ export function PlayScreen() {
             tone={human === 0 ? "pen.blue" : "pen.red"}
             active={yourTurn}
           />
-          <Box textAlign="center" flex="1" color="cream" fontWeight="600" minH="6" role="status">
-            {result ? resultTitle : thinking ? t("botThinking") : yourTurn ? t("yourTurn") : ""}
-            {combo >= 2 && !result ? (
-              <Text as="span" display="block" color="sun" fontSize="xl" fontWeight="700">
-                {t("combo", { n: numberFormat.format(combo) })}
-              </Text>
-            ) : null}
-          </Box>
+        }
+        opponent={
           <PlayerChip
             icon={<LuBot />}
             name={t("bot")}
@@ -165,50 +151,62 @@ export function PlayScreen() {
             active={!yourTurn && !result}
             reverse
           />
-        </Stack>
-
-        <Box flex="1" minW={0} w="full">
-          <BoardCanvas
-            session={session}
-            onSelectEdge={onSelectEdge}
-            onEvent={onRendererEvent}
-            twoTapTouch={twoTapTouch}
-            label={t("board")}
-            comboLabel={comboLabel}
-          />
-          {twoTapTouch ? (
-            <Text textAlign="center" fontSize="sm" color="cream" opacity={0.8} mt={1}>
-              {t("twoTapHint")}
-            </Text>
-          ) : null}
-        </Box>
-
-        <Stack w={{ base: "full", md: "48" }} flexShrink={0} gap={3}>
-          <HStack justify="center" gap={2}>
-            <Text color="cream" fontWeight="700" data-testid="map-name">
-              {tm("current", { name: mapName(session.mapId) })}
-              {settings.mapId === "random" ? ` (${tm("random")})` : ""}
-            </Text>
-            <Button variant="sticker" size="sm" bg="sun" onClick={openMaps}>
-              <LuMap /> {tm("change")}
-            </Button>
-          </HStack>
-          <HStack justify="center" gap={2}>
-            <Button variant="sticker" size="sm" onClick={newGame}>
-              <LuRotateCcw /> {t("newGame")}
-            </Button>
-            <Button
-              variant="sticker"
-              size="sm"
-              bg="coral"
-              disabled={!!result || state.moveNo === 0}
-              onClick={() => setResignOpen(true)}
-            >
-              <LuFlag /> {t("resign")}
-            </Button>
-          </HStack>
-        </Stack>
-      </Flex>
+        }
+        status={
+          <Box textAlign="center" color="cream" fontWeight="600" minH="6" role="status">
+            {result ? resultTitle : thinking ? t("botThinking") : yourTurn ? t("yourTurn") : ""}
+            {combo >= 2 && !result ? (
+              <Text as="span" display="block" color="sun" fontSize="xl" fontWeight="700">
+                {t("combo", { n: numberFormat.format(combo) })}
+              </Text>
+            ) : null}
+          </Box>
+        }
+        board={
+          <>
+            <BoardCanvas
+              session={session}
+              onSelectEdge={onSelectEdge}
+              onEvent={onRendererEvent}
+              twoTapTouch={twoTapTouch}
+              label={t("board")}
+              comboLabel={comboLabel}
+            />
+            {twoTapTouch ? (
+              <Text textAlign="center" fontSize="sm" color="cream" opacity={0.8} mt={1}>
+                {t("twoTapHint")}
+              </Text>
+            ) : null}
+          </>
+        }
+        controls={
+          <Stack gap={3}>
+            <HStack justify="center" gap={2} flexWrap="wrap">
+              <Text color="cream" fontWeight="700" data-testid="map-name">
+                {tm("current", { name: mapName(session.mapId) })}
+                {settings.mapId === "random" ? ` (${tm("random")})` : ""}
+              </Text>
+              <Button variant="sticker" size="sm" bg="sun" onClick={openMaps}>
+                <LuMap /> {tm("change")}
+              </Button>
+            </HStack>
+            <HStack justify="center" gap={2}>
+              <Button variant="sticker" size="sm" onClick={newGame}>
+                <LuRotateCcw /> {t("newGame")}
+              </Button>
+              <Button
+                variant="sticker"
+                size="sm"
+                bg="coral"
+                disabled={!!result || state.moveNo === 0}
+                onClick={() => setResignOpen(true)}
+              >
+                <LuFlag /> {t("resign")}
+              </Button>
+            </HStack>
+          </Stack>
+        }
+      />
 
       {/* Xác nhận đầu hàng */}
       <Dialog.Root
