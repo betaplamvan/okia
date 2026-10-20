@@ -132,7 +132,50 @@ function arpeggio(freqs, stepMs, decay) {
   return normalize(out, 0.8);
 }
 
+/** Tiếng COMBO: arpeggio rất nhanh + lớp "lấp lánh" (nhiễu cao, lọc thông cao). */
+function sparkle(seed) {
+  const r = rng(seed);
+  const freqs = [659.25, 783.99, 987.77, 1318.5, 1567.98];
+  const stepMs = 45;
+  const n = Math.floor((SR * (stepMs * freqs.length + 420)) / 1000);
+  const out = new Array(n).fill(0);
+  freqs.forEach((f, k) => {
+    const start = Math.floor((SR * stepMs * k) / 1000);
+    for (let i = start; i < n; i++) {
+      const t = (i - start) / SR;
+      out[i] +=
+        Math.exp(-t * 9) *
+        (Math.sin(2 * Math.PI * f * t) * 0.5 + Math.sin(2 * Math.PI * f * 3 * t) * 0.12);
+    }
+  });
+  // Lấp lánh: nhiễu trắng lọc thông cao đơn giản (sai phân), rải thành hạt ngắn.
+  let prev = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const x = r() * 2 - 1;
+    const hp = x - prev;
+    prev = x;
+    const gate = Math.sin(2 * Math.PI * 38 * t) > 0.6 ? 1 : 0.15;
+    out[i] += hp * 0.18 * gate * Math.exp(-t * 6) * Math.min(1, t * 40);
+  }
+  return normalize(out, 0.8);
+}
+
+/** Tiếng đếm ô cuối ván: "pop" rất ngắn, mềm. */
+function pop(freq = 1200) {
+  const n = Math.floor(SR * 0.06);
+  const out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const env = Math.exp(-t * 70) * Math.min(1, i / 30);
+    out[i] = env * (Math.sin(2 * Math.PI * freq * t * (1 - t * 3)) * 0.8);
+  }
+  return normalize(out, 0.7);
+}
+
 const files = {
+  "combo.wav": sparkle(71),
+  "count.wav": pop(),
   "draw_01.wav": pencil(11, 170),
   "draw_02.wav": pencil(23, 190),
   "draw_03.wav": pencil(37, 160),

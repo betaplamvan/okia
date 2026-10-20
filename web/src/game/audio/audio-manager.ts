@@ -124,6 +124,17 @@ class AudioManager {
     this.play("capture", { rate });
   }
 
+  /** Tiếng COMBO (ô thứ n ≥ 2 trong lượt): lấp lánh, cao dần, tối đa ×1.5. */
+  playCombo(combo: number): void {
+    const rate = Math.min(1.5, 1 + 0.06 * Math.max(0, combo - 2));
+    this.play("combo", { rate, volume: 0.85 });
+  }
+
+  /** Tiếng đếm ô cuối ván: "pop" ngắn, cao dần theo số đếm. */
+  playCount(n: number): void {
+    this.play("count", { rate: Math.min(2, 1 + 0.025 * n), volume: 0.55 });
+  }
+
   playUi(kind: "click" | "confirm" | "back" | "error" | "open" | "close" = "click"): void {
     this.play(`ui_${kind}`, { volume: 0.6 });
   }

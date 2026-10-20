@@ -28,12 +28,15 @@ import {
 import { useGameSounds } from "@/components/play/use-game-sounds";
 import { audio } from "@/game/audio/audio-manager";
 import { LocalBotController, type GameResult } from "@/game/controller";
+import type { RendererEvent } from "@/game/renderer/board-renderer";
 import { Link } from "@/i18n/navigation";
 
 export function PlayScreen() {
   const t = useTranslations("Play");
   const locale = useLocale();
   const [resignOpen, setResignOpen] = useState(false);
+  // Kết quả chỉ hiện sau khi renderer đếm xong ô (P0-14); có dự phòng nếu renderer không báo.
+  const [settled, setSettled] = useState<GameResult | null>(null);
   const [controller] = useState(() => new LocalBotController({ rows: 5, cols: 5 }));
   const settings = useSyncExternalStore(subscribeSettings, getSettings, getServerSettings);
 
@@ -66,6 +69,10 @@ export function PlayScreen() {
   const session = useSyncExternalStore(subscribe, getSession, getSession);
 
   const onSelectEdge = useCallback((edge: number) => controller.play(edge), [controller]);
+  const onRendererEvent = useCallback((e: RendererEvent) => {
+    if (e.type === "count") audio.playCount(e.n);
+    else setSettled(e.result);
+  }, []);
   useGameSounds(session);
 
   const changeSize = (size: Size) => {
@@ -81,6 +88,16 @@ export function PlayScreen() {
 
   const { state, human, bot, thinking, result, combo } = session;
   const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+  const comboLabel = useCallback(
+    (n: number) => t("combo", { n: numberFormat.format(n) }),
+    [t, numberFormat],
+  );
+
+  useEffect(() => {
+    if (!result) return;
+    const id = setTimeout(() => setSettled(result), 4000);
+    return () => clearTimeout(id);
+  }, [result]);
   const youScore = numberFormat.format(state.scores[human]);
   const botScore = numberFormat.format(state.scores[bot]);
   const yourTurn = state.turn === human && !result;
@@ -136,8 +153,10 @@ export function PlayScreen() {
           <BoardCanvas
             session={session}
             onSelectEdge={onSelectEdge}
+            onEvent={onRendererEvent}
             twoTapTouch={twoTapTouch}
             label={t("board")}
+            comboLabel={comboLabel}
           />
           {twoTapTouch ? (
             <Text textAlign="center" fontSize="sm" color="cream" opacity={0.8} mt={1}>
@@ -221,7 +240,11 @@ export function PlayScreen() {
       </Dialog.Root>
 
       {/* Kết thúc ván */}
-      <Dialog.Root placement="center" motionPreset="slide-in-bottom" open={!!result}>
+      <Dialog.Root
+        placement="center"
+        motionPreset="slide-in-bottom"
+        open={!!result && settled === result}
+      >
         <Portal>
           <Dialog.Backdrop bg="rgba(26, 40, 38, 0.6)" />
           <Dialog.Positioner px={4}>

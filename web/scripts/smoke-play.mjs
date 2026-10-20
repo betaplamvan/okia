@@ -8,6 +8,8 @@ const [base = "http://localhost:3000"] = process.argv.slice(2);
 const N = 3;
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const page = await browser.newPage({ locale: "vi-VN", viewport: { width: 390, height: 844 } });
+// REDUCED=1: kiểm tra đường prefers-reduced-motion (không hiệu ứng, kết quả hiện ngay).
+if (process.env.REDUCED) await page.emulateMedia({ reducedMotion: "reduce" });
 
 const problems = [];
 page.on("console", (m) => {
@@ -45,11 +47,18 @@ const scoreOf = async (name) => {
 
 let clicks = 0;
 let shot = false;
-for (let i = 0; i < 200; i++) {
+let comboShot = false;
+let endedAt = 0; // lúc trạng thái báo kết quả (trước khi đếm ô xong)
+for (let i = 0; i < 300; i++) {
   if (await dialog.isVisible()) break;
   const text = (await status.innerText()).trim();
+  if (!comboShot && text.includes("COMBO")) {
+    await page.screenshot({ path: ".shots/play-combo-390.png" });
+    comboShot = true;
+  }
+  if (!endedAt && /thắng|Hòa/i.test(text)) endedAt = Date.now();
   if (!text.includes("Đến lượt bạn")) {
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(100);
     continue;
   }
   const e = edges[i % edges.length];
@@ -63,12 +72,13 @@ for (let i = 0; i < 200; i++) {
 }
 
 const finished = await dialog.isVisible();
+const countMs = endedAt ? Date.now() - endedAt : -1;
 const title = finished ? await dialog.getByRole("heading").first().innerText() : "(chưa kết thúc)";
 const you = await scoreOf("Bạn");
 const bot = await scoreOf("Máy");
 await page.screenshot({ path: ".shots/play-end-390.png" });
 console.log(
-  `clicks=${clicks} finished=${finished} title="${title}" score=${you}-${bot} sum=${you + bot}`,
+  `clicks=${clicks} finished=${finished} title="${title}" score=${you}-${bot} sum=${you + bot} comboShot=${comboShot} đếm-ô≈${countMs}ms`,
 );
 for (const p of problems) console.log("  " + p);
 

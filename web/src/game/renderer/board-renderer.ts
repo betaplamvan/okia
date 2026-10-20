@@ -4,7 +4,7 @@
  *
  * Chỉ chạy ở trình duyệt: pixi.js và gsap được import động trong `create()`.
  */
-import type { GameSession } from "../controller";
+import type { GameResult, GameSession } from "../controller";
 import { edgeCount, edgeEndpoints, horizontalEdgeCount, type Player } from "../rules";
 
 type Pixi = typeof import("pixi.js");
@@ -16,6 +16,8 @@ export interface RendererColors {
   grid: number;
   ink: number;
   pens: [number, number];
+  /** Màu chữ COMBO / tia lấp lánh. */
+  accent: number;
 }
 
 export const DEFAULT_COLORS: RendererColors = {
@@ -24,15 +26,25 @@ export const DEFAULT_COLORS: RendererColors = {
   grid: 0xc9d8f0,
   ink: 0x1a2826,
   pens: [0x1e4fd8, 0xd8341e],
+  accent: 0xffd93d,
 };
+
+/** Sự kiện hiệu ứng phát ra từ renderer (để màn chơi phát tiếng / hiện kết quả đúng lúc). */
+export type RendererEvent =
+  { type: "count"; owner: Player; n: number } | { type: "settled"; result: GameResult };
 
 export interface BoardRendererOptions {
   onSelectEdge: (edge: number) => void;
+  onEvent?: (event: RendererEvent) => void;
   colors?: Partial<RendererColors>;
   /** Chạm hai lần (xem trước rồi xác nhận) trên màn cảm ứng. */
   twoTapTouch?: boolean;
-  /** Tôn trọng prefers-reduced-motion: bỏ animation. */
+  /** Tôn trọng prefers-reduced-motion: bỏ animation, particle, rung. */
   reducedMotion?: boolean;
+  /** Nhãn đã dịch — chữ "COMBO ×n" đi qua hàm t của giao diện, engine không tự dịch (docs/09). */
+  labels?: { combo: (n: number) => string };
+  /** Font chữ cho text vẽ trên canvas (mặc định: font của phần tử chứa). */
+  fontFamily?: string;
 }
 
 interface Geometry {
@@ -61,16 +73,22 @@ export class BoardRenderer {
       edges: new C(),
       preview: new C(),
       dots: new C(),
+      fx: new C(),
     };
-    app.stage.addChild(
+    // `world` chứa toàn bộ bàn để rung (shake) mà không đụng hitArea của stage.
+    this.world = new C();
+    this.world.addChild(
       this.layers.paper,
       this.layers.boxes,
       this.layers.edges,
       this.layers.preview,
       this.layers.dots,
+      this.layers.fx,
     );
+    app.stage.addChild(this.world);
     this.previewG = new px.Graphics();
     this.layers.preview.addChild(this.previewG);
+    this.fontFamily = opts.fontFamily || getComputedStyle(host).fontFamily || "sans-serif";
     this.bindPointer();
     app.renderer.on("resize", () => this.layout());
   }
@@ -93,10 +111,12 @@ export class BoardRenderer {
 
   private readonly colors: RendererColors;
   private readonly layers: Record<
-    "paper" | "boxes" | "edges" | "preview" | "dots",
+    "paper" | "boxes" | "edges" | "preview" | "dots" | "fx",
     InstanceType<Pixi["Container"]>
   >;
+  private readonly world: InstanceType<Pixi["Container"]>;
   private readonly previewG: InstanceType<Pixi["Graphics"]>;
+  private readonly fontFamily: string;
   private geo: Geometry | null = null;
   private session: GameSession | null = null;
   private edgeG = new Map<number, InstanceType<Pixi["Graphics"]>>();
@@ -104,6 +124,9 @@ export class BoardRenderer {
   private previewEdge: number | null = null;
   private interactive = true;
   private destroyed = false;
+  /** Timeline đang chạy của phần đếm ô cuối ván (hủy khi ván mới). */
+  private countTl: ReturnType<Gsap["timeline"]> | null = null;
+  private shakeTl: ReturnType<Gsap["timeline"]> | null = null;
 
   // ---------- Public ----------
 
@@ -121,6 +144,14 @@ export class BoardRenderer {
     }
     this.syncPieces();
     this.setPreview(null);
+    // Hiệu ứng theo diễn biến: combo (chữ nổ + rung), kết thúc ván (đếm ô).
+    const { lastMove, combo, result } = session;
+    const moved = !!prev && session.state.moveNo > prev.state.moveNo && !!lastMove;
+    if (moved && lastMove.captured.length > 0 && combo >= 2 && !this.opts.reducedMotion) {
+      this.popCombo(lastMove.captured, lastMove.by, combo);
+      if (combo >= 3) this.shake(Math.min(1, (combo - 2) / 4));
+    }
+    if (result && !prev?.result) this.settle(result);
   }
 
   /** Bật/tắt chạm hai lần (bàn 7×7 trên màn hình hẹp) mà không tạo lại renderer. */
@@ -223,6 +254,12 @@ export class BoardRenderer {
   // ---------- Cạnh & ô ----------
 
   private resetBoard() {
+    this.countTl?.kill();
+    this.countTl = null;
+    this.shakeTl?.kill();
+    this.shakeTl = null;
+    this.world.position.set(0, 0);
+    this.layers.fx.removeChildren();
     this.layers.edges.removeChildren();
     this.layers.boxes.removeChildren();
     this.edgeG.clear();
@@ -350,7 +387,196 @@ export class BoardRenderer {
       container.scale.set(0.6);
       this.gsap.to(container, { alpha: 1, duration: 0.2 });
       this.gsap.to(container.scale, { x: 1, y: 1, duration: 0.35, ease: "back.out(2)" });
+      this.burstPaper(container.x, container.y, color);
     }
+  }
+
+  // ---------- Hiệu ứng (docs/08 — Animation & Âm thanh) ----------
+
+  private boxCenter(box: number) {
+    const g = this.geo!;
+    const p = this.dot(Math.floor(box / g.cols), box % g.cols);
+    return { x: p.x + g.cell / 2, y: p.y + g.cell / 2 };
+  }
+
+  private makeText(text: string, fill: number, fontSize: number) {
+    const t = new this.px.Text({
+      text,
+      style: {
+        fontFamily: this.fontFamily,
+        fontSize,
+        fontWeight: "700",
+        fill,
+        stroke: { color: this.colors.ink, width: Math.max(2, fontSize * 0.11), join: "round" },
+        dropShadow: {
+          color: this.colors.ink,
+          alpha: 0.85,
+          blur: 0,
+          angle: Math.PI / 4,
+          distance: Math.max(2, fontSize * 0.1),
+        },
+      },
+    });
+    t.anchor.set(0.5);
+    return t;
+  }
+
+  /** Vụn giấy bắn ra từ ô vừa ăn: hình chữ nhật nhỏ, màu bút + giấy + vàng, có trọng lực. */
+  private burstPaper(x: number, y: number, color: number, count = 10, spread = 1) {
+    if (this.opts.reducedMotion) return;
+    const g = this.geo!;
+    const layer = this.layers.fx;
+    const palette = [color, color, this.colors.paper, this.colors.accent];
+    const parts: { s: InstanceType<Pixi["Graphics"]>; vx: number; vy: number; rot: number }[] = [];
+    const speed = g.cell * 1.6 * spread;
+    for (let i = 0; i < count; i++) {
+      const s = new this.px.Graphics();
+      const w = g.cell * (0.08 + Math.random() * 0.1);
+      const h = g.cell * (0.05 + Math.random() * 0.06);
+      s.roundRect(-w / 2, -h / 2, w, h, h * 0.3)
+        .fill(palette[i % palette.length])
+        .stroke({ width: 1, color: this.colors.ink, alpha: 0.7 });
+      s.position.set(x, y);
+      s.rotation = Math.random() * Math.PI;
+      layer.addChild(s);
+      const ang = Math.random() * Math.PI * 2;
+      const v = speed * (0.5 + Math.random() * 0.5);
+      parts.push({
+        s,
+        vx: Math.cos(ang) * v,
+        vy: Math.sin(ang) * v - speed * 0.5,
+        rot: (Math.random() - 0.5) * 12,
+      });
+    }
+    const tween = { t: 0 };
+    const dur = 0.55 + Math.random() * 0.2;
+    const gravity = g.cell * 6;
+    this.gsap.to(tween, {
+      t: 1,
+      duration: dur,
+      ease: "none",
+      onUpdate: () => {
+        if (this.destroyed) return;
+        const t = tween.t * dur;
+        for (const p of parts) {
+          p.s.x = x + p.vx * t;
+          p.s.y = y + p.vy * t + gravity * t * t;
+          p.s.rotation += p.rot * 0.016;
+          p.s.alpha = 1 - tween.t * tween.t;
+        }
+      },
+      onComplete: () => {
+        if (this.destroyed) return;
+        for (const p of parts) p.s.destroy();
+      },
+    });
+  }
+
+  /** Chữ "COMBO ×n" nổ ra tại ô vừa ăn: phóng to nảy, xoay nhẹ, bay lên rồi tan. */
+  private popCombo(boxes: number[], by: Player, combo: number) {
+    const g = this.geo!;
+    const label = this.opts.labels?.combo(combo) ?? `COMBO ×${combo}`;
+    const centers = boxes.map((b) => this.boxCenter(b));
+    const cx = centers.reduce((a, c) => a + c.x, 0) / centers.length;
+    const cy = centers.reduce((a, c) => a + c.y, 0) / centers.length;
+    const fontSize = Math.max(20, Math.min(46, g.cell * 0.5 + combo * 2));
+    const text = this.makeText(label, this.colors.accent, fontSize);
+    // Giữ chữ trong khung canvas.
+    const halfW = text.width / 2 + 4;
+    const x = Math.min(g.width - halfW, Math.max(halfW, cx));
+    const y = Math.max(fontSize, cy - g.cell * 0.2);
+    text.position.set(x, y);
+    text.scale.set(0.2);
+    text.rotation = (Math.random() - 0.5) * 0.3;
+    this.layers.fx.addChild(text);
+    this.burstPaper(x, y, this.colors.pens[by], 6 + combo * 2, 1.4);
+    const tl = this.gsap.timeline({
+      onComplete: () => {
+        if (!this.destroyed) text.destroy();
+      },
+    });
+    tl.to(text.scale, { x: 1.15, y: 1.15, duration: 0.28, ease: "back.out(3)" })
+      .to(text, { rotation: 0, duration: 0.28 }, 0)
+      .to(text.scale, { x: 1, y: 1, duration: 0.15 })
+      .to(text, { y: y - g.cell * 0.6, alpha: 0, duration: 0.45, ease: "power1.in" }, "+=0.35");
+  }
+
+  /** Rung bàn nhẹ (combo ≥ 3). `intensity` 0–1. */
+  private shake(intensity: number) {
+    if (this.opts.reducedMotion) return;
+    this.shakeTl?.kill();
+    const amp = 2 + intensity * 5;
+    const pos = this.world.position;
+    const tl = this.gsap.timeline({ onComplete: () => pos.set(0, 0) });
+    for (let i = 0; i < 6; i++) {
+      const k = 1 - i / 6;
+      tl.to(pos, {
+        x: (Math.random() - 0.5) * 2 * amp * k,
+        y: (Math.random() - 0.5) * 2 * amp * k,
+        duration: 0.035,
+      });
+    }
+    tl.to(pos, { x: 0, y: 0, duration: 0.05 });
+    this.shakeTl = tl;
+  }
+
+  /**
+   * Kết thúc ván: đếm ô từng người (ô nảy lần lượt + số to giữa bàn), xong mới báo `settled`
+   * để màn chơi hiện kết quả. Đầu hàng hoặc giảm hiệu ứng → báo ngay.
+   */
+  private settle(result: GameResult) {
+    const s = this.session!;
+    const emit = (e: RendererEvent) => {
+      if (!this.destroyed) this.opts.onEvent?.(e);
+    };
+    const done = () => emit({ type: "settled", result });
+    if (result.reason !== "complete" || this.opts.reducedMotion || !this.geo) {
+      this.countTl = this.gsap.timeline().call(done, [], result.reason === "complete" ? 0.1 : 0.3);
+      return;
+    }
+    const g = this.geo;
+    const owners = s.state.owners;
+    const order: Player[] = [s.human, s.bot];
+    const total = owners.filter((o) => o !== -1).length;
+    const step = Math.max(0.024, Math.min(0.08, 1.3 / Math.max(1, total)));
+    const counter = this.makeText("", this.colors.pens[s.human], Math.max(28, g.cell * 1.1));
+    counter.position.set(g.width / 2, g.height / 2);
+    counter.alpha = 0;
+    this.layers.fx.addChild(counter);
+    const tl = this.gsap.timeline({
+      delay: 0.45,
+      onComplete: () => {
+        if (this.destroyed) return;
+        counter.destroy();
+        this.countTl = null;
+        done();
+      },
+    });
+    for (const owner of order) {
+      let n = 0;
+      for (let b = 0; b < owners.length; b++) {
+        if (owners[b] !== owner) continue;
+        n += 1;
+        const count = n;
+        const box = this.boxG.get(b);
+        tl.call(() => {
+          if (this.destroyed) return;
+          counter.text = String(count);
+          counter.style.fill = this.colors.pens[owner];
+          counter.alpha = 1;
+          counter.scale.set(1.25);
+          this.gsap.to(counter.scale, { x: 1, y: 1, duration: 0.18, ease: "power2.out" });
+          if (box) {
+            box.scale.set(1.3);
+            this.gsap.to(box.scale, { x: 1, y: 1, duration: 0.25, ease: "back.out(2)" });
+          }
+          emit({ type: "count", owner, n: count });
+        });
+        tl.to({}, { duration: step });
+      }
+      if (n > 0) tl.to(counter, { alpha: 0, duration: 0.2 }, "+=0.35");
+    }
+    this.countTl = tl;
   }
 
   // ---------- Tương tác ----------

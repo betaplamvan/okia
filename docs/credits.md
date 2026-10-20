@@ -5,7 +5,7 @@
 | Tên trong game | Nguồn / tác giả | Giấy phép | File gốc |
 |---|---|---|---|
 | `ui_click`, `ui_confirm`, `ui_back`, `ui_error`, `ui_open`, `ui_close`, `ui_drop`, `ui_select`, `notify`, `glass` | **Kenney** — [Interface Sounds](https://kenney.nl/assets/interface-sounds) (kenney.nl) | CC0 1.0 | `shared/audio/ui/*.ogg` |
-| `draw_01..03` (bút chì), `capture` (ting ăn ô), `turn`, `win`, `lose` | Tổng hợp bằng `web/scripts/synth-sfx.mjs` (dự án tự tạo) | Thuộc dự án | `shared/audio/core/*.wav` |
+| `draw_01..03` (bút chì), `capture` (ting ăn ô), `combo` (lấp lánh ăn chuỗi), `count` (pop đếm ô), `turn`, `win`, `lose` | Tổng hợp bằng `web/scripts/synth-sfx.mjs` (dự án tự tạo) | Thuộc dự án | `shared/audio/core/*.wav` |
 | Nhạc nền `childhood-friends` | **Juhani Junkala** (SubspaceAudio) — "Calm2 - Childhood Friends", [JRPG Pack 4 Calm](https://opengameart.org/content/jrpg-pack-4-calm) trên OpenGameArt | CC0 1.0 | `shared/audio/music/childhood-friends.ogg` |
 | Nhạc nền `calm-loop` | **wipics** — [Calm Loop](https://opengameart.org/content/calm-loop) trên OpenGameArt | CC0 1.0 | `shared/audio/music/calm-loop.mp3` |
 

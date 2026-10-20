@@ -53,7 +53,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M0.5 Animation
 - [x] **P0-13** Nét vẽ chạy từ chấm đến chấm (GSAP), hiệu ứng ăn ô gạch chéo + nảy nhẹ
-- [ ] **P0-14** Chữ "COMBO ×n" (qua hàm `t` truyền vào engine), particle giấy, đếm ô cuối ván; tôn trọng `prefers-reduced-motion`
+- [x] **P0-14** Chữ "COMBO ×n" (qua hàm `t` truyền vào engine), particle giấy, đếm ô cuối ván; tôn trọng `prefers-reduced-motion`
 
 ### M0.6 Âm thanh
 - [x] **P0-15** `AudioManager` (Howler, audio sprite) với âm thanh tạm (tổng hợp bằng script hoặc CC0, ghi `credits.md`); script build audio sprite; mở khóa audio iOS ở lần chạm đầu
@@ -162,7 +162,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [ ] **P2-15** API mua (`purchase`: `debit` + `inventory` trong một transaction), trang bị (`PUT /loadout`); trả tên vật phẩm theo locale; gửi loadout trong `room_state`
 
 ### M2.8 Engine skin phía client
-- [ ] **P2-16** Nạp manifest + asset theo nhu cầu, áp dụng bàn/bút/nét cho renderer
+- [ ] **P2-16** Nạp manifest + asset theo nhu cầu, áp dụng bàn/bút/nét cho renderer; skin bút kèm kiểu chữ COMBO, loại vụn và bộ tiếng `capture`/`combo` riêng ([08](08-skin.md#manifest))
 - [ ] **P2-17** Thư viện hiệu ứng ô (`hatch`, `fill`, `stamp`, `sticker`, `signature`); trang `/dev/skins` xem trước
 
 ### M2.9 Shop

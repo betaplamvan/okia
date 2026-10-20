@@ -22,14 +22,16 @@ export function useGameSounds(session: GameSession) {
     if (state.moveNo > last.state.moveNo && lastMove) {
       audio.playDraw();
       if (lastMove.captured.length > 0) {
-        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(15);
+        const n = lastMove.captured.length;
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(combo >= 3 ? [15, 30, 25] : 15);
+        }
         // Ăn 2 ô một nét → hai "ting" nối nhau.
         lastMove.captured.forEach((_, i) =>
-          setTimeout(
-            () => audio.playCapture(combo - lastMove.captured.length + 1 + i),
-            90 + i * 110,
-          ),
+          setTimeout(() => audio.playCapture(combo - n + 1 + i), 90 + i * 110),
         );
+        // Từ ô thứ 2 trong lượt: tiếng COMBO lấp lánh, cao dần theo chuỗi.
+        if (combo >= 2) setTimeout(() => audio.playCombo(combo), 90 + n * 110);
       } else if (state.turn === human && !state.finished) {
         setTimeout(() => audio.play("turn", { volume: 0.5 }), 160);
       }
