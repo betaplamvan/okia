@@ -1,0 +1,20 @@
+{
+  "name": "2x2: các lỗi NOT_YOUR_TURN, INVALID_EDGE, EDGE_TAKEN không làm đổi trạng thái",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 1, "edge": 0, "expectError": "NOT_YOUR_TURN" },
+    { "player": 0, "edge": 12, "expectError": "INVALID_EDGE" },
+    { "player": 0, "edge": -1, "expectError": "INVALID_EDGE" },
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 0, "expectError": "EDGE_TAKEN" },
+    { "player": 0, "edge": 1, "expectError": "NOT_YOUR_TURN" }
+  ],
+  "expect": {
+    "scores": [0, 0],
+    "turn": 1,
+    "finished": false,
+    "moveNo": 1,
+    "owners": [-1, -1, -1, -1]
+  }
+}

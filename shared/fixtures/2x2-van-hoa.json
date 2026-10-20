@@ -1,0 +1,29 @@
+{
+  "name": "2x2: ván đầy đủ kết thúc hòa 2-2; nước sau khi hết ván báo GAME_OVER",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 4 },
+    { "player": 0, "edge": 6 },
+    { "player": 1, "edge": 9 },
+    { "player": 0, "edge": 1 },
+    { "player": 1, "edge": 10 },
+    { "player": 0, "edge": 2, "expectCaptured": [2] },
+    { "player": 0, "edge": 7, "expectCaptured": [0] },
+    { "player": 0, "edge": 5, "expectCaptured": [] },
+    { "player": 1, "edge": 11, "expectCaptured": [] },
+    { "player": 0, "edge": 8, "expectCaptured": [] },
+    { "player": 1, "edge": 3, "expectCaptured": [1, 3] },
+    { "player": 1, "edge": 3, "expectError": "GAME_OVER" },
+    { "player": 0, "edge": 0, "expectError": "GAME_OVER" }
+  ],
+  "expect": {
+    "scores": [2, 2],
+    "turn": 1,
+    "finished": true,
+    "moveNo": 12,
+    "owners": [0, 1, 0, 1],
+    "winner": null
+  }
+}

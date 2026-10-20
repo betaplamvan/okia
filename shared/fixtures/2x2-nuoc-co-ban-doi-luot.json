@@ -1,0 +1,16 @@
+{
+  "name": "2x2: hai nước hợp lệ không ăn ô, đổi lượt mỗi nước",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0, "expectCaptured": [] },
+    { "player": 1, "edge": 5, "expectCaptured": [] }
+  ],
+  "expect": {
+    "scores": [0, 0],
+    "turn": 0,
+    "finished": false,
+    "moveNo": 2,
+    "owners": [-1, -1, -1, -1]
+  }
+}

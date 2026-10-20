@@ -1,0 +1,19 @@
+{
+  "name": "2x2: ăn một ô rồi được đi tiếp (ví dụ trong docs/03)",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 2 },
+    { "player": 0, "edge": 6 },
+    { "player": 1, "edge": 7, "expectCaptured": [0] },
+    { "player": 1, "edge": 1, "expectCaptured": [] }
+  ],
+  "expect": {
+    "scores": [0, 1],
+    "turn": 0,
+    "finished": false,
+    "moveNo": 5,
+    "owners": [1, -1, -1, -1]
+  }
+}

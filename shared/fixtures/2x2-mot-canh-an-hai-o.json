@@ -1,0 +1,21 @@
+{
+  "name": "2x2: một cạnh (2) khép kín cùng lúc ô 0 và ô 2",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 6 },
+    { "player": 0, "edge": 7 },
+    { "player": 1, "edge": 4 },
+    { "player": 0, "edge": 9 },
+    { "player": 1, "edge": 10 },
+    { "player": 0, "edge": 2, "expectCaptured": [0, 2] }
+  ],
+  "expect": {
+    "scores": [2, 0],
+    "turn": 0,
+    "finished": false,
+    "moveNo": 7,
+    "owners": [0, -1, 0, -1]
+  }
+}

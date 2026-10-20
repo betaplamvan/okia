@@ -34,8 +34,8 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ✅ *Demo: trang chủ đổi được vi/en, hiển thị đúng ở 320px và desktop.*
 
 ### M0.2 Luật chơi
-- [ ] **P0-05** `rules.ts`: kiểu dữ liệu, hàm đánh số cạnh/ô, `createGame`, `applyMove` theo [03](03-luat-choi.md)
-- [ ] **P0-06** Viết fixtures trong `shared/fixtures/` (đủ các nhóm tối thiểu) + test Vitest đọc fixtures
+- [x] **P0-05** `rules.ts`: kiểu dữ liệu, hàm đánh số cạnh/ô, `createGame`, `applyMove` theo [03](03-luat-choi.md)
+- [x] **P0-06** Viết fixtures trong `shared/fixtures/` (đủ các nhóm tối thiểu) + test Vitest đọc fixtures
 
 ✅ *Demo: `pnpm test` xanh với toàn bộ fixtures.*
 

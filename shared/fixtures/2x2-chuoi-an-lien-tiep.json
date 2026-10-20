@@ -1,0 +1,23 @@
+{
+  "name": "2x2: ăn ô 0 rồi ăn tiếp ô 1 trong cùng lượt, nước không ăn mới đổi lượt",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 2 },
+    { "player": 0, "edge": 6 },
+    { "player": 1, "edge": 1 },
+    { "player": 0, "edge": 3 },
+    { "player": 1, "edge": 5 },
+    { "player": 0, "edge": 7, "expectCaptured": [0] },
+    { "player": 0, "edge": 8, "expectCaptured": [1] },
+    { "player": 0, "edge": 4, "expectCaptured": [] }
+  ],
+  "expect": {
+    "scores": [2, 0],
+    "turn": 1,
+    "finished": false,
+    "moveNo": 9,
+    "owners": [0, 0, -1, -1]
+  }
+}

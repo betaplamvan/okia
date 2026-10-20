@@ -1,0 +1,165 @@
+{
+  "name": "3x3: ván ngẫu nhiên đầy đủ (seed 1), sinh bởi scripts/gen-fixtures.mts",
+  "rows": 3,
+  "cols": 3,
+  "moves": [
+    {
+      "player": 0,
+      "edge": 15,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 0,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 12,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 23,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 22,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 6,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 14,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 17,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 8,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 21,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 9,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 10,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 2,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 7,
+      "expectCaptured": [
+        7
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 4,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 3,
+      "expectCaptured": []
+    },
+    {
+      "player": 1,
+      "edge": 13,
+      "expectCaptured": [
+        0
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 1,
+      "expectCaptured": [
+        1
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 16,
+      "expectCaptured": [
+        3
+      ]
+    },
+    {
+      "player": 1,
+      "edge": 19,
+      "expectCaptured": []
+    },
+    {
+      "player": 0,
+      "edge": 11,
+      "expectCaptured": [
+        8
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 5,
+      "expectCaptured": [
+        2
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 18,
+      "expectCaptured": [
+        4,
+        5
+      ]
+    },
+    {
+      "player": 0,
+      "edge": 20,
+      "expectCaptured": [
+        6
+      ]
+    }
+  ],
+  "expect": {
+    "scores": [
+      5,
+      4
+    ],
+    "turn": 0,
+    "finished": true,
+    "moveNo": 24,
+    "owners": [
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "winner": 0
+  }
+}
