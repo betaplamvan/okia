@@ -48,7 +48,9 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
 
   return (
     <html lang={locale} className={`${fontHand.variable} ${fontSans.variable}`}>
-      <body>
+      {/* suppressHydrationWarning: extension trình duyệt (ColorZilla, Grammarly…) hay gắn thêm
+          thuộc tính vào <body> trước khi hydrate; chỉ bỏ qua lệch thuộc tính trên phần tử này. */}
+      <body suppressHydrationWarning>
         <NextIntlClientProvider>
           <Provider>
             <AppShell>{children}</AppShell>
