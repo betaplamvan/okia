@@ -69,7 +69,7 @@ export default function Home() {
             icon={<LuBot />}
             title={t("playBot")}
             description={t("playBotSub")}
-            badge={soon}
+            href="/play"
           />
           <ModeCard
             tone="coral"

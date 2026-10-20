@@ -40,19 +40,19 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ✅ *Demo: `pnpm test` xanh với toàn bộ fixtures.*
 
 ### M0.3 Vẽ bàn đấu
-- [ ] **P0-07** Mount PixiJS ở `/play` (client component); `ResizeObserver`, `resolution = min(dpr, 2)`, `touch-action: none`
-- [ ] **P0-08** Vẽ bàn mặc định "vở ô li": nền, lưới mờ, chấm; bàn luôn vuông, tự co theo khung
-- [ ] **P0-09** Bắt cạnh gần điểm chạm nhất (không vùng chết), hiện cạnh mờ khi hover; chế độ chạm hai lần cho bàn 7×7 trên màn hình < 400px
-- [ ] **P0-10** Vẽ cạnh đã đi (màu theo người chơi) và ô đã ăn (tô đơn giản)
+- [x] **P0-07** Mount PixiJS ở `/play` (client component); `ResizeObserver`, `resolution = min(dpr, 2)`, `touch-action: none`
+- [x] **P0-08** Vẽ bàn mặc định "vở ô li": nền, lưới mờ, chấm; bàn luôn vuông, tự co theo khung
+- [x] **P0-09** Bắt cạnh gần điểm chạm nhất (không vùng chết), hiện cạnh mờ khi hover; chế độ chạm hai lần cho bàn 7×7 trên màn hình < 400px
+- [x] **P0-10** Vẽ cạnh đã đi (màu theo người chơi) và ô đã ăn (tô đơn giản)
 
 ### M0.4 Vòng lặp chơi với bot tạm
-- [ ] **P0-11** Interface `GameController` (để sau này thay bằng bản online); `LocalBotController`: người chơi click → `applyMove` → renderer; **bot tạm** (ăn ô nếu có, còn lại ngẫu nhiên) đi với độ trễ tự nhiên
-- [ ] **P0-12** HUD theo bố cục dọc/ngang ở [11](11-responsive-i18n.md#bố-cục-màn-hình-chơi): tên, điểm, lượt; màn hình kết thúc; chơi lại; chọn bàn 3×3 / 5×5 / 7×7
+- [x] **P0-11** Interface `GameController` (để sau này thay bằng bản online); `LocalBotController`: người chơi click → `applyMove` → renderer; **bot tạm** (ăn ô nếu có, còn lại ngẫu nhiên) đi với độ trễ tự nhiên
+- [x] **P0-12** HUD theo bố cục dọc/ngang ở [11](11-responsive-i18n.md#bố-cục-màn-hình-chơi): tên, điểm, lượt; màn hình kết thúc; chơi lại; chọn bàn 3×3 / 5×5 / 7×7
 
 ✅ *Demo: chơi hết ván với bot tạm trên điện thoại, xoay màn hình không mất ván.*
 
 ### M0.5 Animation
-- [ ] **P0-13** Nét vẽ chạy từ chấm đến chấm (GSAP), hiệu ứng ăn ô gạch chéo + nảy nhẹ
+- [x] **P0-13** Nét vẽ chạy từ chấm đến chấm (GSAP), hiệu ứng ăn ô gạch chéo + nảy nhẹ
 - [ ] **P0-14** Chữ "COMBO ×n" (qua hàm `t` truyền vào engine), particle giấy, đếm ô cuối ván; tôn trọng `prefers-reduced-motion`
 
 ### M0.6 Âm thanh
@@ -62,7 +62,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ✅ *Demo: ván chơi có đủ hình và tiếng — đây là lúc tự hỏi "có đã tay không?"*
 
 ### M0.7 Bot
-- [ ] **P0-17** `bot.ts` theo [03 — Bot](03-luat-choi.md#bot): ăn ô, cạnh an toàn, nhường chuỗi ngắn nhất; tham số `strength` + lỗi có chủ đích; fixtures tình huống cho bot
+- [x] **P0-17** `bot.ts` theo [03 — Bot](03-luat-choi.md#bot): ăn ô, cạnh an toàn, nhường chuỗi ngắn nhất; tham số `strength` + lỗi có chủ đích; fixtures tình huống cho bot
 - [ ] **P0-18** Luật chuỗi dài, double-cross, tìm kiếm alpha-beta cuối ván — *có thể để sau giai đoạn 1 nếu tốn thời gian*
 
 ### M0.8 Hoàn thiện & cho bạn bè thử

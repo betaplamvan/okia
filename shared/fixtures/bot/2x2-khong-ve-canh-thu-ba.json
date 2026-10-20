@@ -1,0 +1,10 @@
+{
+  "name": "2x2: ô 0 có 2 cạnh (0, 6); còn cạnh an toàn → bot không được vẽ 2 hay 7",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 6 }
+  ],
+  "acceptable": [1, 3, 4, 5, 8, 9, 10, 11]
+}

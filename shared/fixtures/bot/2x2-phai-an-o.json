@@ -1,0 +1,11 @@
+{
+  "name": "2x2: ô 0 đã có 3 cạnh (0, 2, 6) → bot phải vẽ cạnh 7 để ăn",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 2 },
+    { "player": 0, "edge": 6 }
+  ],
+  "acceptable": [7]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "2x2: 4 ô đều 2 cạnh, hết cạnh an toàn; ô 1 và ô 3 lẻ (tặng 1), ô 0–ô 2 nối qua cạnh 2 (tặng 2) → bot tặng ô lẻ",
+  "rows": 2,
+  "cols": 2,
+  "moves": [
+    { "player": 0, "edge": 0 },
+    { "player": 1, "edge": 7 },
+    { "player": 0, "edge": 3 },
+    { "player": 1, "edge": 9 },
+    { "player": 0, "edge": 10 }
+  ],
+  "acceptable": [1, 5, 8, 11]
+}

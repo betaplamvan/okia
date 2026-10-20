@@ -12,6 +12,7 @@
     "smoke": "node scripts/smoke.mjs",
     "shots": "node scripts/shots.mjs",
     "smoke:ui": "node scripts/smoke-interactions.mjs",
+    "smoke:play": "node scripts/smoke-play.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

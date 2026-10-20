@@ -1,5 +1,6 @@
 import { Box, Circle, Heading, HStack, Stack, Text, type BoxProps } from "@chakra-ui/react";
 import { LuArrowRight } from "react-icons/lu";
+import { Link } from "@/i18n/navigation";
 
 type ModeCardProps = Omit<BoxProps, "title"> & {
   title: string;
@@ -9,6 +10,8 @@ type ModeCardProps = Omit<BoxProps, "title"> & {
   tone: "mint" | "coral" | "pink" | "sun" | "paper";
   /** Nhãn nhỏ khi tính năng chưa sẵn sàng. */
   badge?: string;
+  /** Có href → cả thẻ là một link (next-intl Link, giữ đúng locale). */
+  href?: string;
 };
 
 // Chấm trang trí góc thẻ dùng màu đối lập với nền (docs/14).
@@ -21,24 +24,9 @@ const DOT: Record<ModeCardProps["tone"], string> = {
 };
 
 /** Thẻ chọn chế độ chơi theo phong cách sticker. */
-export function ModeCard({ title, description, icon, tone, badge, ...rest }: ModeCardProps) {
-  return (
-    <Box
-      layerStyle="sticker"
-      bg={tone}
-      position="relative"
-      p={5}
-      pb={7}
-      minH="40"
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-between"
-      transitionProperty="transform, box-shadow"
-      transitionDuration="fast"
-      _hover={{ transform: "translate(-1px, -1px)" }}
-      _active={{ transform: "translate(3px, 3px)", boxShadow: "stickerSm" }}
-      {...rest}
-    >
+export function ModeCard({ title, description, icon, tone, badge, href, ...rest }: ModeCardProps) {
+  const inner = (
+    <>
       <Circle
         size="3"
         bg={DOT[tone]}
@@ -86,6 +74,34 @@ export function ModeCard({ title, description, icon, tone, badge, ...rest }: Mod
       >
         <LuArrowRight />
       </Circle>
-    </Box>
+    </>
   );
+
+  const styleProps: BoxProps = {
+    layerStyle: "sticker",
+    bg: tone,
+    position: "relative",
+    p: 5,
+    pb: 7,
+    minH: "40",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    transitionProperty: "transform, box-shadow",
+    transitionDuration: "fast",
+    _hover: href ? { transform: "translate(-1px, -1px)" } : undefined,
+    _active: href ? { transform: "translate(3px, 3px)", boxShadow: "stickerSm" } : undefined,
+    _focusVisible: { outline: "3px solid", outlineColor: "sun", outlineOffset: "2px" },
+    opacity: href ? 1 : 0.92,
+    ...rest,
+  };
+
+  if (href) {
+    return (
+      <Box asChild {...styleProps}>
+        <Link href={href}>{inner}</Link>
+      </Box>
+    );
+  }
+  return <Box {...styleProps}>{inner}</Box>;
 }
