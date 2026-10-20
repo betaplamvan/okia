@@ -1,7 +1,7 @@
 # ADR-0002 — Xây đủ hai loại tiền nhưng khóa Mực tím
 
 - **Ngày:** 2026-10-20
-- **Trạng thái:** Chấp nhận
+- **Trạng thái:** **Đã thay thế** bởi [ADR-0005](0005-mot-tien-te-donate.md) (2026-10-20) — chỉ giữ lại để tham khảo lịch sử
 
 ## Bối cảnh
 

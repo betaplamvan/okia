@@ -26,7 +26,7 @@ Tên tiếng Anh: xem [bảng thuật ngữ](11-responsive-i18n.md#bảng-thuậ
 
 - Dài 6–8 tuần, tên theo chủ đề trường học (Học kỳ I, Thi giữa kỳ, Mùa hè…).
 - **Reset mềm:** `mmr_mới = 1500 + (mmr_cũ - 1500) × 0.5`, `rd_mới = max(rd_cũ, 150)`.
-- Thưởng cuối mùa theo `peak_tier`: vật phẩm `reward` độc quyền (khung, dấu ô) + Ruột chì. Không thưởng Mực tím.
+- Thưởng cuối mùa theo `peak_tier`: vật phẩm `reward` độc quyền (khung, dấu ô) + Ruột chì theo bảng ở [06](06-kinh-te.md#nguồn-giá-trị-khởi-điểm).
 
 ## Ghép trận
 
@@ -49,4 +49,4 @@ Worker nền `matchmaking` (một bản duy nhất nhờ `lock:mm`) chạy mỗi
 - Server kiểm tra mọi nước đi (xem [03](03-luat-choi.md)).
 - Rate limit `move` (tối đa 5 tin/giây).
 - Phát hiện **dàn xếp kết quả**: cặp tài khoản gặp nhau > 5 trận xếp hạng/ngày với kết quả một chiều → đánh dấu để xem xét.
-- Tài khoản khách **không được chơi xếp hạng** — phải liên kết Google/Zalo.
+- Tài khoản khách **không được chơi xếp hạng**; tài khoản email phải **đã xác minh** (`EMAIL_NOT_VERIFIED`). Xem [13](13-xac-thuc.md).

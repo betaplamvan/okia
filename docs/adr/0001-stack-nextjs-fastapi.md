@@ -5,7 +5,7 @@
 
 ## Bối cảnh
 
-Game cần: đăng nhập, phòng đấu realtime, ghép trận, xếp hạng, ví hai loại tiền. Nakama (game server mã nguồn mở) có sẵn hầu hết các tính năng này. Tuy nhiên đây là dự án cá nhân và người phát triển đã quen Next.js, FastAPI, Postgres, Redis.
+Game cần: đăng nhập, phòng đấu realtime, ghép trận, xếp hạng, ví tiền trong game. Nakama (game server mã nguồn mở) có sẵn hầu hết các tính năng này. Tuy nhiên đây là dự án cá nhân và người phát triển đã quen Next.js, FastAPI, Postgres, Redis.
 
 ## Quyết định
 

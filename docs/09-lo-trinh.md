@@ -13,11 +13,11 @@
 | Giai đoạn | Mục tiêu | Ước lượng |
 |---|---|---|
 | [0. Prototype offline](#giai-đoạn-0--prototype-offline) | Chơi được với bot trên trình duyệt, hai ngôn ngữ, mọi kích thước màn hình | ~20 buổi (~5 tuần) |
-| [1. Online phòng riêng](#giai-đoạn-1--online-phòng-riêng) | Hai người ở hai nơi chơi với nhau qua link | ~21 buổi (~5 tuần) |
+| [1. Online phòng riêng](#giai-đoạn-1--online-phòng-riêng) | Hai người ở hai nơi chơi với nhau qua link; tài khoản email/Google | ~23 buổi (~6 tuần) |
 | [2A. Ghép trận & xếp hạng](#giai-đoạn-2a--ghép-trận--xếp-hạng) | Người lạ ghép trận, có hạng và BXH | ~14 buổi (~3,5 tuần) |
-| [2B. Kinh tế & skin](#giai-đoạn-2b--kinh-tế--skin) | Kiếm Ruột chì, mua và trang bị skin → **Beta công khai** | ~20 buổi (~5 tuần) |
-| [3. Lan truyền & vận hành](#giai-đoạn-3--lan-truyền--vận-hành) | Đăng nhập Zalo, sự kiện, admin, bot có cá tính | liên tục |
-| [4. Kiếm tiền](#giai-đoạn-4--kiếm-tiền) | Mở khóa Mực tím | khi đủ người chơi |
+| [2B. Kinh tế & skin](#giai-đoạn-2b--kinh-tế--skin) | Kiếm Ruột chì từ xếp hạng, mua và trang bị skin → **Beta công khai** | ~18 buổi (~4,5 tuần) |
+| [3. Lan truyền & vận hành](#giai-đoạn-3--lan-truyền--vận-hành) | Bảo mật tài khoản nâng cao, sự kiện, admin, bot có cá tính | liên tục |
+| [4. Donate & duy trì](#giai-đoạn-4--donate--duy-trì) | Trang ủng hộ, minh bạch chi phí | ~3 buổi, sau beta |
 
 ---
 
@@ -77,7 +77,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M1.1 Khởi tạo backend
 - [ ] **P1-01** `api/` FastAPI: cấu hình settings, healthcheck, pytest; `docker-compose.yml` với Postgres + Redis cho dev
-- [ ] **P1-02** SQLAlchemy async + Alembic: `naming_convention`, `env.py` async, `alembic check` trong CI; model + migration đầu tiên (`users` có `locale`, `auth_identities`, `matches`)
+- [ ] **P1-02** SQLAlchemy async + Alembic: `naming_convention`, `env.py` async, `alembic check` trong CI; model + migration đầu tiên (`users`, `auth_identities`, `sessions`, `matches` theo [05](05-co-so-du-lieu.md#tài-khoản))
 - [ ] **P1-03** i18n backend: `t(key, locale)`, `locales/vi.json` + `en.json`, xác định locale (`users.locale` → `Accept-Language` → `vi`), test hai file cùng tập key; lỗi trả `code` + `message` đã dịch
 
 ### M1.2 Luật chơi phía server
@@ -85,37 +85,42 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ✅ *Demo: hai bộ test cùng xanh trên một bộ fixtures.*
 
-### M1.3 Xác thực
-- [ ] **P1-05** Đăng nhập khách (device id → JWT), `GET /me`, `PATCH /me` (tên hiển thị, `locale`); client đồng bộ ngôn ngữ đã chọn
-- [ ] **P1-06** Google OAuth + liên kết tài khoản khách → tài khoản thật
+### M1.3 Xác thực (theo [13](13-xac-thuc.md))
+- [ ] **P1-05** Phiên: access JWT 1 giờ + refresh cookie xoay (`sessions`), `token_version`; đăng nhập khách (device id); `GET /me`, `PATCH /me` (tên hiển thị, `locale`); client đồng bộ ngôn ngữ đã chọn
+- [ ] **P1-06** Email + mật khẩu: `register` (Argon2id, danh sách mật khẩu phổ biến), `login` (rate limit, lỗi không phân biệt), nâng cấp khách → tài khoản; test
+- [ ] **P1-07** Email giao dịch (Resend qua background task + Mailpit dev, mẫu vi/en): xác minh email, quên/đặt lại mật khẩu (token một lần, tăng `token_version`); webhook bounce; chặn xếp hạng khi chưa xác minh
+- [ ] **P1-08** Google OAuth (PKCE, xác minh `id_token`), tự liên kết theo email đã xác minh, gộp tài khoản khách, xử lý `IDENTITY_TAKEN`; test
+- [ ] **P1-09** Giao diện: màn hình đăng nhập/đăng ký/quên mật khẩu, banner "xác minh email", trang cài đặt tài khoản tối thiểu; `DELETE /me` xóa mềm
+
+✅ *Demo: khách chơi → đăng ký email → nhận mail xác minh (Mailpit) → bấm link → được vào xếp hạng; đăng nhập Google trùng email tự liên kết.*
 
 ### M1.4 Nền WebSocket
-- [ ] **P1-07** Endpoint `/ws` xác thực JWT, nhận `lang`, `ping/pong`, gửi `error`; model Pydantic cho các tin nhắn theo [04](04-giao-thuc-ws.md)
-- [ ] **P1-08** Script xuất JSON Schema → sinh type TS vào `web/`; Redis pub/sub helper
+- [ ] **P1-10** Endpoint `/ws` xác thực JWT, nhận `lang`, `ping/pong`, gửi `error`; model Pydantic cho các tin nhắn theo [04](04-giao-thuc-ws.md)
+- [ ] **P1-11** Script xuất JSON Schema → sinh type TS vào `web/`; Redis pub/sub helper
 
 ### M1.5 Phòng đấu
-- [ ] **P1-09** `room_create` / `room_join`, lưu `room:{id}` trong Redis, gửi `room_state`
-- [ ] **P1-10** Xử lý `move`: khóa phòng, kiểm tra `seq`, `apply_move`, publish `moved`
-- [ ] **P1-11** `resign`, `game_over`, ghi trận vào bảng `matches`, dọn Redis
+- [ ] **P1-12** `room_create` / `room_join`, lưu `room:{id}` trong Redis, gửi `room_state`
+- [ ] **P1-13** Xử lý `move`: khóa phòng, kiểm tra `seq`, `apply_move`, publish `moved`
+- [ ] **P1-14** `resign`, `game_over`, ghi trận vào bảng `matches`, dọn Redis
 
 ### M1.6 Timer & kết nối lại
-- [ ] **P1-12** Sorted set `deadlines` + worker quét mỗi giây (có khóa); hết giờ đi ngẫu nhiên; 3 lần → `afk`
-- [ ] **P1-13** `user:{id}:room`, `welcome.activeRoomId`, `opponent_status`
+- [ ] **P1-15** Sorted set `deadlines` + worker quét mỗi giây (có khóa); hết giờ đi ngẫu nhiên; 3 lần → `afk`
+- [ ] **P1-16** `user:{id}:room`, `welcome.activeRoomId`, `opponent_status`
 
 ✅ *Demo: test tích hợp với 2 client WS giả chơi hết ván, kể cả rớt mạng giữa chừng.*
 
 ### M1.7 Client online
-- [ ] **P1-14** WS client có tự kết nối lại (backoff), store trạng thái kết nối
-- [ ] **P1-15** `NetworkController` (cùng interface `GameController`): animate lạc quan, hoàn tác khi lỗi; hiển thị lỗi theo `code` đã dịch
-- [ ] **P1-16** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger
-- [ ] **P1-17** Thanh đếm giờ lượt, báo đối thủ rớt mạng, màn hình kết thúc online
+- [ ] **P1-17** WS client có tự kết nối lại (backoff) và tự refresh access token, store trạng thái kết nối
+- [ ] **P1-18** `NetworkController` (cùng interface `GameController`): animate lạc quan, hoàn tác khi lỗi; hiển thị lỗi theo `code` đã dịch
+- [ ] **P1-19** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger
+- [ ] **P1-20** Thanh đếm giờ lượt, báo đối thủ rớt mạng, màn hình kết thúc online
 
 ### M1.8 Triển khai
-- [ ] **P1-18** VPS + Docker Compose production (container `api` chạy `alembic upgrade head` khi khởi động), Caddy, Cloudflare, tên miền
-- [ ] **P1-19** Backup `pg_dump` → R2, Sentry cho web và api, trang chính sách quyền riêng tư (vi/en)
-- [ ] **P1-20** Test ảnh chụp màn hình Playwright: 3 kích thước × 2 ngôn ngữ cho trang chủ, màn chơi, màn kết thúc
+- [ ] **P1-21** VPS + Docker Compose production (container `api` chạy `alembic upgrade head` khi khởi động), Caddy, Cloudflare, tên miền; cấu hình SPF/DKIM cho email
+- [ ] **P1-22** Backup `pg_dump` → R2, Sentry cho web và api, trang chính sách quyền riêng tư (vi/en)
+- [ ] **P1-23** Test ảnh chụp màn hình Playwright: 3 kích thước × 2 ngôn ngữ cho trang chủ, đăng nhập, màn chơi, màn kết thúc
 
-**🏁 Tiêu chí hoàn thành giai đoạn 1:** hai điện thoại ở hai mạng khác nhau chơi hết ván qua link mời; tắt mạng 20 giây rồi bật lại vẫn chơi tiếp được; mỗi người thấy giao diện theo ngôn ngữ của mình.
+**🏁 Tiêu chí hoàn thành giai đoạn 1:** hai điện thoại ở hai mạng khác nhau chơi hết ván qua link mời; tắt mạng 20 giây rồi bật lại vẫn chơi tiếp được; mỗi người thấy giao diện theo ngôn ngữ của mình; đăng ký email thật nhận được mail xác minh trên production.
 
 ---
 
@@ -145,16 +150,16 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ## Giai đoạn 2B — Kinh tế & skin
 
 ### M2.5 Ví & sổ cái
-- [ ] **P2-10** Model + migration `currencies` (tên `{vi, en}`), `wallets`, `wallet_ledger`; migration dữ liệu seed `soft` (bật) và `hard` (khóa)
-- [ ] **P2-11** Service `credit` / `debit` với idempotency + các lớp chặn Mực tím theo [06](06-kinh-te.md); đủ bộ test bắt buộc
+- [ ] **P2-10** Model + migration `wallets`, `wallet_ledger` (một loại tiền, xem [05](05-co-so-du-lieu.md#kinh-tế)); tạo ví khi tạo tài khoản
+- [ ] **P2-11** Service `credit` / `debit` với idempotency theo [06](06-kinh-te.md#quy-tắc-ví); đủ bộ test bắt buộc
 
 ### M2.6 Thưởng
-- [ ] **P2-12** Thưởng sau trận, trần 300/ngày, không thưởng phòng riêng/afk
-- [ ] **P2-13** Nhiệm vụ ngày (`quests` có `title {vi, en}`, `user_quests`), điểm danh 7 ngày; giao diện nhận thưởng
+- [ ] **P2-12** Thưởng thắng trận xếp hạng khi `game_over` (cùng transaction với rating); không thưởng casual/bot/phòng riêng/afk/đầu hàng sớm; thông báo rõ ở màn hình chọn chế độ rằng chỉ xếp hạng mới cho Ruột chì
+- [ ] **P2-13** Phát hiện dàn xếp kết quả: bảng `match_flags`, quy tắc cặp tài khoản gặp nhau bất thường, giữ thưởng/rating của trận bị cờ; test
 
 ### M2.7 Vật phẩm & trang bị
-- [ ] **P2-14** Model + migration `items` (tên/mô tả `{vi, en}`), `inventory`, `loadouts`, `wishlist`; script seed từ `shared/skins/` (từ chối manifest thiếu ngôn ngữ); cấp skin mặc định cho người mới
-- [ ] **P2-15** API mua (`purchase`), trang bị (`PUT /loadout`), wishlist; trả tên vật phẩm theo locale; gửi loadout trong `room_state`
+- [ ] **P2-14** Model + migration `items` (tên/mô tả `{vi, en}`, một cột `price`), `inventory`, `loadouts`; script seed từ `shared/skins/` (từ chối manifest thiếu ngôn ngữ); cấp skin mặc định cho người mới
+- [ ] **P2-15** API mua (`purchase`: `debit` + `inventory` trong một transaction), trang bị (`PUT /loadout`); trả tên vật phẩm theo locale; gửi loadout trong `room_state`
 
 ### M2.8 Engine skin phía client
 - [ ] **P2-16** Nạp manifest + asset theo nhu cầu, áp dụng bàn/bút/nét cho renderer
@@ -162,13 +167,13 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M2.9 Shop
 - [ ] **P2-18** Trang shop responsive (lưới 2 cột trên điện thoại, nhiều cột trên desktop): danh mục, shop xoay vòng theo ngày, mua bằng Ruột chì, ví trên header
-- [ ] **P2-19** Vật phẩm khóa 🔒 "Sắp mở bán", nút "Thử" trên bàn mẫu, nút "Muốn có"; trang kho đồ & trang bị
+- [ ] **P2-19** Nút "Thử" trên bàn mẫu, luồng mua → đề nghị trang bị ngay; trang kho đồ & trang bị
 
 ### M2.10 Nội dung
 - [ ] **P2-20** Pipeline `pnpm assets:build` đầy đủ (SVG → PNG, atlas, audio sprite, kiểm tra manifest) chạy trong CI
 - [ ] **P2-21** 12 skin đầu tiên (3 mỗi loại, tên vi/en; ≥ 8 skin thuần thủ tục/SVG) + bộ âm thanh chính thức — *có thể làm song song từ giai đoạn 1*, xem [12](12-asset.md#lộ-trình-asset-song-song-với-09)
 
-**🏁 Tiêu chí hoàn thành giai đoạn 2 (Beta công khai):** người chơi mới chơi → nhận Ruột chì → mua và trang bị skin → đối thủ nhìn thấy skin đó; Mực tím không thể có được bằng bất kỳ cách nào (đã có test chứng minh).
+**🏁 Tiêu chí hoàn thành giai đoạn 2 (Beta công khai):** người chơi mới tạo tài khoản (email xác minh hoặc Google) → thắng trận xếp hạng → nhận Ruột chì → mua và trang bị skin → đối thủ nhìn thấy skin đó; thắng casual/bot/phòng riêng không sinh dòng ledger (đã có test chứng minh); trận bị cờ win-trading không trả thưởng.
 
 ---
 
@@ -176,10 +181,10 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 Không có thứ tự cố định; chọn theo dữ liệu thực tế.
 
-- [ ] **P3-01** Đăng nhập Zalo
+- [ ] **P3-01** Bảo mật tài khoản nâng cao: đổi mật khẩu, đổi email (xác minh địa chỉ mới), trang "Thiết bị đang đăng nhập" thu hồi từng phiên, gỡ/thêm identity Google
 - [ ] **P3-02** Biểu cảm nhanh trong trận (`emote`)
 - [ ] **P3-03** Job kết thúc mùa: reset mềm, phát thưởng theo `peak_tier`
-- [ ] **P3-04** Trang admin tối giản: tra cứu người chơi, cấp vật phẩm, khóa tài khoản, xem thống kê wishlist, sửa nội dung `{vi, en}`
+- [ ] **P3-04** Trang admin tối giản: tra cứu người chơi, cấp vật phẩm, khóa tài khoản, xem xét `match_flags`, sửa nội dung `{vi, en}`
 - [ ] **P3-05** PostHog: phễu chơi ván đầu, retention D1/D7 (tách theo ngôn ngữ)
 - [ ] **P3-06** PWA (cài lên màn hình chính)
 - [ ] **P3-07** Sự kiện theo mùa: khai giảng, 20/11, Tết — skin `reward` giới hạn thời gian
@@ -195,12 +200,10 @@ Theo [03 — Cá tính bot](03-luat-choi.md#cá-tính-bot-llm).
 
 ---
 
-## Giai đoạn 4 — Kiếm tiền
+## Giai đoạn 4 — Donate & duy trì
 
-Chỉ bắt đầu khi có lượng người chơi ổn định và đã xử lý pháp lý ([10](10-phap-ly.md)).
+Không có thanh toán, không bán gì ([ADR-0005](adr/0005-mot-tien-te-donate.md)). Làm sau beta công khai, khi đã có người chơi thật.
 
-- [ ] **P4-01** Tư vấn luật sư; lập doanh nghiệp; hồ sơ giấy phép
-- [ ] **P4-02** Chọn và tích hợp cổng thanh toán; webhook `credit(source='payment')`
-- [ ] **P4-03** Trang nạp tiền, gói nạp, lịch sử giao dịch, hóa đơn
-- [ ] **P4-04** Bật `currencies.hard` + `PAYMENTS_ENABLED`; thông báo cho người có wishlist
-- [ ] **P4-05** Battle pass theo mùa
+- [ ] **P4-01** Trang `/donate` (vi/en): lời cảm ơn, VietQR + MoMo + một kênh quốc tế, cấu hình trong `web/src/config/donate.ts`; ghi rõ không có quyền lợi trong game ([10](10-phap-ly.md#donate))
+- [ ] **P4-02** Phần minh bạch chi phí vận hành hằng tháng; danh sách cảm ơn tự đăng ký (tùy chọn)
+- [ ] **P4-03** Lời mời donate ở màn hình kết thúc: tối đa một lần, sau ≥ 20 ván, tắt được

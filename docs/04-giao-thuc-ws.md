@@ -46,7 +46,8 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 
 | `code` | Khi nào |
 |---|---|
-| `UNAUTHORIZED` | Token sai/hết hạn |
+| `UNAUTHORIZED` | Token sai/hết hạn (client refresh rồi kết nối lại) |
+| `GUEST_NOT_ALLOWED`, `EMAIL_NOT_VERIFIED` | Khách hoặc tài khoản chưa xác minh gửi `queue` với `mode: "ranked"` |
 | `NOT_YOUR_TURN`, `INVALID_EDGE`, `EDGE_TAKEN`, `GAME_OVER` | Từ luật chơi |
 | `STALE_SEQ` | `seq` không khớp — client cần đồng bộ lại |
 | `ROOM_NOT_FOUND`, `ROOM_FULL` | Phòng không tồn tại / đã đủ người |

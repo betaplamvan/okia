@@ -171,7 +171,7 @@ Từ giai đoạn 3, bot dùng server LLM (Qwen) để tạo lời thoại:
 | Lúc nào | Ví dụ |
 |---|---|
 | Vào trận | "Hôm nay mình mang bút mới, cẩn thận nhé!" |
-| Bot ăn combo ≥ 3 | "Một… hai… ba ô! Cảm ơn bạn nha 😄" |
+| Bot ăn combo ≥ 3 | "Ô kìa! Một… hai… ba ô! Cảm ơn bạn nha 😄" |
 | Người chơi ăn combo ≥ 3 | "Ơ khoan, mình chưa chuẩn bị!" |
 | Kết thúc | Câu chúc mừng / an ủi |
 | Sau ván (tùy chọn) | **Nhận xét ván đấu**: thuật toán tìm nước sai lớn nhất của người chơi (nước làm mất nhiều ô nhất theo tìm kiếm), LLM diễn giải bằng tiếng Việt dễ hiểu |

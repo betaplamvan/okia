@@ -43,7 +43,7 @@
 ## Font
 
 - **UI:** *Be Vietnam Pro* (có đủ tiếng Việt, nhiều độ đậm).
-- **Viết tay (bàn đấu, HUD):** ứng viên *Patrick Hand*, *Shantell Sans*, *Dancing Script* — **phải chạy script kiểm tra** đủ ký tự `ă â đ ê ô ơ ư` và dấu chồng `ặ ỗ ữ ỷ ẫ` trước khi chọn; thử render chuỗi "Thủ khoa — Vở ô li — Mực tím" ở 14px và 32px.
+- **Viết tay (bàn đấu, HUD):** ứng viên *Patrick Hand*, *Shantell Sans*, *Dancing Script* — **phải chạy script kiểm tra** đủ ký tự `ă â đ ê ô ơ ư` và dấu chồng `ặ ỗ ữ ỷ ẫ` trước khi chọn; thử render chuỗi "Thủ khoa — Vở ô li — Ruột chì" ở 14px và 32px.
 - Tự host font (woff2, subset `latin` + `vietnamese`) qua `next/font`, không tải từ Google lúc chạy.
 
 ## Cấu trúc thư mục

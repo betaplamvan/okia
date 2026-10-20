@@ -1,5 +1,9 @@
 # 01 — Tổng quan sản phẩm
 
+## Tên
+
+**Ô Kìa** — câu cảm thán khi nhìn ra một ô ăn được, khoảnh khắc vui nhất của trò. Tên giữ nguyên ở cả giao diện tiếng Việt và tiếng Anh; chỉ dịch dòng mô tả. ASCII: `okia`. Trước khi dùng công khai cần kiểm tra tên miền, kết quả tìm kiếm trên Zalo/App Store/Google Play và nhãn hiệu tại ipvietnam.gov.vn.
+
 ## Ý tưởng
 
 Hai người luân phiên vẽ một cạnh giữa hai chấm kề nhau trên lưới. Ai vẽ cạnh thứ tư khép kín một ô thì ô đó thuộc về mình và được đi tiếp. Hết cạnh thì đếm ô, ai nhiều ô hơn thắng. Trò này quốc tế gọi là *Dots and Boxes* — trò dân gian, không ai giữ bản quyền luật chơi.
@@ -20,7 +24,7 @@ Hai người luân phiên vẽ một cạnh giữa hai chấm kề nhau trên l�
 
 - Dự án **cá nhân**, làm ngoài giờ (~10–15 giờ/tuần).
 - Chi phí vận hành giai đoạn đầu mục tiêu **< 500.000đ/tháng**.
-- **Chưa có cổng thanh toán**: tiền cao cấp được xây đầy đủ nhưng khóa (xem [06](06-kinh-te.md), [ADR-0002](adr/0002-khoa-tien-cao-cap.md)).
+- **Hoàn toàn miễn phí, không có thanh toán**: một loại tiền trong game kiếm bằng thắng xếp hạng; chi phí vận hành bù bằng donate tự nguyện (xem [06](06-kinh-te.md), [ADR-0005](adr/0005-mot-tien-te-donate.md)).
 
 ## Chế độ chơi
 
@@ -38,7 +42,7 @@ Kích thước bàn (tính theo số ô): **3×3** (nhanh), **5×5** (chuẩn, d
 ## Bản sắc
 
 - **Tên hạng:** Giấy nháp → Vở ô li → Học sinh khá → Học sinh giỏi → Thủ khoa.
-- **Tiền tệ:** *Ruột chì* (tiền thường), *Mực tím* (tiền cao cấp).
+- **Tiền tệ:** *Ruột chì* — loại tiền duy nhất, miễn phí.
 - Tên tiếng Anh tương ứng: xem [bảng thuật ngữ](11-responsive-i18n.md#bảng-thuật-ngữ).
 - **Âm thanh:** tiếng bút sột soạt, trống trường khi vào trận, "ting" cao dần khi ăn chuỗi.
 - Tránh tên/logo thương hiệu thật (Thiên Long, Hồng Hà…).
@@ -48,4 +52,5 @@ Kích thước bàn (tính theo số ô): **3×3** (nhanh), **5×5** (chuẩn, d
 - % người chơi hoàn thành ván đầu tiên
 - Retention D1 / D7
 - Thời gian chờ ghép trận trung bình
-- Số lượt "Muốn có" theo từng vật phẩm khóa (đo nhu cầu trước khi mở bán)
+- Tỷ lệ khách nâng cấp thành tài khoản thật (email hoặc Google) và tỷ lệ xác minh email — điều kiện để chơi xếp hạng và kiếm Ruột chì
+- Tỷ lệ người chơi mua skin đầu tiên trong 7 ngày

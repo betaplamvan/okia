@@ -55,7 +55,8 @@ Responsive (mobile-first, tối thiểu 320px) và i18n: xem [11](11-responsive-
 | Migration | Alembic — autogenerate từ model SQLAlchemy (quy trình: [05](05-co-so-du-lieu.md#quản-lý-schema-bằng-alembic)) |
 | Đa ngôn ngữ | Catalog JSON + hàm `t()` tự viết ([11](11-responsive-i18n.md#backend--fastapi)) |
 | Redis | `redis.asyncio` |
-| Xác thực | JWT do FastAPI phát; đăng nhập khách, Google OAuth, Zalo OAuth |
+| Xác thực | Khách, email + mật khẩu (Argon2id), Google OAuth (PKCE); access JWT + refresh cookie — xem [13](13-xac-thuc.md) |
+| Email giao dịch | Resend (SDK `resend`); Mailpit khi dev |
 | Test | pytest + pytest-asyncio |
 
 ### Dịch vụ LLM (Qwen) — cho cá tính bot
@@ -77,7 +78,7 @@ Luật cần chạy ở client (chơi offline, bot, animation tức thì) **và*
 ## Cấu trúc repo
 
 ```
-game/
+okia/                        # repo (monorepo)
 ├─ docs/                     # tài liệu này
 ├─ web/                      # Next.js
 │  ├─ messages/              # vi.json, en.json
@@ -125,9 +126,11 @@ game/
 | `DATABASE_URL` | Postgres | — |
 | `REDIS_URL` | Redis | — |
 | `JWT_SECRET` | Ký token | — |
+| `APP_BASE_URL` | URL public của web, dùng trong link email và callback OAuth | — |
 | `GOOGLE_CLIENT_ID/SECRET` | OAuth Google | — |
-| `ZALO_APP_ID/SECRET` | OAuth Zalo | — |
-| `PAYMENTS_ENABLED` | Bật cổng nạp | `false` |
+| `EMAIL_PROVIDER` | `resend` \| `mailpit` \| `console` (dev) | `console` |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Resend; `EMAIL_FROM` dạng `Ô Kìa <no-reply@okia.vn>` | — |
+| `RESEND_WEBHOOK_SECRET` | Xác minh chữ ký webhook bounce/complaint | — |
 | `LLM_BASE_URL` | Địa chỉ server Qwen | — (để trống = tắt, chỉ dùng câu soạn sẵn) |
 | `LLM_MODEL` | Tên model | — |
 | `LLM_TIMEOUT_MS` | Timeout mỗi lần gọi | `3000` |

@@ -6,7 +6,7 @@
 
 ### Quy trình thay đổi schema
 1. Sửa/thêm model trong `api/app/models/`.
-2. `alembic revision --autogenerate -m "add wishlist"` để sinh migration.
+2. `alembic revision --autogenerate -m "add loadouts"` để sinh migration.
 3. **Đọc lại file migration**: autogenerate không nhận ra mọi thứ (đổi tên cột/bảng, `CHECK` constraint, kiểu enum, index biểu thức). Sửa tay những chỗ đó.
 4. `alembic upgrade head` trên database dev, chạy test.
 5. Thử `alembic downgrade -1` rồi `upgrade head` lại để chắc chắn migration đảo ngược được.
@@ -15,7 +15,7 @@
 ### Quy tắc
 - **Không sửa migration đã chạy** ở production; cần thay đổi thì tạo migration mới.
 - Đặt `naming_convention` cho `MetaData` (khóa chính, khóa ngoại, unique, check, index) để tên constraint ổn định và autogenerate không sinh thay đổi thừa.
-- **Dữ liệu khởi tạo bắt buộc** (bảng `currencies`, vật phẩm mặc định) đưa vào migration dữ liệu (`op.bulk_insert`). Danh mục skin thì dùng script seed riêng (xem [08](08-skin.md#quy-trình-thêm-skin)) vì thay đổi thường xuyên.
+- **Dữ liệu khởi tạo bắt buộc** (vật phẩm mặc định, mùa giải đầu) đưa vào migration dữ liệu (`op.bulk_insert`). Danh mục skin thì dùng script seed riêng (xem [08](08-skin.md#quy-trình-thêm-skin)) vì thay đổi thường xuyên.
 - Migration thay đổi dữ liệu lớn: tách làm hai bước (thêm cột cho phép NULL → điền dữ liệu → đặt NOT NULL) để không khóa bảng lâu.
 - **CI chạy `alembic check`**: báo lỗi nếu model đã đổi mà chưa có migration.
 - Khi deploy: container `api` chạy `alembic upgrade head` trước khi khởi động server.
@@ -28,23 +28,42 @@ Mọi bảng có `created_at TIMESTAMPTZ DEFAULT now()` (lược bớt bên dư�
 
 ```sql
 CREATE TABLE users (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  display_name  TEXT NOT NULL,
-  avatar_url    TEXT,
-  is_guest      BOOLEAN NOT NULL DEFAULT true,
-  locale        TEXT NOT NULL DEFAULT 'vi' CHECK (locale IN ('vi', 'en')),
-  banned_until  TIMESTAMPTZ
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  display_name      TEXT NOT NULL,
+  avatar_url        TEXT,
+  email             TEXT UNIQUE,        -- đã lower(); NULL với khách
+  email_verified_at TIMESTAMPTZ,
+  email_bounced_at  TIMESTAMPTZ,       -- Resend báo bounce/complaint → không gửi nữa
+  is_guest          BOOLEAN NOT NULL DEFAULT true,
+  locale            TEXT NOT NULL DEFAULT 'vi' CHECK (locale IN ('vi', 'en')),
+  token_version     INT NOT NULL DEFAULT 1,   -- tăng để vô hiệu mọi phiên
+  banned_until      TIMESTAMPTZ,
+  deleted_at        TIMESTAMPTZ         -- xóa mềm, xóa cứng sau 30 ngày
 );
 
 CREATE TABLE auth_identities (
-  provider      TEXT NOT NULL,          -- 'guest' | 'google' | 'zalo'
-  subject       TEXT NOT NULL,          -- id phía provider (guest: device id)
+  provider      TEXT NOT NULL,          -- 'guest' | 'password' | 'google'
+  subject       TEXT NOT NULL,          -- guest: device id; password: email; google: sub
   user_id       UUID NOT NULL REFERENCES users ON DELETE CASCADE,
-  PRIMARY KEY (provider, subject)
+  secret_hash   TEXT,                   -- chỉ provider 'password': Argon2id
+  PRIMARY KEY (provider, subject),
+  CHECK ((provider = 'password') = (secret_hash IS NOT NULL))
 );
+CREATE INDEX ON auth_identities (user_id);
+
+CREATE TABLE sessions (                 -- refresh token
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+  refresh_hash  TEXT NOT NULL UNIQUE,   -- SHA-256 của refresh token
+  user_agent    TEXT,
+  expires_at    TIMESTAMPTZ NOT NULL,
+  revoked_at    TIMESTAMPTZ,
+  replaced_by   UUID                    -- phiên mới sau khi xoay
+);
+CREATE INDEX ON sessions (user_id);
 ```
 
-Liên kết tài khoản: người chơi khách đăng nhập Google/Zalo → thêm dòng `auth_identities` cho cùng `user_id`, đặt `is_guest = false`. Không mất tiến trình.
+Một user có thể có nhiều identity (`password` và `google` cùng lúc). Khách nâng cấp → giữ `user_id`, thêm identity, đặt `email`, `is_guest = false`. Chi tiết luồng: [13](13-xac-thuc.md#gộp-tài-khoản).
 
 ### Xếp hạng & trận đấu
 
@@ -92,41 +111,34 @@ CREATE INDEX ON matches (player1, ended_at DESC);
 ### Kinh tế
 
 ```sql
-CREATE TABLE currencies (
-  code     TEXT PRIMARY KEY,            -- 'soft' | 'hard'
-  name     JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),  -- {"vi":"Ruột chì","en":"Lead"}
-  enabled  BOOLEAN NOT NULL DEFAULT true
-);
+-- Một loại tiền duy nhất (Ruột chì), xem 06. Tên tiền nằm trong file dịch, không cần bảng.
 
 CREATE TABLE wallets (
-  user_id   UUID REFERENCES users,
-  currency  TEXT REFERENCES currencies,
-  balance   BIGINT NOT NULL DEFAULT 0 CHECK (balance >= 0),
-  PRIMARY KEY (user_id, currency)
+  user_id   UUID PRIMARY KEY REFERENCES users,
+  balance   BIGINT NOT NULL DEFAULT 0 CHECK (balance >= 0)
 );
 
 CREATE TABLE wallet_ledger (            -- chỉ INSERT, không UPDATE/DELETE
   id               BIGSERIAL PRIMARY KEY,
-  user_id          UUID NOT NULL,
-  currency         TEXT NOT NULL REFERENCES currencies,
+  user_id          UUID NOT NULL REFERENCES users,
   delta            BIGINT NOT NULL,     -- dương: cộng, âm: trừ
   balance_after    BIGINT NOT NULL,
-  source           TEXT NOT NULL,       -- match | quest | daily | purchase | payment | admin | season
-  ref              TEXT,                -- match id, item id, mã giao dịch…
+  source           TEXT NOT NULL,       -- match | season | purchase | admin
+  ref              TEXT,                -- match id, season id, item id…
   idempotency_key  TEXT NOT NULL UNIQUE
 );
+CREATE INDEX ON wallet_ledger (user_id, id DESC);
 
 CREATE TABLE items (
   id          TEXT PRIMARY KEY,         -- 'pen_ink_purple'
   type        TEXT NOT NULL,            -- pen | stroke | box | board
   rarity      TEXT NOT NULL,            -- common | rare | epic | legendary | reward
-  price_soft  INT,
-  price_hard  INT,
+  price       INT,                      -- Ruột chì; NULL = không bán (rarity 'reward')
   name        JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),
   description JSONB CHECK (description IS NULL OR (description ? 'vi' AND description ? 'en')),
   manifest    JSONB NOT NULL,
   active      BOOLEAN NOT NULL DEFAULT true,
-  CHECK (price_soft IS NOT NULL OR price_hard IS NOT NULL OR rarity = 'reward')
+  CHECK ((price IS NOT NULL) = (rarity <> 'reward'))
 );
 
 CREATE TABLE inventory (
@@ -143,35 +155,23 @@ CREATE TABLE loadouts (
   box         TEXT REFERENCES items,
   board       TEXT REFERENCES items
 );
-
-CREATE TABLE wishlist (
-  user_id     UUID REFERENCES users,
-  item_id     TEXT REFERENCES items,
-  PRIMARY KEY (user_id, item_id)
-);
 ```
 
-### Nhiệm vụ
+### Phát hiện dàn xếp kết quả
 
 ```sql
-CREATE TABLE quests (
-  id        TEXT PRIMARY KEY,           -- 'daily_win_3'
-  title     JSONB NOT NULL CHECK (title ? 'vi' AND title ? 'en'),  -- {"vi":"Thắng 3 trận","en":"Win 3 matches"}
-  period    TEXT NOT NULL,              -- daily | weekly
-  goal      JSONB NOT NULL,             -- {"event": "win", "count": 3}
-  reward    INT NOT NULL,               -- Ruột chì (luôn là tiền thường)
-  active    BOOLEAN NOT NULL DEFAULT true
-);
-
-CREATE TABLE user_quests (
-  user_id   UUID REFERENCES users,
-  quest_id  TEXT REFERENCES quests,
-  period_key TEXT NOT NULL,             -- '2026-10-20' hoặc '2026-W43'
-  progress  INT NOT NULL DEFAULT 0,
-  claimed   BOOLEAN NOT NULL DEFAULT false,
-  PRIMARY KEY (user_id, quest_id, period_key)
+CREATE TABLE match_flags (
+  match_id   UUID PRIMARY KEY REFERENCES matches,
+  reason     TEXT NOT NULL,             -- win_trading_pair | afk_pattern | manual
+  status     TEXT NOT NULL DEFAULT 'pending',  -- pending | cleared | confirmed
+  note       TEXT,
+  reviewed_at TIMESTAMPTZ
 );
 ```
+
+Trận có cờ `pending`/`confirmed` không trả thưởng Ruột chì và không tính rating cho tới khi `cleared` (xem [06](06-kinh-te.md#chống-lạm-dụng)).
+
+*Không có bảng nhiệm vụ:* mọi Ruột chì đến từ xếp hạng ([ADR-0005](adr/0005-mot-tien-te-donate.md)).
 
 ## Redis
 
@@ -185,9 +185,11 @@ CREATE TABLE user_quests (
 | `mm:joined:{userId}` | String | 10 phút | Thời điểm vào hàng chờ |
 | `deadlines` | Sorted set | — | `roomId` với score = hạn giờ lượt (epoch ms) |
 | `lock:mm`, `lock:timer` | String | 5 giây | Đảm bảo chỉ một worker nền chạy |
-| `rl:{userId}:{action}` | String | 1–60 giây | Rate limit |
+| `rl:{userId}:{action}` | String | 1–60 giây | Rate limit trong game |
+| `rl:login:{email}`, `rl:login:{ip}` | String | 15 phút | Đếm đăng nhập sai |
+| `rl:email:{email}:{purpose}` | String | 1 giờ | Giới hạn gửi lại email xác minh / đặt lại |
+| `token:used:{jti}` | String | theo hạn token | Link xác minh / đặt lại đã dùng |
 | `lb:{season}:{board}` | Sorted set | — | Cache bảng xếp hạng |
-| `daily_soft:{userId}:{date}` | String | 1 ngày | Ruột chì đã kiếm hôm nay (trần) |
 | `bot:{userId}:streak` | String | 7 ngày | Chuỗi thắng/thua với bot (điều chỉnh `strength`) |
 
 Khi ván kết thúc: ghi `matches`, cập nhật `ratings`, cộng thưởng vào ví — **trong một transaction Postgres** — rồi mới xóa `room:{id}`.

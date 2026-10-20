@@ -21,7 +21,7 @@ Skin được mô tả bằng dữ liệu, không bằng code. File nguồn ở 
   "type": "pen",
   "name": { "vi": "Bút mực tím", "en": "Purple Ink Pen" },
   "rarity": "rare",
-  "price": { "soft": 800, "hard": 40 },
+  "price": 450,
   "assetBase": "skins/pen_ink_purple/",
   "pen":    { "sprite": "nib.png", "tipOffset": [4, 28] },
   "sfx":    { "draw": "scribble_ink" },
@@ -35,7 +35,7 @@ Skin được mô tả bằng dữ liệu, không bằng code. File nguồn ở 
   "type": "stroke",
   "name": { "vi": "Nét run tay", "en": "Shaky Hand" },
   "rarity": "common",
-  "price": { "soft": 300 },
+  "price": 150,
   "stroke": { "texture": "pencil.png", "width": 3, "jitter": 0.6, "drawMs": 180, "ease": "power2.out" }
 }
 ```
@@ -46,7 +46,7 @@ Skin được mô tả bằng dữ liệu, không bằng code. File nguồn ở 
   "type": "box",
   "name": { "vi": "Dấu 10 điểm", "en": "Perfect 10 Stamp" },
   "rarity": "epic",
-  "price": { "soft": 2000, "hard": 100 },
+  "price": 1200,
   "box": { "effect": "stamp", "sprite": "stamp10.png", "durationMs": 350, "particles": "paper" },
   "sfx": { "capture": "stamp_thud" }
 }
@@ -58,7 +58,7 @@ Skin được mô tả bằng dữ liệu, không bằng code. File nguồn ở 
   "type": "board",
   "name": { "vi": "Bảng đen", "en": "Blackboard" },
   "rarity": "rare",
-  "price": { "soft": 800 },
+  "price": 450,
   "board": { "background": "blackboard.jpg", "gridColor": "#ffffff22", "dotSprite": "chalk_dot.png" },
   "sfx": { "ambient": "classroom_ambient" }
 }

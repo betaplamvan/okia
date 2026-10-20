@@ -91,10 +91,11 @@ Thứ tự ưu tiên, dùng chung cho frontend và backend:
 ### Backend — FastAPI
 - **Locale của request:** REST lấy theo thứ tự ở trên (header `Accept-Language`); WebSocket nhận `?lang=vi|en` khi kết nối, ưu tiên `users.locale` nếu có.
 - **File dịch:** `api/app/i18n/locales/vi.json`, `en.json`; hàm `t(key, locale, **params)`. Thiếu key ở `en` → dùng `vi`. Test kiểm tra hai file có cùng tập key.
-- **Lỗi:** luôn trả **mã lỗi ổn định** (`code`, ví dụ `CURRENCY_LOCKED`) và kèm `message` đã dịch. Client ưu tiên tự dịch theo `code`; `message` dùng khi client chưa có bản dịch.
+- **Lỗi:** luôn trả **mã lỗi ổn định** (`code`, ví dụ `INSUFFICIENT_FUNDS`) và kèm `message` đã dịch. Client ưu tiên tự dịch theo `code`; `message` dùng khi client chưa có bản dịch.
 - **Backend phải dịch:**
-  - nội dung từ database (tên/mô tả vật phẩm, nhiệm vụ, mùa giải, tên tiền tệ) — xem bên dưới,
+  - nội dung từ database (tên/mô tả vật phẩm, tên mùa giải) — xem bên dưới,
   - lời thoại bot: câu soạn sẵn có đủ hai ngôn ngữ; prompt LLM yêu cầu trả lời theo locale của người chơi,
+  - email giao dịch (xác minh, đặt lại mật khẩu): mẫu vi/en chọn theo `locale` của người nhận,
   - nhận xét sau ván, thông báo.
 
 ### Nội dung trong database
@@ -112,8 +113,8 @@ Các trường hiển thị cho người chơi lưu dạng JSONB có đủ hai n
 
 | Tiếng Việt | English |
 |---|---|
-| Ruột chì (tiền thường) | Lead |
-| Mực tím (tiền cao cấp) | Purple Ink |
+| Ô Kìa (tên game) | Ô Kìa — **không dịch** |
+| Ruột chì (tiền trong game) | Lead |
 | Giấy nháp | Scratch Paper |
 | Vở ô li | Notebook |
 | Học sinh khá | Good Student |
@@ -123,7 +124,12 @@ Các trường hiển thị cho người chơi lưu dạng JSONB có đủ hai n
 | Ghép trận thường | Casual Match |
 | Xếp hạng | Ranked |
 | Phòng riêng | Private Room |
-| Muốn có | Wishlist |
-| Sắp mở bán | Coming Soon |
+| Thử | Try on |
+| Mua | Buy |
+| Ủng hộ | Donate |
+| Chơi thử (khách) | Play as guest |
+| Tạo tài khoản | Create account |
+| Đăng nhập bằng Google | Continue with Google |
+| Xác minh email | Verify email |
 
 Thêm thuật ngữ mới vào bảng này trước khi dùng, để hai ngôn ngữ luôn thống nhất.
