@@ -99,6 +99,11 @@
     "p3": "Hãy tử tế: tên hiển thị không được chứa từ ngữ xúc phạm; biểu cảm trong trận chỉ để vui.",
     "p4": "Vật phẩm trong game không có giá trị tiền tệ và không thể mua bán, trao đổi ngoài game."
   },
+  "Sound": {
+    "title": "Âm thanh",
+    "music": "Nhạc nền",
+    "sfx": "Hiệu ứng âm thanh"
+  },
   "Play": {
     "title": "Chơi với máy",
     "board": "Bàn đấu",

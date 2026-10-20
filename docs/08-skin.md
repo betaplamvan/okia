@@ -83,7 +83,7 @@ Thiết bị yếu hoặc người chơi bật "Giảm hiệu ứng" (và `prefe
 
 ## Âm thanh
 
-- Dùng **audio sprite** (một file `.webm` + `.mp3` dự phòng) qua Howler để giảm số request và độ trễ trên iOS.
+- Dùng **audio sprite** (một file `.webm` + `.mp3` dự phòng) qua Howler để giảm số request và độ trễ trên iOS. **Đã làm (P0-15/16):** `web/scripts/build-audio.mjs` (ffmpeg-static) gộp `shared/audio/core/*` + `shared/audio/ui/*` thành `public/assets/audio/core.{webm,mp3,json}` và chuẩn hóa nhạc nền (`loudnorm -18 LUFS`) vào `public/assets/audio/music/`; chạy tự động trước `dev`/`build` (`predev`/`prebuild`). Tiếng tổng hợp (bút chì, ting, gõ, thắng/thua) sinh bởi `scripts/synth-sfx.mjs`; nguồn ngoài ghi ở [credits.md](credits.md). Cài đặt 2 kênh (nhạc / hiệu ứng, bật-tắt + âm lượng) trong popover ở header, lưu `localStorage`; nhạc nền chỉ bắt đầu sau cử chỉ đầu tiên của người dùng.
 - Âm thanh mặc định: `draw_default`, `capture_ting`, `turn_change`, `school_drum` (vào trận), `win`, `lose`.
 - **Combo:** khi ăn ô thứ `n` trong một lượt, phát `capture` với `rate = 1 + 0.08 × (n-1)` (tối đa 1.6) → cao độ tăng dần.
 - Rung (`navigator.vibrate`) 15 ms khi ăn ô, trên thiết bị hỗ trợ.

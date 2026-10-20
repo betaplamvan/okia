@@ -56,8 +56,8 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [ ] **P0-14** Chữ "COMBO ×n" (qua hàm `t` truyền vào engine), particle giấy, đếm ô cuối ván; tôn trọng `prefers-reduced-motion`
 
 ### M0.6 Âm thanh
-- [ ] **P0-15** `AudioManager` (Howler, audio sprite) với âm thanh tạm (tổng hợp bằng script hoặc CC0, ghi `credits.md`); script build audio sprite; mở khóa audio iOS ở lần chạm đầu
-- [ ] **P0-16** Cao độ tăng dần khi ăn chuỗi, rung nhẹ; cài đặt âm lượng lưu `localStorage`
+- [x] **P0-15** `AudioManager` (Howler, audio sprite) với âm thanh tạm (tổng hợp bằng script hoặc CC0, ghi `credits.md`); script build audio sprite; mở khóa audio iOS ở lần chạm đầu
+- [x] **P0-16** Cao độ tăng dần khi ăn chuỗi, rung nhẹ; cài đặt âm lượng lưu `localStorage`
 
 ✅ *Demo: ván chơi có đủ hình và tiếng — đây là lúc tự hỏi "có đã tay không?"*
 

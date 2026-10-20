@@ -25,6 +25,8 @@ import {
   updateSettings,
   type Size,
 } from "@/components/play/play-settings";
+import { useGameSounds } from "@/components/play/use-game-sounds";
+import { audio } from "@/game/audio/audio-manager";
 import { LocalBotController, type GameResult } from "@/game/controller";
 import { Link } from "@/i18n/navigation";
 
@@ -64,13 +66,18 @@ export function PlayScreen() {
   const session = useSyncExternalStore(subscribe, getSession, getSession);
 
   const onSelectEdge = useCallback((edge: number) => controller.play(edge), [controller]);
+  useGameSounds(session);
 
   const changeSize = (size: Size) => {
+    audio.playUi("click");
     updateSettings({ size });
     controller.newGame({ rows: size, cols: size });
   };
 
-  const newGame = () => controller.newGame();
+  const newGame = () => {
+    audio.playUi("confirm");
+    controller.newGame();
+  };
 
   const { state, human, bot, thinking, result, combo } = session;
   const numberFormat = useMemo(() => new Intl.NumberFormat(locale), [locale]);

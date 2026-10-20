@@ -1,6 +1,8 @@
 import { Box, Container, Flex, Heading, HStack } from "@chakra-ui/react";
+import { AudioProvider } from "@/components/audio-provider";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { SiteFooter } from "@/components/site-footer";
+import { SoundSettings } from "@/components/sound-settings";
 import { Link } from "@/i18n/navigation";
 
 type AppShellProps = { children: React.ReactNode };
@@ -10,6 +12,7 @@ type AppShellProps = { children: React.ReactNode };
 export function AppShell({ children }: AppShellProps) {
   return (
     <Flex direction="column" minH="100dvh">
+      <AudioProvider />
       <Box as="header">
         <Container maxW="4xl" px={4} py={3}>
           <HStack justify="space-between">
@@ -23,7 +26,10 @@ export function AppShell({ children }: AppShellProps) {
             >
               <Link href="/">Ô Kìa</Link>
             </Heading>
-            <LanguageSwitcher />
+            <HStack gap={2}>
+              <SoundSettings />
+              <LanguageSwitcher />
+            </HStack>
           </HStack>
         </Container>
       </Box>

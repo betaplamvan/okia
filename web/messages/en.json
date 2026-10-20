@@ -99,6 +99,11 @@
     "p3": "Be kind: display names must not contain offensive words; in-game emotes are for fun only.",
     "p4": "In-game items have no monetary value and cannot be bought, sold or traded outside the game."
   },
+  "Sound": {
+    "title": "Sound",
+    "music": "Background music",
+    "sfx": "Sound effects"
+  },
   "Play": {
     "title": "Play vs Bot",
     "board": "Game board",

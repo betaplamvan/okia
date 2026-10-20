@@ -4,3 +4,4 @@ allowBuilds:
   "@swc/core": true
   "@parcel/watcher": true
   esbuild: true
+  ffmpeg-static: true
