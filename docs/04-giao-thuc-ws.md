@@ -9,7 +9,8 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `queue` | `mode: "casual"\|"ranked"`, `board: "3x3"\|"5x5"\|"7x7"` | Vào hàng chờ ghép trận |
 | `queue_cancel` | — | Rời hàng chờ |
 | `room_create` | `board`, `turnSeconds: 15\|30\|60\|null` | Tạo phòng riêng, nhận mã phòng |
-| `room_join` | `roomId` | Vào phòng (từ link mời hoặc kết nối lại) |
+| `room_join` | `roomId` | Vào phòng (từ link mời hoặc kết nối lại). Mã phòng 6 ký tự (A–Z, 2–9, bỏ I/O/0/1), không phân biệt hoa thường |
+| `room_leave` | `roomId` | Rời phòng đang chờ (xóa phòng) hoặc phòng đã kết thúc |
 | `move` | `roomId`, `edge`, `seq` | Vẽ cạnh. `seq` = `moveNo` client đang thấy |
 | `resign` | `roomId` | Đầu hàng |
 | `emote` | `roomId`, `id` | Biểu cảm nhanh (danh sách cố định, không chat tự do) |
@@ -22,7 +23,7 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `welcome` | `userId`, `activeRoomId?` | Sau khi kết nối; có `activeRoomId` nếu đang dở trận → client gửi `room_join` |
 | `queued` | `mode`, `board`, `since` | Đã vào hàng chờ |
 | `matched` | `roomId` | Tìm được đối thủ → client gửi `room_join` |
-| `room_state` | `roomId`, `players[]`, `state`, `deadline`, `loadouts` | Ảnh chụp đầy đủ trạng thái (khi vào phòng / kết nối lại) |
+| `room_state` | `roomId`, `mode`, `board`, `turnSeconds`, `status: waiting\|playing\|over`, `hostId`, `players[]`, `state`, `deadline`, `result?`, `loadouts` | Ảnh chụp đầy đủ trạng thái (khi vào phòng / kết nối lại; khi người thứ hai vào, cả hai cùng nhận) |
 | `moved` | `roomId`, `by`, `edge`, `captured[]`, `scores`, `turn`, `moveNo`, `deadline`, `reason: "player"\|"timeout"` | Một nước đi đã được chấp nhận |
 | `game_over` | `roomId`, `winner: 0\|1\|null`, `scores`, `reason: "complete"\|"resign"\|"afk"`, `ratingDelta?`, `rewards?` | Kết thúc ván |
 | `opponent_status` | `roomId`, `online: bool` | Đối thủ rớt mạng / quay lại |
@@ -32,7 +33,7 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `error` | `code`, `message`, `ref?` | Lỗi; `code` ổn định để client tự dịch, `message` đã dịch theo locale; `ref` gắn với tin nhắn gây lỗi |
 | `pong` | — | |
 
-`players[]` gồm `{ userId, name, tier, isBot, seat: 0|1 }`. `deadline` là epoch ms theo giờ server; client tự bù lệch giờ từ `welcome`.
+`players[]` gồm `{ userId, name, tier, isBot, seat: 0|1, online }`. Chủ phòng ngồi ghế 0 hoặc 1 ngẫu nhiên khi ván bắt đầu. `welcome` có thêm `serverTime` (epoch ms). `deadline` là epoch ms theo giờ server; client tự bù lệch giờ từ `welcome`.
 
 ## Luồng một nước đi
 
@@ -53,6 +54,11 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `ROOM_NOT_FOUND`, `ROOM_FULL` | Phòng không tồn tại / đã đủ người |
 | `ALREADY_IN_GAME` | Đang ở trận khác |
 | `RATE_LIMITED` | Gửi quá nhanh |
+| `ROOM_BUSY` | Không lấy được khóa phòng sau ~2 giây |
+| `BAD_MESSAGE` | JSON không đúng schema |
+| `UNSUPPORTED` | Tính năng chưa có (`queue` ở giai đoạn 1) |
+
+**Triển khai (M1.4–M1.7):** model Pydantic ở `api/app/ws/messages.py`; `uv run python -m scripts.export_ws_schema` xuất `shared/ws-schema.json`; `pnpm gen:ws` sinh `web/src/game/ws-types.ts`. Token sai → đóng với code **4401** trước khi accept; client refresh rồi nối lại. Presence: hash `presence:{room}` đếm số kết nối mỗi user; về 0 → `opponent_status(false)`. Khi socket đóng, phần dọn dẹp chạy trong task được shield để server tắt handler cũng không mất `opponent_status`.
 
 ## Kết nối lại
 

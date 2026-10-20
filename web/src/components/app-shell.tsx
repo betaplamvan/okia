@@ -1,4 +1,5 @@
 import { Box, Container, Flex, Heading, HStack } from "@chakra-ui/react";
+import { Suspense } from "react";
 import { AudioProvider } from "@/components/audio-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { UserButton } from "@/components/auth/user-button";
@@ -16,7 +17,11 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <Flex direction="column" minH="100dvh">
       <AudioProvider />
-      <AuthProvider />
+      {/* Suspense: các client component này đọc usePathname(); route động (/r/[code]) với
+          cacheComponents yêu cầu giá trị runtime như vậy phải nằm trong Suspense. */}
+      <Suspense fallback={null}>
+        <AuthProvider />
+      </Suspense>
       <Toaster />
       <Box as="header">
         <Container maxW="4xl" px={4} py={3}>
@@ -33,8 +38,10 @@ export function AppShell({ children }: AppShellProps) {
             </Heading>
             <HStack gap={2}>
               <SoundSettings />
-              <LanguageSwitcher />
-              <UserButton />
+              <Suspense fallback={null}>
+                <LanguageSwitcher />
+                <UserButton />
+              </Suspense>
             </HStack>
           </HStack>
         </Container>

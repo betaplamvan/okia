@@ -21,7 +21,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "chakra:typegen": "chakra typegen src/theme/index.ts",
-    "smoke:auth": "node scripts/smoke-auth.mjs"
+    "smoke:auth": "node scripts/smoke-auth.mjs",
+    "gen:ws": "node scripts/gen-ws-types.mjs",
+    "smoke:room": "node scripts/smoke-room.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.37.0",
@@ -49,6 +51,7 @@
     "eslint-config-prettier": "^10.1.8",
     "ffmpeg-static": "^5.3.0",
     "jsdom": "^30.1.3",
+    "json-schema-to-typescript": "^16.0.0",
     "playwright": "^1.64.1",
     "prettier": "^3.9.10",
     "typescript": "^5",

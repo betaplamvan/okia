@@ -83,7 +83,7 @@ export default function Home() {
             icon={<LuUsers />}
             title={t("privateRoom")}
             description={t("privateRoomSub")}
-            badge={soon}
+            href="/room"
           />
           <ModeCard
             tone="sun"

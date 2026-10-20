@@ -13,16 +13,25 @@ from app.auth.router import router as auth_router
 from app.config import Settings, get_settings
 from app.db import dispose_engine, get_db
 from app.errors import install_error_handlers
+from app.game.timer import TimerWorker
 from app.i18n import Locale, resolve_locale, t
+from app.ws.endpoint import router as ws_router
+from app.ws.hub import Hub
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     app.state.redis = redis.from_url(settings.redis_url, decode_responses=True)
+    app.state.hub = Hub(app.state.redis)
+    await app.state.hub.start()
+    timer = TimerWorker(app.state.redis, app.state.hub)
+    timer.start()
     try:
         yield
     finally:
+        await timer.stop()
+        await app.state.hub.stop()
         await app.state.redis.aclose()
         await dispose_engine()
 
@@ -53,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(auth_router)
+    app.include_router(ws_router)
 
     @app.get("/healthz", tags=["ops"])
     async def healthz() -> dict[str, str]:

@@ -97,25 +97,27 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 **Đã làm (M1.3):** backend `api/app/auth/` (27 test), client `web/src/stores/auth.ts` + hộp thoại hồ sơ kiểu noitu (`components/auth/`), trang `/auth/verify`, `/auth/reset`, smoke `pnpm smoke:auth`. Cần cấu hình thật: `RESEND_API_KEY` + tên miền gửi, `GOOGLE_CLIENT_ID/SECRET` (xem `api/README.md`).
 
 ### M1.4 Nền WebSocket
-- [ ] **P1-10** Endpoint `/ws` xác thực JWT, nhận `lang`, `ping/pong`, gửi `error`; model Pydantic cho các tin nhắn theo [04](04-giao-thuc-ws.md)
-- [ ] **P1-11** Script xuất JSON Schema → sinh type TS vào `web/`; Redis pub/sub helper
+- [x] **P1-10** Endpoint `/ws` xác thực JWT, nhận `lang`, `ping/pong`, gửi `error`; model Pydantic cho các tin nhắn theo [04](04-giao-thuc-ws.md)
+- [x] **P1-11** Script xuất JSON Schema → sinh type TS vào `web/`; Redis pub/sub helper
 
 ### M1.5 Phòng đấu
-- [ ] **P1-12** `room_create` / `room_join`, lưu `room:{id}` trong Redis, gửi `room_state`
-- [ ] **P1-13** Xử lý `move`: khóa phòng, kiểm tra `seq`, `apply_move`, publish `moved`
-- [ ] **P1-14** `resign`, `game_over`, ghi trận vào bảng `matches`, dọn Redis
+- [x] **P1-12** `room_create` / `room_join`, lưu `room:{id}` trong Redis, gửi `room_state`
+- [x] **P1-13** Xử lý `move`: khóa phòng, kiểm tra `seq`, `apply_move`, publish `moved`
+- [x] **P1-14** `resign`, `game_over`, ghi trận vào bảng `matches`, dọn Redis
 
 ### M1.6 Timer & kết nối lại
-- [ ] **P1-15** Sorted set `deadlines` + worker quét mỗi giây (có khóa); hết giờ đi ngẫu nhiên; 3 lần → `afk`
-- [ ] **P1-16** `user:{id}:room`, `welcome.activeRoomId`, `opponent_status`
+- [x] **P1-15** Sorted set `deadlines` + worker quét mỗi giây (có khóa); hết giờ đi ngẫu nhiên; 3 lần → `afk`
+- [x] **P1-16** `user:{id}:room`, `welcome.activeRoomId`, `opponent_status`
 
 ✅ *Demo: test tích hợp với 2 client WS giả chơi hết ván, kể cả rớt mạng giữa chừng.*
 
+**Đã làm (M1.4–M1.7):** `api/app/ws/` (messages Pydantic → `shared/ws-schema.json` → `web/src/game/ws-types.ts` qua `pnpm gen:ws`), `api/app/game/room.py` (phòng trong Redis, mã 6 ký tự = id = mã mời), `timer.py` (worker hết giờ), `tests/test_ws.py` (2 client qua TestClient: hết ván, rớt mạng, hết giờ, afk, đầu hàng); web `net/ws-client.ts`, `game/network-controller.ts`, `/room` + `/r/[code]`, smoke `pnpm smoke:room` (hai trình duyệt). Chưa có: ghép trận (`queue` trả `UNSUPPORTED`, giai đoạn 2), chơi lại trong phòng, emote UI.
+
 ### M1.7 Client online
-- [ ] **P1-17** WS client có tự kết nối lại (backoff) và tự refresh access token, store trạng thái kết nối
-- [ ] **P1-18** `NetworkController` (cùng interface `GameController`): animate lạc quan, hoàn tác khi lỗi; hiển thị lỗi theo `code` đã dịch
-- [ ] **P1-19** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger
-- [ ] **P1-20** Thanh đếm giờ lượt, báo đối thủ rớt mạng, màn hình kết thúc online
+- [x] **P1-17** WS client có tự kết nối lại (backoff) và tự refresh access token, store trạng thái kết nối
+- [x] **P1-18** `NetworkController` (cùng interface `GameController`): animate lạc quan, hoàn tác khi lỗi; hiển thị lỗi theo `code` đã dịch
+- [x] **P1-19** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger. *Còn lại:* ảnh OG (hiện mới có tiêu đề + mô tả theo ngôn ngữ)
+- [x] **P1-20** Thanh đếm giờ lượt, báo đối thủ rớt mạng, màn hình kết thúc online
 
 ### M1.8 Triển khai
 - [ ] **P1-21** VPS + Docker Compose production (container `api` chạy `alembic upgrade head` khi khởi động), Caddy, Cloudflare, tên miền; cấu hình SPF/DKIM cho email

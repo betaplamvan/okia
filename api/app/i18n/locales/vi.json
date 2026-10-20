@@ -30,7 +30,10 @@
     "OAUTH_STATE": "Phiên đăng nhập Google không hợp lệ, hãy thử lại.",
     "OAUTH_FAILED": "Không đăng nhập được với Google, hãy thử lại.",
     "OAUTH_CANCELLED": "Bạn đã hủy đăng nhập Google.",
-    "OAUTH_EMAIL_UNVERIFIED": "Email Google của bạn chưa được xác minh."
+    "OAUTH_EMAIL_UNVERIFIED": "Email Google của bạn chưa được xác minh.",
+    "ROOM_BUSY": "Phòng đang bận, thử lại.",
+    "UNSUPPORTED": "Tính năng này chưa có.",
+    "BAD_MESSAGE": "Tin nhắn không hợp lệ."
   },
   "currency": {
     "lead": "Ruột chì"

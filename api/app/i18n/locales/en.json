@@ -30,7 +30,10 @@
     "OAUTH_STATE": "Google sign-in session is invalid, please try again.",
     "OAUTH_FAILED": "Could not sign in with Google, please try again.",
     "OAUTH_CANCELLED": "Google sign-in was cancelled.",
-    "OAUTH_EMAIL_UNVERIFIED": "Your Google email is not verified."
+    "OAUTH_EMAIL_UNVERIFIED": "Your Google email is not verified.",
+    "ROOM_BUSY": "Room is busy, try again.",
+    "UNSUPPORTED": "This feature is not available yet.",
+    "BAD_MESSAGE": "Invalid message."
   },
   "currency": {
     "lead": "Lead"

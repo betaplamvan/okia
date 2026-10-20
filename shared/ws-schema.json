@@ -1,0 +1,987 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OkiaWs",
+  "type": "object",
+  "properties": {
+    "client": {
+      "discriminator": {
+        "mapping": {
+          "emote": "#/definitions/Emote",
+          "move": "#/definitions/Move",
+          "ping": "#/definitions/Ping",
+          "queue": "#/definitions/Queue",
+          "queue_cancel": "#/definitions/QueueCancel",
+          "resign": "#/definitions/Resign",
+          "room_create": "#/definitions/RoomCreate",
+          "room_join": "#/definitions/RoomJoin",
+          "room_leave": "#/definitions/RoomLeave"
+        },
+        "propertyName": "t"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Queue"
+        },
+        {
+          "$ref": "#/definitions/QueueCancel"
+        },
+        {
+          "$ref": "#/definitions/RoomCreate"
+        },
+        {
+          "$ref": "#/definitions/RoomJoin"
+        },
+        {
+          "$ref": "#/definitions/RoomLeave"
+        },
+        {
+          "$ref": "#/definitions/Move"
+        },
+        {
+          "$ref": "#/definitions/Resign"
+        },
+        {
+          "$ref": "#/definitions/Emote"
+        },
+        {
+          "$ref": "#/definitions/Ping"
+        }
+      ]
+    },
+    "server": {
+      "discriminator": {
+        "mapping": {
+          "bot_say": "#/definitions/BotSay",
+          "emote": "#/definitions/EmoteOut",
+          "error": "#/definitions/Error",
+          "game_over": "#/definitions/GameOver",
+          "match_review": "#/definitions/MatchReview",
+          "matched": "#/definitions/Matched",
+          "moved": "#/definitions/Moved",
+          "opponent_status": "#/definitions/OpponentStatus",
+          "pong": "#/definitions/Pong",
+          "queued": "#/definitions/Queued",
+          "room_state": "#/definitions/RoomState",
+          "welcome": "#/definitions/Welcome"
+        },
+        "propertyName": "t"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Welcome"
+        },
+        {
+          "$ref": "#/definitions/Queued"
+        },
+        {
+          "$ref": "#/definitions/Matched"
+        },
+        {
+          "$ref": "#/definitions/RoomState"
+        },
+        {
+          "$ref": "#/definitions/Moved"
+        },
+        {
+          "$ref": "#/definitions/GameOver"
+        },
+        {
+          "$ref": "#/definitions/OpponentStatus"
+        },
+        {
+          "$ref": "#/definitions/EmoteOut"
+        },
+        {
+          "$ref": "#/definitions/BotSay"
+        },
+        {
+          "$ref": "#/definitions/MatchReview"
+        },
+        {
+          "$ref": "#/definitions/Error"
+        },
+        {
+          "$ref": "#/definitions/Pong"
+        }
+      ]
+    }
+  },
+  "required": [
+    "client",
+    "server"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "BotSay": {
+      "properties": {
+        "t": {
+          "const": "bot_say",
+          "default": "bot_say",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "event": {
+          "title": "Event",
+          "type": "string"
+        }
+      },
+      "required": [
+        "roomId",
+        "text",
+        "event"
+      ],
+      "title": "BotSay",
+      "type": "object"
+    },
+    "Emote": {
+      "properties": {
+        "t": {
+          "const": "emote",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 32,
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "roomId",
+        "id"
+      ],
+      "title": "Emote",
+      "type": "object"
+    },
+    "EmoteOut": {
+      "properties": {
+        "t": {
+          "const": "emote",
+          "default": "emote",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "by": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "By",
+          "type": "integer"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "roomId",
+        "by",
+        "id"
+      ],
+      "title": "EmoteOut",
+      "type": "object"
+    },
+    "Error": {
+      "properties": {
+        "t": {
+          "const": "error",
+          "default": "error",
+          "title": "T",
+          "type": "string"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "Error",
+      "type": "object"
+    },
+    "GameOver": {
+      "properties": {
+        "t": {
+          "const": "game_over",
+          "default": "game_over",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "winner": {
+          "anyOf": [
+            {
+              "enum": [
+                0,
+                1
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Winner"
+        },
+        "scores": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Scores",
+          "type": "array"
+        },
+        "reason": {
+          "enum": [
+            "complete",
+            "resign",
+            "afk",
+            "abandon"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "ratingDelta": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ratingdelta"
+        },
+        "rewards": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rewards"
+        }
+      },
+      "required": [
+        "roomId",
+        "winner",
+        "scores",
+        "reason"
+      ],
+      "title": "GameOver",
+      "type": "object"
+    },
+    "GameStateOut": {
+      "properties": {
+        "rows": {
+          "title": "Rows",
+          "type": "integer"
+        },
+        "cols": {
+          "title": "Cols",
+          "type": "integer"
+        },
+        "edges": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "owners": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Owners",
+          "type": "array"
+        },
+        "scores": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Scores",
+          "type": "array"
+        },
+        "turn": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Turn",
+          "type": "integer"
+        },
+        "moveNo": {
+          "title": "Moveno",
+          "type": "integer"
+        },
+        "finished": {
+          "title": "Finished",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rows",
+        "cols",
+        "edges",
+        "owners",
+        "scores",
+        "turn",
+        "moveNo",
+        "finished"
+      ],
+      "title": "GameStateOut",
+      "type": "object"
+    },
+    "MatchReview": {
+      "properties": {
+        "t": {
+          "const": "match_review",
+          "default": "match_review",
+          "title": "T",
+          "type": "string"
+        },
+        "matchId": {
+          "title": "Matchid",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "keyMove": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keymove"
+        }
+      },
+      "required": [
+        "matchId",
+        "text"
+      ],
+      "title": "MatchReview",
+      "type": "object"
+    },
+    "Matched": {
+      "properties": {
+        "t": {
+          "const": "matched",
+          "default": "matched",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "roomId"
+      ],
+      "title": "Matched",
+      "type": "object"
+    },
+    "Move": {
+      "properties": {
+        "t": {
+          "const": "move",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "edge": {
+          "minimum": 0,
+          "title": "Edge",
+          "type": "integer"
+        },
+        "seq": {
+          "minimum": 0,
+          "title": "Seq",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "t",
+        "roomId",
+        "edge",
+        "seq"
+      ],
+      "title": "Move",
+      "type": "object"
+    },
+    "Moved": {
+      "properties": {
+        "t": {
+          "const": "moved",
+          "default": "moved",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "by": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "By",
+          "type": "integer"
+        },
+        "edge": {
+          "title": "Edge",
+          "type": "integer"
+        },
+        "captured": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Captured",
+          "type": "array"
+        },
+        "scores": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Scores",
+          "type": "array"
+        },
+        "turn": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Turn",
+          "type": "integer"
+        },
+        "moveNo": {
+          "title": "Moveno",
+          "type": "integer"
+        },
+        "deadline": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deadline"
+        },
+        "reason": {
+          "default": "player",
+          "enum": [
+            "player",
+            "timeout"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "roomId",
+        "by",
+        "edge",
+        "captured",
+        "scores",
+        "turn",
+        "moveNo"
+      ],
+      "title": "Moved",
+      "type": "object"
+    },
+    "OpponentStatus": {
+      "properties": {
+        "t": {
+          "const": "opponent_status",
+          "default": "opponent_status",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "online": {
+          "title": "Online",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "roomId",
+        "online"
+      ],
+      "title": "OpponentStatus",
+      "type": "object"
+    },
+    "Ping": {
+      "properties": {
+        "t": {
+          "const": "ping",
+          "title": "T",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t"
+      ],
+      "title": "Ping",
+      "type": "object"
+    },
+    "PlayerOut": {
+      "properties": {
+        "userId": {
+          "title": "Userid",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "seat": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Seat",
+          "type": "integer"
+        },
+        "isBot": {
+          "default": false,
+          "title": "Isbot",
+          "type": "boolean"
+        },
+        "tier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tier"
+        },
+        "online": {
+          "default": true,
+          "title": "Online",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "seat"
+      ],
+      "title": "PlayerOut",
+      "type": "object"
+    },
+    "Pong": {
+      "properties": {
+        "t": {
+          "const": "pong",
+          "default": "pong",
+          "title": "T",
+          "type": "string"
+        }
+      },
+      "title": "Pong",
+      "type": "object"
+    },
+    "Queue": {
+      "properties": {
+        "t": {
+          "const": "queue",
+          "title": "T",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "casual",
+            "ranked"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "board": {
+          "enum": [
+            "3x3",
+            "5x5",
+            "7x7"
+          ],
+          "title": "Board",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "mode",
+        "board"
+      ],
+      "title": "Queue",
+      "type": "object"
+    },
+    "QueueCancel": {
+      "properties": {
+        "t": {
+          "const": "queue_cancel",
+          "title": "T",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t"
+      ],
+      "title": "QueueCancel",
+      "type": "object"
+    },
+    "Queued": {
+      "properties": {
+        "t": {
+          "const": "queued",
+          "default": "queued",
+          "title": "T",
+          "type": "string"
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "board": {
+          "enum": [
+            "3x3",
+            "5x5",
+            "7x7"
+          ],
+          "title": "Board",
+          "type": "string"
+        },
+        "since": {
+          "title": "Since",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "mode",
+        "board",
+        "since"
+      ],
+      "title": "Queued",
+      "type": "object"
+    },
+    "Resign": {
+      "properties": {
+        "t": {
+          "const": "resign",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "roomId"
+      ],
+      "title": "Resign",
+      "type": "object"
+    },
+    "RoomCreate": {
+      "properties": {
+        "t": {
+          "const": "room_create",
+          "title": "T",
+          "type": "string"
+        },
+        "board": {
+          "default": "5x5",
+          "enum": [
+            "3x3",
+            "5x5",
+            "7x7"
+          ],
+          "title": "Board",
+          "type": "string"
+        },
+        "turnSeconds": {
+          "anyOf": [
+            {
+              "enum": [
+                15,
+                30,
+                60
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 30,
+          "title": "Turnseconds"
+        }
+      },
+      "required": [
+        "t"
+      ],
+      "title": "RoomCreate",
+      "type": "object"
+    },
+    "RoomJoin": {
+      "properties": {
+        "t": {
+          "const": "room_join",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "maxLength": 12,
+          "minLength": 4,
+          "title": "Roomid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "roomId"
+      ],
+      "title": "RoomJoin",
+      "type": "object"
+    },
+    "RoomLeave": {
+      "description": "Rời phòng đang chờ (chưa có đối thủ) hoặc phòng đã kết thúc.",
+      "properties": {
+        "t": {
+          "const": "room_leave",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "roomId"
+      ],
+      "title": "RoomLeave",
+      "type": "object"
+    },
+    "RoomState": {
+      "properties": {
+        "t": {
+          "const": "room_state",
+          "default": "room_state",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "casual",
+            "ranked",
+            "private"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "board": {
+          "enum": [
+            "3x3",
+            "5x5",
+            "7x7"
+          ],
+          "title": "Board",
+          "type": "string"
+        },
+        "turnSeconds": {
+          "anyOf": [
+            {
+              "enum": [
+                15,
+                30,
+                60
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Turnseconds"
+        },
+        "status": {
+          "enum": [
+            "waiting",
+            "playing",
+            "over"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "hostId": {
+          "title": "Hostid",
+          "type": "string"
+        },
+        "players": {
+          "items": {
+            "$ref": "#/definitions/PlayerOut"
+          },
+          "title": "Players",
+          "type": "array"
+        },
+        "state": {
+          "$ref": "#/definitions/GameStateOut"
+        },
+        "deadline": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deadline"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GameOver"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "loadouts": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "title": "Loadouts",
+          "type": "object"
+        }
+      },
+      "required": [
+        "roomId",
+        "mode",
+        "board",
+        "turnSeconds",
+        "status",
+        "hostId",
+        "players",
+        "state"
+      ],
+      "title": "RoomState",
+      "type": "object"
+    },
+    "Welcome": {
+      "properties": {
+        "t": {
+          "const": "welcome",
+          "default": "welcome",
+          "title": "T",
+          "type": "string"
+        },
+        "userId": {
+          "title": "Userid",
+          "type": "string"
+        },
+        "activeRoomId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Activeroomid"
+        },
+        "serverTime": {
+          "title": "Servertime",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "userId",
+        "serverTime"
+      ],
+      "title": "Welcome",
+      "type": "object"
+    }
+  }
+}

@@ -6,7 +6,7 @@
 import { chooseMove } from "./bot";
 import { applyMove, createGame, winner, type GameState, type Player } from "./rules";
 
-export type EndReason = "complete" | "resign";
+export type EndReason = "complete" | "resign" | "afk" | "abandon";
 
 export interface MoveInfo {
   edge: number;
@@ -29,6 +29,21 @@ export interface GameSession {
   combo: number;
   thinking: boolean;
   result: GameResult | null;
+  /** Chỉ có ở ván online (NetworkController). */
+  online?: OnlineInfo;
+}
+
+export interface OnlineInfo {
+  roomId: string;
+  status: "connecting" | "waiting" | "playing" | "over";
+  /** Tên theo ghế 0/1 (null khi ghế trống). */
+  names: [string | null, string | null];
+  turnSeconds: number | null;
+  /** Hạn lượt hiện tại, epoch ms theo giờ server. */
+  deadline: number | null;
+  opponentOnline: boolean;
+  /** Nước đi của mình đang chờ server xác nhận (animate lạc quan). */
+  pendingEdge: number | null;
 }
 
 export interface GameController {
