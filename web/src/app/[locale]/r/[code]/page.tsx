@@ -19,12 +19,17 @@ export async function generateMetadata({
   };
 }
 
-// Suspense: route động + client component dùng usePathname() (cacheComponents yêu cầu).
-export default async function RoomCodePage({ params }: PageProps<"/[locale]/r/[code]">) {
-  const { code } = await params;
+// Suspense: route động + client component dùng usePathname() (cacheComponents yêu cầu). `params` phải
+// được await BÊN TRONG Suspense, nếu không `next build` lỗi "uncached or runtime data during prerendering".
+export default function RoomCodePage({ params }: PageProps<"/[locale]/r/[code]">) {
   return (
     <Suspense fallback={null}>
-      <RoomScreen code={code.toUpperCase()} />
+      <RoomCodeContent params={params} />
     </Suspense>
   );
+}
+
+async function RoomCodeContent({ params }: Pick<PageProps<"/[locale]/r/[code]">, "params">) {
+  const { code } = await params;
+  return <RoomScreen code={code.toUpperCase()} />;
 }
