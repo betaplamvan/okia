@@ -1,10 +1,10 @@
-// Smoke test bằng trình duyệt thật: mở từng URL, chờ hydrate, in lang/title/status và chữ hiển thị.
-// Dùng Edge đã cài trên máy (channel msedge) nên không cần tải trình duyệt.
+// Smoke test bằng trình duyệt thật: mở từng URL, chờ hydrate, in lang/title/status, chữ hiển thị
+// và mọi lỗi console / lỗi trang (kể cả lỗi hydration). Dùng Edge đã cài (channel msedge).
 //
 //   SMOKE_LOCALE=vi-VN node scripts/smoke.mjs http://localhost:3000 / /en /khong-ton-tai
 //
 // Server phải đang chạy sẵn (pnpm start hoặc pnpm dev). SMOKE_LOCALE giả lập
-// Accept-Language của trình duyệt (mặc định vi-VN) để kiểm tra việc đoán locale.
+// Accept-Language của trình duyệt (mặc định vi-VN). Thoát mã 1 nếu thiếu lang hoặc có lỗi.
 import { chromium } from "playwright";
 
 const [base = "http://localhost:3000", ...paths] = process.argv.slice(2);
@@ -14,9 +14,20 @@ const locale = process.env.SMOKE_LOCALE ?? "vi-VN";
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const page = await browser.newPage({ locale, viewport: { width: 390, height: 844 } });
 
+const problems = [];
+page.on("console", (msg) => {
+  if (msg.type() === "error" || msg.type() === "warning") {
+    problems.push(`[console.${msg.type()}] ${msg.text().split("\n")[0].slice(0, 200)}`);
+  }
+});
+page.on("pageerror", (err) => {
+  problems.push(`[pageerror] ${String(err.message).split("\n")[0].slice(0, 200)}`);
+});
+
 let failed = false;
 console.log(`browser locale: ${locale}`);
 for (const path of targets) {
+  problems.length = 0;
   const response = await page.goto(base + path, { waitUntil: "networkidle" });
   const status = response?.status();
   const finalUrl = page.url().replace(base, "");
@@ -29,7 +40,10 @@ for (const path of targets) {
   console.log(
     `${path} -> ${finalUrl}\n  status=${status} lang=${lang} title="${title}"\n  text: ${text}`,
   );
-  if (!lang) failed = true;
+  // Trang cố ý trả 404 thì trình duyệt luôn log "Failed to load resource: 404" — không phải lỗi.
+  const real = problems.filter((p) => !(status === 404 && /Failed to load resource.*404/.test(p)));
+  for (const p of real) console.log(`  ${p}`);
+  if (!lang || real.length) failed = true;
 }
 
 await browser.close();

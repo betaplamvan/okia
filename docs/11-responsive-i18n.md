@@ -59,6 +59,7 @@
 
 - Kiểm tra thủ công trên **iOS Safari** và **Chrome Android** thật trước mỗi mốc.
 - Từ giai đoạn 1: test ảnh chụp màn hình bằng Playwright ở 3 kích thước (360, 768, 1440) × 2 ngôn ngữ.
+- Công cụ sẵn có từ P0-04 (dùng Edge đã cài qua Playwright `channel: "msedge"`, không tải trình duyệt): `pnpm smoke <base> <paths…>` in lang/title/chữ hiển thị và **mọi lỗi console/hydration**; `pnpm shots <base> <paths…>` chụp 3 bề rộng vào `.shots/`. Biến `SMOKE_LOCALE` giả lập ngôn ngữ trình duyệt. Ở dev, route catch-all 404 có thêm cảnh báo "Could not validate `instant`" của Next — chỉ ở dev, production sạch.
 
 ---
 

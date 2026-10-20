@@ -2,8 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Patrick_Hand } from "next/font/google";
 import { notFound } from "next/navigation";
 import * as rootParams from "next/root-params";
+import Script from "next/script";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { AppShell } from "@/components/app-shell";
+import { COLOR_MODE_SCRIPT } from "@/components/ui/color-mode";
 import { Provider } from "@/components/ui/provider";
 import { routing } from "@/i18n/routing";
 
@@ -45,15 +48,23 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
   if (!hasLocale(routing.locales, locale)) notFound();
 
   return (
-    // suppressHydrationWarning: next-themes gán class color mode lên <html> trước khi hydrate.
+    // suppressHydrationWarning: script color mode gán class "dark"/"light" lên <html> trước khi hydrate.
     <html
       lang={locale}
       className={`${fontSans.variable} ${fontHand.variable}`}
       suppressHydrationWarning
     >
       <body>
+        {/* Chống nháy theme; beforeInteractive chỉ được phép trong root layout. */}
+        <Script
+          id="okia-color-mode"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: COLOR_MODE_SCRIPT }}
+        />
         <NextIntlClientProvider>
-          <Provider>{children}</Provider>
+          <Provider>
+            <AppShell>{children}</AppShell>
+          </Provider>
         </NextIntlClientProvider>
       </body>
     </html>

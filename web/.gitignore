@@ -42,3 +42,6 @@ next-env.d.ts
 
 # next-intl: khai bao kieu sinh tu messages/vi.json
 messages/*.d.json.ts
+
+# anh chup man hinh tu scripts/shots.mjs
+.shots/

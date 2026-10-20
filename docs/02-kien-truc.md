@@ -35,7 +35,7 @@
 | Animation | GSAP |
 | Âm thanh | Howler.js (audio sprite) |
 | Nét vẽ tay | rough.js hoặc shader tự viết |
-| UI | Chakra UI v3 (style props responsive, color mode) |
+| UI | Chakra UI v3 (style props responsive). Color mode **tự viết** (`components/ui/color-mode.tsx`, ~80 dòng) thay cho `next-themes` trong snippet của Chakra: next-themes không còn bảo trì và gây lỗi hydration với React 19.3 / Next 16.2+ (script inline trong component). Script chống nháy chèn bằng `next/script` `beforeInteractive` ở root layout |
 | Đa ngôn ngữ | next-intl (`vi` mặc định, `en`) |
 | State client (ván đang chơi, kết nối, cài đặt) | Zustand — không dùng Redux, thừa cho quy mô này |
 | Dữ liệu server (hồ sơ, shop, BXH) | SWR (cùng hệ sinh thái Vercel, thay TanStack Query) |
