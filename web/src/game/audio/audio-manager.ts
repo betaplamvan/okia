@@ -57,11 +57,23 @@ class AudioManager {
     this.syncMusic(s);
   }
 
+  private pauseTimer: ReturnType<typeof setTimeout> | null = null;
+
   private async syncMusic(s: AudioSettings) {
     if (!this.unlocked) return;
+    // Hủy lệnh pause còn chờ từ lần tắt trước, nếu không bật lại nhanh sẽ bị im.
+    if (this.pauseTimer) {
+      clearTimeout(this.pauseTimer);
+      this.pauseTimer = null;
+    }
     if (!s.musicOn) {
-      this.music?.fade(this.music.volume(), 0, 300);
-      setTimeout(() => this.music?.pause(), 320);
+      if (this.music?.playing()) {
+        this.music.fade(this.music.volume(), 0, 300);
+        this.pauseTimer = setTimeout(() => {
+          this.music?.pause();
+          this.pauseTimer = null;
+        }, 320);
+      }
       return;
     }
     if (!this.music || this.musicTrack !== s.track) {

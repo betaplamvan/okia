@@ -81,7 +81,17 @@ function Channel({ label, on, volume, onToggle, onVolume, onVolumeEnd }: Channel
           cursor="pointer"
         >
           <Checkbox.HiddenInput />
-          <Checkbox.Control borderColor="ink" borderWidth="2px" bg="paper" />
+          {/* Trạng thái phải nhìn rõ: chưa chọn = ô giấy trống, đã chọn = nền mint + dấu tích mực. */}
+          <Checkbox.Control
+            boxSize="6"
+            borderWidth="2px"
+            borderColor="ink"
+            bg="paper"
+            color="ink"
+            _checked={{ bg: "mint", borderColor: "ink", color: "ink" }}
+          >
+            <Checkbox.Indicator />
+          </Checkbox.Control>
           <Checkbox.Label fontWeight="600" fontSize="lg" color="ink">
             {label}
           </Checkbox.Label>
