@@ -20,7 +20,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "chakra:typegen": "chakra typegen src/theme/index.ts"
+    "chakra:typegen": "chakra typegen src/theme/index.ts",
+    "smoke:auth": "node scripts/smoke-auth.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.37.0",

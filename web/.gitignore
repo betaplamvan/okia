@@ -45,3 +45,4 @@ messages/*.d.json.ts
 
 # anh chup man hinh tu scripts/shots.mjs
 .shots/
+!.env.example

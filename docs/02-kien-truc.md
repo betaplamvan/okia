@@ -127,9 +127,11 @@ okia/                        # repo (monorepo)
 | `REDIS_URL` | Redis | — |
 | `JWT_SECRET` | Ký token | — |
 | `APP_BASE_URL` | URL public của web, dùng trong link email và callback OAuth | — |
-| `GOOGLE_CLIENT_ID/SECRET` | OAuth Google | — |
+| `API_BASE_URL` | URL public của API, dựng `redirect_uri` Google = `{API_BASE_URL}/auth/google/callback` | `http://localhost:8000` |
+| `COOKIE_SECURE`, `COOKIE_DOMAIN` | Cookie refresh: `Secure` khi https; domain khi web và api khác subdomain | `false`, — |
+| `GOOGLE_CLIENT_ID/SECRET` | OAuth Google (để trống = nút Google báo `GOOGLE_DISABLED`) | — |
 | `EMAIL_PROVIDER` | `resend` \| `console` (chỉ in log khi chạy test) | `resend` |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Resend; `EMAIL_FROM` dạng `Ô Kìa <no-reply@okia.vn>` | — |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Resend; `EMAIL_FROM` dạng `Ô Kìa <no-reply@okia.vn>` (chưa có tên miền thì `onboarding@resend.dev` chỉ gửi được tới email chủ tài khoản Resend) | — |
 | `RESEND_WEBHOOK_SECRET` | Xác minh chữ ký webhook bounce/complaint | — |
 | `LLM_BASE_URL` | Địa chỉ server Qwen | — (để trống = tắt, chỉ dùng câu soạn sẵn) |
 | `LLM_MODEL` | Tên model | — |

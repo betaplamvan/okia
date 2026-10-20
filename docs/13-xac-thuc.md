@@ -14,6 +14,8 @@ Không có đăng nhập Zalo, Facebook, Apple, hay số điện thoại. Có th
 
 ## Khách
 
+> **Triển khai (M1.3):** giống noitu, client **tự tạo khách ngay lần đầu vào** (không có màn đăng nhập riêng); bấm pill tên / avatar ở header mở hộp thoại hồ sơ với tab *Tài khoản* để liên kết Google hoặc email. Khi khách nâng cấp, identity `guest` bị **gỡ** để device id không mở lại được tài khoản thật sau khi đăng xuất; `/auth/guest` gặp identity khách trỏ tới tài khoản đã nâng cấp sẽ tạo khách mới.
+
 - Client sinh `device_id` (UUID) lưu `localStorage`; `POST /auth/guest` → tạo `users(is_guest=true)` + `auth_identities(provider='guest', subject=device_id)` → phát token.
 - Mất `localStorage` là mất tài khoản khách — chấp nhận, vì khách không có tiến trình đáng giữ.
 - Khách **nâng cấp** thành tài khoản thật bằng cách đăng ký email hoặc đăng nhập Google **trong khi đang giữ token khách** (xem [Gộp tài khoản](#gộp-tài-khoản)).
@@ -47,11 +49,11 @@ Không có đăng nhập Zalo, Facebook, Apple, hay số điện thoại. Có th
 
 ## Google OAuth
 
-- **Authorization Code + PKCE**, xử lý ở backend: `GET /auth/google/start` → chuyển hướng Google → `GET /auth/google/callback` nhận `code`, đổi lấy `id_token`, xác minh chữ ký và `aud` bằng thư viện `google-auth`.
+- **Authorization Code + PKCE**, xử lý ở backend: `POST /auth/google/start` (kèm Bearer nếu đang có phiên, để biết khách cần nâng cấp hay tài khoản cần liên kết; trả `{url}`) → client chuyển hướng tới Google → `GET /auth/google/callback` nhận `code`, đổi lấy `id_token` (httpx), xác minh chữ ký/`aud`/`iss` bằng JWKS của Google qua PyJWT. `state` + `code_verifier` lưu Redis 10 phút. Callback chuyển hướng về `APP_BASE_URL{return_to}?auth=google|error&code=…`.
 - Lấy `sub`, `email`, `email_verified`, `name`, `picture`. Chỉ nhận khi `email_verified = true`.
 - Tìm `auth_identities(provider='google', subject=sub)`:
   - Có → đăng nhập.
-  - Không có, nhưng `users.email` trùng với email Google và tài khoản đó đã xác minh → **tự động liên kết** Google vào tài khoản đó (an toàn vì cả hai phía đều đã xác minh cùng email).
+  - Không có, nhưng `users.email` trùng với email Google và tài khoản đó đã xác minh → **tự động liên kết** Google vào tài khoản đó (an toàn vì cả hai phía đều đã xác minh cùng email). Trùng email nhưng tài khoản kia **chưa** xác minh → `IDENTITY_TAKEN` (không gộp).
   - Không có gì → tạo tài khoản mới, `email_verified_at = now()`, avatar từ `picture`.
 - `state` chống CSRF lưu trong cookie ngắn hạn. Callback kết thúc bằng chuyển hướng về client với refresh cookie đã đặt; không đưa token lên URL.
 

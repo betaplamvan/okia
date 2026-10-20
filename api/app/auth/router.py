@@ -342,6 +342,7 @@ async def link_or_login_google(
         target = current
         switched = False
         if target.is_guest:
+            await service.drop_guest_identities(db, target)
             target.is_guest = False
             target.email = profile.email
             target.email_verified_at = datetime.now(UTC)

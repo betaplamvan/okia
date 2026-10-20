@@ -161,14 +161,27 @@ async def revoke_all(db: AsyncSession, user_id: uuid.UUID) -> None:
 
 async def guest_login(db: AsyncSession, device_id: str, locale: Locale) -> User:
     ident = await get_identity(db, "guest", device_id)
-    if ident:
+    if ident and ident.user.is_guest:
         return ident.user
+    if ident:
+        # Thiết bị này từng nâng cấp thành tài khoản thật: không bao giờ cấp lại tài khoản đó
+        # mà không có mật khẩu/Google → gỡ identity cũ, tạo khách mới.
+        await db.delete(ident)
+        await db.flush()
     user = User(display_name=random_display_name(locale), is_guest=True, locale=locale)
     user.identities.append(AuthIdentity(provider="guest", subject=device_id))
     db.add(user)
     await db.commit()
     await db.refresh(user, attribute_names=["identities"])
     return user
+
+
+async def drop_guest_identities(db: AsyncSession, user: User) -> None:
+    """Khi nâng cấp khách: bỏ identity `guest` để device id không mở lại tài khoản thật."""
+    for ident in [i for i in user.identities if i.provider == "guest"]:
+        user.identities.remove(ident)
+        await db.delete(ident)
+    await db.flush()
 
 
 # ---------- Email + mật khẩu ----------
@@ -199,6 +212,7 @@ async def register(
         return RegisterOutcome(None, None)
     if current is not None and current.is_guest:
         user = current  # nâng cấp chính user khách, giữ user_id (docs/13 — Gộp tài khoản)
+        await drop_guest_identities(db, user)
         user.is_guest = False
         user.email = email
         user.locale = locale

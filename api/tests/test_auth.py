@@ -370,3 +370,21 @@ async def test_delete_me(client: AsyncClient) -> None:
     # Email được giải phóng để đăng ký lại.
     r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
     assert r.status_code == 200
+
+
+async def test_device_cannot_reopen_upgraded_account(client: AsyncClient) -> None:
+    """Khách nâng cấp rồi đăng xuất: device id cũ phải cho ra KHÁCH MỚI, không phải tài khoản."""
+    g = await guest(client)
+    r = await client.post(
+        "/auth/register",
+        json={"email": EMAIL, "password": PASSWORD},
+        headers=bearer(g["accessToken"]),
+    )
+    assert r.json()["user"]["id"] == g["user"]["id"]
+    await client.post("/auth/logout")
+    again = await guest(client)
+    assert again["user"]["id"] != g["user"]["id"]
+    assert again["user"]["isGuest"] is True
+    # Tài khoản thật vẫn đăng nhập được bình thường.
+    r = await client.post("/auth/login", json={"email": EMAIL, "password": PASSWORD})
+    assert r.json()["user"]["id"] == g["user"]["id"]
