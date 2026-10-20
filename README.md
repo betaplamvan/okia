@@ -6,7 +6,7 @@ Trò ăn ô trên giấy ô li (Dots & Boxes) chơi trên web. Dự án cá nhâ
 |---|---|
 | [`docs/`](docs/README.md) | Tài liệu thiết kế, lộ trình, quyết định kiến trúc |
 | [`web/`](web/) | Frontend Next.js 16 + Chakra UI v3 + PixiJS |
-| `api/` | Backend FastAPI (giai đoạn 1) |
+| [`api/`](api/README.md) | Backend FastAPI + SQLAlchemy/Alembic + Redis |
 | [`shared/`](shared/) | Fixtures luật chơi và manifest skin dùng chung |
 
 ## Chạy frontend
@@ -20,3 +20,17 @@ pnpm lint && pnpm typecheck && pnpm build
 ```
 
 Yêu cầu Node 20+ và pnpm 12 (`npm i -g pnpm`).
+
+## Chạy backend
+
+```bash
+docker compose up -d        # Postgres (cổng 5433), Redis (6380), Mailpit (8025) — tránh đụng cổng mặc định
+cd api
+cp .env.example .env
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload --port 8000   # http://localhost:8000/docs
+uv run pytest
+```
+
+Yêu cầu Python 3.13, [uv](https://docs.astral.sh/uv/) và Docker.

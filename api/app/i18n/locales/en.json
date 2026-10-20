@@ -1,0 +1,28 @@
+{
+  "errors": {
+    "UNAUTHORIZED": "Please sign in.",
+    "GUEST_NOT_ALLOWED": "Create an account to use this feature.",
+    "EMAIL_NOT_VERIFIED": "Verify your email to play ranked.",
+    "NOT_YOUR_TURN": "It is not your turn.",
+    "INVALID_EDGE": "Invalid line.",
+    "EDGE_TAKEN": "This line is already drawn.",
+    "GAME_OVER": "The game is over.",
+    "STALE_SEQ": "State is out of date, syncing.",
+    "ROOM_NOT_FOUND": "Room not found.",
+    "ROOM_FULL": "The room is full.",
+    "ALREADY_IN_GAME": "You are already in another game.",
+    "RATE_LIMITED": "Too fast, try again in {retryAfter} seconds.",
+    "INSUFFICIENT_FUNDS": "Not enough Lead.",
+    "INTERNAL": "Something went wrong, please try again."
+  },
+  "currency": {
+    "lead": "Lead"
+  },
+  "tiers": {
+    "scratch": "Scratch Paper",
+    "notebook": "Notebook",
+    "good": "Good Student",
+    "honor": "Honor Student",
+    "valedictorian": "Valedictorian"
+  }
+}

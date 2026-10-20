@@ -76,12 +76,12 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ## Giai đoạn 1 — Online phòng riêng
 
 ### M1.1 Khởi tạo backend
-- [ ] **P1-01** `api/` FastAPI: cấu hình settings, healthcheck, pytest; `docker-compose.yml` với Postgres + Redis cho dev
-- [ ] **P1-02** SQLAlchemy async + Alembic: `naming_convention`, `env.py` async, `alembic check` trong CI; model + migration đầu tiên (`users`, `auth_identities`, `sessions`, `matches` theo [05](05-co-so-du-lieu.md#tài-khoản))
-- [ ] **P1-03** i18n backend: `t(key, locale)`, `locales/vi.json` + `en.json`, xác định locale (`users.locale` → `Accept-Language` → `vi`), test hai file cùng tập key; lỗi trả `code` + `message` đã dịch
+- [x] **P1-01** `api/` FastAPI: cấu hình settings, healthcheck, pytest; `docker-compose.yml` với Postgres + Redis cho dev
+- [x] **P1-02** SQLAlchemy async + Alembic: `naming_convention`, `env.py` async, `alembic check` trong CI; model + migration đầu tiên (`users`, `auth_identities`, `sessions`, `matches` theo [05](05-co-so-du-lieu.md#tài-khoản))
+- [x] **P1-03** i18n backend: `t(key, locale)`, `locales/vi.json` + `en.json`, xác định locale (`users.locale` → `Accept-Language` → `vi`), test hai file cùng tập key; lỗi trả `code` + `message` đã dịch
 
 ### M1.2 Luật chơi phía server
-- [ ] **P1-04** `rules.py` port từ `rules.ts`; pytest chạy trên cùng `shared/fixtures/`; CI chạy cả Vitest và pytest
+- [x] **P1-04** `rules.py` port từ `rules.ts`; pytest chạy trên cùng `shared/fixtures/`; CI chạy cả Vitest và pytest
 
 ✅ *Demo: hai bộ test cùng xanh trên một bộ fixtures.*
 

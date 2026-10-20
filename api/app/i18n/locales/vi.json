@@ -1,0 +1,28 @@
+{
+  "errors": {
+    "UNAUTHORIZED": "Bạn cần đăng nhập.",
+    "GUEST_NOT_ALLOWED": "Tạo tài khoản để dùng tính năng này.",
+    "EMAIL_NOT_VERIFIED": "Hãy xác minh email để chơi xếp hạng.",
+    "NOT_YOUR_TURN": "Chưa đến lượt bạn.",
+    "INVALID_EDGE": "Cạnh không hợp lệ.",
+    "EDGE_TAKEN": "Cạnh này đã được vẽ.",
+    "GAME_OVER": "Ván đã kết thúc.",
+    "STALE_SEQ": "Trạng thái đã cũ, đang đồng bộ lại.",
+    "ROOM_NOT_FOUND": "Không tìm thấy phòng.",
+    "ROOM_FULL": "Phòng đã đủ người.",
+    "ALREADY_IN_GAME": "Bạn đang ở một trận khác.",
+    "RATE_LIMITED": "Thao tác quá nhanh, thử lại sau {retryAfter} giây.",
+    "INSUFFICIENT_FUNDS": "Không đủ Ruột chì.",
+    "INTERNAL": "Có lỗi xảy ra, thử lại sau."
+  },
+  "currency": {
+    "lead": "Ruột chì"
+  },
+  "tiers": {
+    "scratch": "Giấy nháp",
+    "notebook": "Vở ô li",
+    "good": "Học sinh khá",
+    "honor": "Học sinh giỏi",
+    "valedictorian": "Thủ khoa"
+  }
+}
