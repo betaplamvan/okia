@@ -1,12 +1,20 @@
 {
   "Metadata": {
     "title": "Ô Kìa",
-    "description": "Ô Kìa — trò ăn ô trên giấy ô li"
+    "description": "Ô Kìa — trò ăn ô trên giấy ô li. Chơi với máy, đấu xếp hạng hoặc tạo phòng rủ bạn bè, miễn phí."
   },
   "Common": {
     "appName": "Ô Kìa",
     "language": "Ngôn ngữ",
-    "switchLanguage": "Chuyển sang {language}"
+    "switchLanguage": "Chuyển sang {language}",
+    "guest": "Khách",
+    "lead": "Ruột chì",
+    "rules": "Luật chơi",
+    "help": "Hướng dẫn",
+    "share": "Chia sẻ",
+    "copied": "Đã sao chép link!",
+    "shareText": "Chơi trò ăn ô trên giấy ô li với mình nhé!",
+    "playNow": "Chơi ngay"
   },
   "Home": {
     "tagline": "Trò ăn ô trên giấy ô li. Rủ bạn bè vào vẽ vài nét nào!",
@@ -19,6 +27,77 @@
     "leaderboard": "Bảng xếp hạng",
     "leaderboardSub": "Xem ai đang đứng đầu mùa này",
     "comingSoon": "Sắp có"
+  },
+  "Rules": {
+    "title": "Luật chơi trong 30 giây",
+    "step1": "Hai người thay phiên nhau vẽ một cạnh nối hai chấm kề nhau.",
+    "step2": "Ai vẽ cạnh thứ tư khép kín một ô thì ô đó là của mình — và được vẽ tiếp một nét nữa.",
+    "step3": "Ăn ô liên tiếp thì cứ đi tiếp; nét nào không ăn ô mới phải nhường lượt.",
+    "step4": "Hết cạnh để vẽ thì đếm ô. Ai nhiều ô hơn thắng.",
+    "tip": "Mẹo: đừng vội vẽ cạnh thứ ba của một ô — đó là lúc bạn tặng ô cho đối thủ.",
+    "close": "Đã hiểu"
+  },
+  "Guide": {
+    "title": "Ô Kìa là gì? Hướng dẫn chơi trò ăn ô trên giấy ô li",
+    "intro1": "Ô Kìa là phiên bản online của trò chơi quen thuộc thời đi học: hai người ngồi chung một trang vở ô li, thay phiên nhau vẽ từng cạnh, ai khép kín được ô thì đánh dấu ô đó là của mình. Thế giới gọi nó là Dots and Boxes; ở Việt Nam, nó là trò cả lớp chơi lén dưới ngăn bàn.",
+    "intro2": "Giờ bạn không cần giấy bút hay người ngồi cạnh: mở link là chơi được ngay trên điện thoại, với máy hoặc với bạn bè ở bất cứ đâu.",
+    "rulesTitle": "Luật chơi cơ bản",
+    "rulesIntro": "Chỉ cần nhớ bốn điều:",
+    "rule1": "Bắt đầu: bàn là một lưới chấm, chưa có cạnh nào.",
+    "rule2": "Lượt đi: mỗi lượt vẽ đúng một cạnh nối hai chấm kề nhau (ngang hoặc dọc).",
+    "rule3": "Ăn ô: vẽ cạnh thứ tư khép kín một ô thì ô đó là của bạn, và bạn được đi tiếp ngay.",
+    "rule4": "Kết thúc: hết cạnh để vẽ thì đếm ô; ai nhiều ô hơn thắng. Bàn 3×3, 5×5, 7×7 có số ô lẻ nên không bao giờ hòa.",
+    "howTitle": "Chơi Ô Kìa như thế nào?",
+    "how1": "Chọn Chơi với máy để làm quen: bot tự điều chỉnh theo trình độ của bạn, không cần chọn độ khó.",
+    "how2": "Tạo Phòng riêng, gửi link qua Zalo hay Messenger, bạn bè bấm vào là vào trận — không cần tài khoản.",
+    "how3": "Tạo tài khoản để chơi Xếp hạng, nhận Ruột chì sau mỗi trận thắng và đổi lấy skin bút, nét vẽ, bàn đấu.",
+    "modesTitle": "Các chế độ chơi",
+    "mode1Title": "Chơi với máy",
+    "mode1Desc": "Luyện tay mọi lúc. Bot biết ăn ô, biết nhường chuỗi ngắn và càng chơi càng hợp sức bạn.",
+    "mode2Title": "Xếp hạng",
+    "mode2Desc": "Ghép với người chơi cùng trình độ. Leo từ Giấy nháp lên Vở ô li, Học sinh khá, Học sinh giỏi và Thủ khoa.",
+    "mode3Title": "Phòng riêng",
+    "mode3Desc": "Chọn kích thước bàn và thời gian mỗi lượt, rồi rủ đúng người bạn muốn.",
+    "mode4Title": "Bảng xếp hạng",
+    "mode4Desc": "Mùa giải kéo dài 6–8 tuần; cuối mùa có skin thưởng theo hạng cao nhất bạn đạt được.",
+    "tipsTitle": "Mẹo cho người mới",
+    "tip1": "Đếm cạnh trước khi vẽ: một ô đã có hai cạnh thì nét thứ ba của bạn chính là món quà cho đối thủ.",
+    "tip2": "Cuối ván bàn chỉ còn những \"chuỗi\" ô. Hãy nhường chuỗi ngắn nhất và giữ chuỗi dài cho mình.",
+    "tip3": "Ăn gần hết chuỗi rồi cố tình bỏ lại hai ô cuối để đối thủ phải mở chuỗi tiếp theo — cao thủ gọi đó là double-cross.",
+    "benefitsTitle": "Vì sao nên chơi?",
+    "benefit1": "Một ván 3×3 chỉ mất một phút, vừa đủ cho giờ ra chơi.",
+    "benefit2": "Luật đơn giản nhưng chiến thuật sâu, càng chơi càng thấy hay.",
+    "benefit3": "Hoàn toàn miễn phí, không quảng cáo, không mua đồ để thắng.",
+    "ctaLine": "Sẵn sàng vẽ nét đầu tiên chưa?",
+    "cta": "Chơi ngay"
+  },
+  "Footer": {
+    "about": "Giới thiệu",
+    "privacy": "Chính sách",
+    "terms": "Điều khoản",
+    "tagline": "Làm ở Việt Nam, miễn phí cho mọi người."
+  },
+  "About": {
+    "title": "Về Ô Kìa",
+    "p1": "Ô Kìa là dự án cá nhân, làm vì nhớ những trang vở ô li bị vẽ kín ô vuông thời đi học. Mục tiêu rất đơn giản: đưa trò ăn ô lên web sao cho mở link là chơi được, chơi với máy hay với bạn bè đều mượt và \"đã tay\".",
+    "p2": "Game hoàn toàn miễn phí. Mọi vật phẩm trong game chỉ để trang trí và đều kiếm được bằng cách chơi; không có cổng nạp tiền, không quảng cáo, không trả tiền để thắng.",
+    "p3": "Nếu bạn thích Ô Kìa, hãy rủ thêm một người bạn vào chơi. Đó là cách ủng hộ tốt nhất."
+  },
+  "Privacy": {
+    "title": "Chính sách quyền riêng tư",
+    "updated": "Bản nháp, cập nhật lần cuối: tháng 10/2026.",
+    "p1": "Khi chơi với tư cách khách, Ô Kìa chỉ lưu một mã thiết bị ngẫu nhiên trên trình duyệt của bạn để nhớ phiên chơi. Không cần tên, email hay số điện thoại.",
+    "p2": "Khi tạo tài khoản, chúng tôi lưu tên hiển thị, ảnh đại diện (nếu có) và email. Email chỉ dùng để đăng nhập, xác minh và đặt lại mật khẩu; mật khẩu được băm, không ai đọc được. Không gửi email tiếp thị.",
+    "p3": "Ô Kìa dùng dịch vụ gửi email giao dịch và công cụ theo dõi lỗi của bên thứ ba có máy chủ ở nước ngoài. Dữ liệu gửi đi chỉ ở mức tối thiểu cần thiết để các dịch vụ này hoạt động.",
+    "p4": "Bạn có thể xóa tài khoản bất cứ lúc nào trong phần cài đặt; dữ liệu sẽ bị ẩn ngay và xóa hẳn sau 30 ngày."
+  },
+  "Terms": {
+    "title": "Điều khoản sử dụng",
+    "updated": "Bản nháp, cập nhật lần cuối: tháng 10/2026.",
+    "p1": "Ô Kìa là trò chơi miễn phí, phi thương mại. Bạn được chơi, chia sẻ link và mời bạn bè thoải mái.",
+    "p2": "Không gian lận: dùng nhiều tài khoản để dàn xếp kết quả, tự động hóa nước đi hay khai thác lỗi sẽ bị khóa tài khoản và hủy kết quả liên quan.",
+    "p3": "Hãy tử tế: tên hiển thị không được chứa từ ngữ xúc phạm; biểu cảm trong trận chỉ để vui.",
+    "p4": "Vật phẩm trong game không có giá trị tiền tệ và không thể mua bán, trao đổi ngoài game."
   },
   "NotFound": {
     "title": "Không tìm thấy trang",

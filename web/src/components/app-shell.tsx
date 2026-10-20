@@ -1,10 +1,11 @@
 import { Box, Container, Flex, Heading, HStack } from "@chakra-ui/react";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { SiteFooter } from "@/components/site-footer";
 import { Link } from "@/i18n/navigation";
 
 type AppShellProps = { children: React.ReactNode };
 
-// Khung chung mobile-first (docs/14): header trong suốt trên nền xanh, nội dung co theo 100dvh.
+// Khung chung mobile-first (docs/14): header trong suốt trên nền xanh, nội dung co theo 100dvh, footer.
 // Màn chơi (/play) sẽ dùng khung riêng không header để tối đa diện tích bàn đấu.
 export function AppShell({ children }: AppShellProps) {
   return (
@@ -29,6 +30,7 @@ export function AppShell({ children }: AppShellProps) {
       <Box as="main" flex="1" display="flex" flexDirection="column">
         {children}
       </Box>
+      <SiteFooter />
     </Flex>
   );
 }

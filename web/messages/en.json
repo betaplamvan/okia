@@ -1,12 +1,20 @@
 {
   "Metadata": {
     "title": "Ô Kìa",
-    "description": "Ô Kìa — dots & boxes, Vietnamese style"
+    "description": "Ô Kìa — dots & boxes on grid paper. Play against the bot, climb the ranked ladder or open a room for friends. Free."
   },
   "Common": {
     "appName": "Ô Kìa",
     "language": "Language",
-    "switchLanguage": "Switch to {language}"
+    "switchLanguage": "Switch to {language}",
+    "guest": "Guest",
+    "lead": "Lead",
+    "rules": "Rules",
+    "help": "How to play",
+    "share": "Share",
+    "copied": "Link copied!",
+    "shareText": "Come play dots & boxes with me!",
+    "playNow": "Play now"
   },
   "Home": {
     "tagline": "Dots & boxes on grid paper. Grab a friend and draw a few lines!",
@@ -19,6 +27,77 @@
     "leaderboard": "Leaderboard",
     "leaderboardSub": "See who leads this season",
     "comingSoon": "Soon"
+  },
+  "Rules": {
+    "title": "The rules in 30 seconds",
+    "step1": "Two players take turns drawing one line between two neighbouring dots.",
+    "step2": "Draw the fourth side of a box and it is yours — and you get to draw again.",
+    "step3": "Keep capturing, keep moving; the first line that closes nothing ends your turn.",
+    "step4": "When no lines are left, count the boxes. Most boxes wins.",
+    "tip": "Tip: never rush to draw the third side of a box — that is how you gift it to your opponent.",
+    "close": "Got it"
+  },
+  "Guide": {
+    "title": "What is Ô Kìa? How to play dots & boxes on grid paper",
+    "intro1": "Ô Kìa is the online version of a game every Vietnamese schoolkid knows: two players share a page of grid paper, take turns drawing sides, and whoever closes a box claims it. The world calls it Dots and Boxes; in Vietnam it is the game the whole class played under the desk.",
+    "intro2": "No paper, no pen, no one next to you needed: open the link and play on your phone, against the bot or with friends anywhere.",
+    "rulesTitle": "Basic rules",
+    "rulesIntro": "Just remember four things:",
+    "rule1": "Start: the board is a grid of dots with no lines yet.",
+    "rule2": "Your turn: draw exactly one line between two neighbouring dots (horizontal or vertical).",
+    "rule3": "Capture: the fourth side of a box makes it yours, and you move again immediately.",
+    "rule4": "End: when no lines remain, count boxes; most boxes wins. 3×3, 5×5 and 7×7 boards have an odd number of boxes, so there is never a draw.",
+    "howTitle": "How do I play on Ô Kìa?",
+    "how1": "Pick Play vs Bot to warm up: the bot adapts to your level, no difficulty to choose.",
+    "how2": "Create a Private Room, send the link over Zalo or Messenger, and your friends are in — no account needed.",
+    "how3": "Create an account to play Ranked, earn Lead after every win and trade it for pen, stroke and board skins.",
+    "modesTitle": "Game modes",
+    "mode1Title": "Play vs Bot",
+    "mode1Desc": "Practice any time. The bot captures, sacrifices short chains, and grows with you.",
+    "mode2Title": "Ranked",
+    "mode2Desc": "Match with players at your level. Climb from Scratch Paper to Notebook, Good Student, Honor Student and Valedictorian.",
+    "mode3Title": "Private Room",
+    "mode3Desc": "Pick the board size and turn timer, then invite exactly who you want.",
+    "mode4Title": "Leaderboard",
+    "mode4Desc": "Seasons last 6–8 weeks; at the end you get a reward skin for your peak rank.",
+    "tipsTitle": "Tips for beginners",
+    "tip1": "Count sides before you draw: a box with two sides already means your third line is a gift.",
+    "tip2": "Late in the game the board is just chains of boxes. Give away the shortest chain and keep the long ones.",
+    "tip3": "Take almost all of a chain, then leave the last two boxes so your opponent must open the next chain — experts call it the double-cross.",
+    "benefitsTitle": "Why play?",
+    "benefit1": "A 3×3 game takes one minute, perfect for a short break.",
+    "benefit2": "Simple rules, deep strategy — it gets better the more you play.",
+    "benefit3": "Completely free, no ads, nothing to buy to win.",
+    "ctaLine": "Ready to draw the first line?",
+    "cta": "Play now"
+  },
+  "Footer": {
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "tagline": "Made in Vietnam, free for everyone."
+  },
+  "About": {
+    "title": "About Ô Kìa",
+    "p1": "Ô Kìa is a personal project born from nostalgia for grid-paper notebooks covered in little squares. The goal is simple: bring the box-capturing game to the web so that opening a link is enough to play, smoothly and satisfyingly, against the bot or with friends.",
+    "p2": "The game is completely free. Every item is cosmetic and earned by playing; there is no top-up, no ads and no paying to win.",
+    "p3": "If you enjoy Ô Kìa, invite one more friend to play. That is the best support we could ask for."
+  },
+  "Privacy": {
+    "title": "Privacy policy",
+    "updated": "Draft, last updated: October 2026.",
+    "p1": "When you play as a guest, Ô Kìa only stores a random device id in your browser to remember your session. No name, email or phone number is required.",
+    "p2": "When you create an account we store your display name, avatar (if any) and email. The email is used only for sign-in, verification and password reset; passwords are hashed and unreadable. We never send marketing email.",
+    "p3": "Ô Kìa uses third-party services for transactional email and error monitoring, hosted outside Vietnam. Only the minimum data needed for those services to work is sent.",
+    "p4": "You can delete your account at any time from the settings; data is hidden immediately and permanently deleted after 30 days."
+  },
+  "Terms": {
+    "title": "Terms of use",
+    "updated": "Draft, last updated: October 2026.",
+    "p1": "Ô Kìa is a free, non-commercial game. Play, share the link and invite friends as much as you like.",
+    "p2": "No cheating: using multiple accounts to fix results, automating moves or exploiting bugs leads to a ban and voided results.",
+    "p3": "Be kind: display names must not contain offensive words; in-game emotes are for fun only.",
+    "p4": "In-game items have no monetary value and cannot be bought, sold or traded outside the game."
   },
   "NotFound": {
     "title": "Page not found",
