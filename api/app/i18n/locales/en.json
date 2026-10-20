@@ -13,7 +13,24 @@
     "ALREADY_IN_GAME": "You are already in another game.",
     "RATE_LIMITED": "Too fast, try again in {retryAfter} seconds.",
     "INSUFFICIENT_FUNDS": "Not enough Lead.",
-    "INTERNAL": "Something went wrong, please try again."
+    "INTERNAL": "Something went wrong, please try again.",
+    "INVALID_CREDENTIALS": "Wrong email or password.",
+    "WEAK_PASSWORD": "Password must be at least 8 characters and not too common.",
+    "TOKEN_INVALID": "This link is not valid.",
+    "TOKEN_EXPIRED": "This link has expired, please request a new one.",
+    "TOKEN_USED": "This link has already been used.",
+    "IDENTITY_TAKEN": "This Google account/email already belongs to another account.",
+    "IDENTITY_EXISTS": "This account already has a password.",
+    "LAST_IDENTITY": "You cannot remove your last sign-in method.",
+    "ALREADY_ACCOUNT": "You are already signed in with an account.",
+    "CHECK_EMAIL": "Please check your inbox.",
+    "BANNED": "This account is suspended.",
+    "NOT_FOUND": "Not found.",
+    "GOOGLE_DISABLED": "Google sign-in is not enabled on this server.",
+    "OAUTH_STATE": "Google sign-in session is invalid, please try again.",
+    "OAUTH_FAILED": "Could not sign in with Google, please try again.",
+    "OAUTH_CANCELLED": "Google sign-in was cancelled.",
+    "OAUTH_EMAIL_UNVERIFIED": "Your Google email is not verified."
   },
   "currency": {
     "lead": "Lead"
@@ -24,5 +41,26 @@
     "good": "Good Student",
     "honor": "Honor Student",
     "valedictorian": "Valedictorian"
+  },
+  "emails": {
+    "footer": "This automatic email from Ô Kìa (okia) was sent because of an action on your account. If it wasn't you, just ignore it.",
+    "verify": {
+      "subject": "Verify your email for Ô Kìa",
+      "body": "Hi {name},\n\nTap the button below to verify your email and unlock ranked play. The link is valid for 24 hours.",
+      "action": "Verify email"
+    },
+    "reset": {
+      "subject": "Reset your Ô Kìa password",
+      "body": "Hi {name},\n\nYou (or someone) requested a password reset. The link is valid for 30 minutes and can be used once.",
+      "action": "Reset password"
+    },
+    "duplicate": {
+      "subject": "Someone tried to sign up for Ô Kìa with your email",
+      "body": "This email already has an Ô Kìa account. If that was you, sign in or use \"Forgot password\". Otherwise, no action is needed."
+    },
+    "google_only": {
+      "subject": "Your Ô Kìa account signs in with Google",
+      "body": "Hi {name},\n\nYou requested a password reset, but this account signs in with Google and has no password. Use \"Continue with Google\" to play."
+    }
   }
 }

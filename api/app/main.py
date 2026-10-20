@@ -9,8 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.router import router as auth_router
 from app.config import Settings, get_settings
 from app.db import dispose_engine, get_db
+from app.errors import install_error_handlers
 from app.i18n import Locale, resolve_locale, t
 
 
@@ -41,6 +43,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    install_error_handlers(app)
+    app.include_router(auth_router)
 
     @app.get("/healthz", tags=["ops"])
     async def healthz() -> dict[str, str]:
