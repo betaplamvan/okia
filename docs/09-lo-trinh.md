@@ -88,11 +88,11 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ### M1.3 Xác thực (theo [13](13-xac-thuc.md))
 - [ ] **P1-05** Phiên: access JWT 1 giờ + refresh cookie xoay (`sessions`), `token_version`; đăng nhập khách (device id); `GET /me`, `PATCH /me` (tên hiển thị, `locale`); client đồng bộ ngôn ngữ đã chọn
 - [ ] **P1-06** Email + mật khẩu: `register` (Argon2id, danh sách mật khẩu phổ biến), `login` (rate limit, lỗi không phân biệt), nâng cấp khách → tài khoản; test
-- [ ] **P1-07** Email giao dịch (Resend qua background task + Mailpit dev, mẫu vi/en): xác minh email, quên/đặt lại mật khẩu (token một lần, tăng `token_version`); webhook bounce; chặn xếp hạng khi chưa xác minh
+- [ ] **P1-07** Email giao dịch (Resend qua background task, `console` khi test, mẫu vi/en): xác minh email, quên/đặt lại mật khẩu (token một lần, tăng `token_version`); webhook bounce; chặn xếp hạng khi chưa xác minh
 - [ ] **P1-08** Google OAuth (PKCE, xác minh `id_token`), tự liên kết theo email đã xác minh, gộp tài khoản khách, xử lý `IDENTITY_TAKEN`; test
 - [ ] **P1-09** Giao diện: màn hình đăng nhập/đăng ký/quên mật khẩu, banner "xác minh email", trang cài đặt tài khoản tối thiểu; `DELETE /me` xóa mềm
 
-✅ *Demo: khách chơi → đăng ký email → nhận mail xác minh (Mailpit) → bấm link → được vào xếp hạng; đăng nhập Google trùng email tự liên kết.*
+✅ *Demo: khách chơi → đăng ký email → nhận mail xác minh (Resend) → bấm link → được vào xếp hạng; đăng nhập Google trùng email tự liên kết.*
 
 ### M1.4 Nền WebSocket
 - [ ] **P1-10** Endpoint `/ws` xác thực JWT, nhận `lang`, `ping/pong`, gửi `error`; model Pydantic cho các tin nhắn theo [04](04-giao-thuc-ws.md)

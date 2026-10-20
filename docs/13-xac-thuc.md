@@ -80,7 +80,7 @@ Một tài khoản có thể có đồng thời identity `password` và `google`
 - Gọi Resend **ngoài request chính** (background task) với retry 3 lần; thất bại ghi log kèm `user_id` và mục đích, không kèm nội dung.
 - Bật webhook `email.bounced` / `email.complained` của Resend → đánh dấu `users.email_bounced_at` để không gửi lại và nhắc người dùng đổi email.
 - Ba mẫu: xác minh, đặt lại mật khẩu, cảnh báo đăng ký trùng. Mỗi mẫu có **vi và en**, chọn theo `locale` của người nhận; nội dung text thuần + HTML tối giản.
-- Môi trường dev: in ra log hoặc dùng **Mailpit** trong Docker Compose, không gửi thật.
+- Môi trường dev: vẫn gửi thật qua Resend (gói miễn phí đủ dùng); chỉ test tự động mới dùng `EMAIL_PROVIDER=console` để in ra log.
 - Không gửi email tiếp thị; email chỉ dùng cho bảo mật tài khoản ([10](10-phap-ly.md#dữ-liệu-cá-nhân)).
 
 ## Bảo mật — checklist

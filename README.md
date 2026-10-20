@@ -24,7 +24,7 @@ Yêu cầu Node 20+ và pnpm 12 (`npm i -g pnpm`).
 ## Chạy backend
 
 ```bash
-docker compose up -d        # Postgres (cổng 5433), Redis (6380), Mailpit (8025) — tránh đụng cổng mặc định
+docker compose up -d        # Postgres (cổng 5433), Redis (6380) — tránh đụng cổng mặc định
 cd api
 cp .env.example .env
 uv sync

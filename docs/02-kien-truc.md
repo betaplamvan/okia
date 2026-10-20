@@ -56,7 +56,7 @@ Responsive (mobile-first, tối thiểu 320px) và i18n: xem [11](11-responsive-
 | Đa ngôn ngữ | Catalog JSON + hàm `t()` tự viết ([11](11-responsive-i18n.md#backend--fastapi)) |
 | Redis | `redis.asyncio` |
 | Xác thực | Khách, email + mật khẩu (Argon2id), Google OAuth (PKCE); access JWT + refresh cookie — xem [13](13-xac-thuc.md) |
-| Email giao dịch | Resend (SDK `resend`); Mailpit khi dev |
+| Email giao dịch | Resend (SDK `resend`) — dùng cả khi dev, gói miễn phí đủ |
 | Test | pytest + pytest-asyncio |
 
 ### Dịch vụ LLM (Qwen) — cho cá tính bot
@@ -128,7 +128,7 @@ okia/                        # repo (monorepo)
 | `JWT_SECRET` | Ký token | — |
 | `APP_BASE_URL` | URL public của web, dùng trong link email và callback OAuth | — |
 | `GOOGLE_CLIENT_ID/SECRET` | OAuth Google | — |
-| `EMAIL_PROVIDER` | `resend` \| `mailpit` \| `console` (dev) | `console` |
+| `EMAIL_PROVIDER` | `resend` \| `console` (chỉ in log khi chạy test) | `resend` |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend; `EMAIL_FROM` dạng `Ô Kìa <no-reply@okia.vn>` | — |
 | `RESEND_WEBHOOK_SECRET` | Xác minh chữ ký webhook bounce/complaint | — |
 | `LLM_BASE_URL` | Địa chỉ server Qwen | — (để trống = tắt, chỉ dùng câu soạn sẵn) |

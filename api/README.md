@@ -1,7 +1,7 @@
 # `api/` — backend FastAPI
 
 ```bash
-docker compose up -d            # ở thư mục gốc: Postgres, Redis, Mailpit
+docker compose up -d            # ở thư mục gốc: Postgres, Redis
 cd api
 cp .env.example .env
 uv sync                         # tạo .venv và cài dependency

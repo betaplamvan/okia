@@ -1,4 +1,4 @@
-# Dịch vụ cho môi trường dev (docs/02): Postgres, Redis, Mailpit (hộp thư giả cho email giao dịch).
+# Dịch vụ cho môi trường dev (docs/02): Postgres, Redis. Email giao dịch gửi thật qua Resend kể cả khi dev.
 # Chạy: docker compose up -d
 services:
   postgres:
@@ -27,15 +27,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - "8025:8025" # giao diện web xem mail
-      - "1025:1025" # SMTP
-    environment:
-      MP_SMTP_AUTH_ACCEPT_ANY: "1"
-      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
 
 volumes:
   pgdata:
