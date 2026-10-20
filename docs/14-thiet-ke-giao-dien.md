@@ -1,0 +1,65 @@
+# 14 — Thiết kế giao diện
+
+Phong cách: **"sticker vở ô li"** — thẻ màu kẹo và giấy kem với viền đen dày, bóng đổ cứng lệch góc, chữ viết tay, trên nền xanh lục đậm có lưới ô li mờ. Học từ [noitu.fun](https://www.noitu.fun/) (đã khảo sát 2026-10-20 bằng ảnh chụp và computed style); **không sao chép asset hay bố cục y nguyên**, chỉ dùng chung ngôn ngữ hình ảnh.
+
+## Token (nguồn chuẩn: `web/src/theme/index.ts`)
+
+| Token | Giá trị | Dùng cho |
+|---|---|---|
+| `colors.ink` | `#1a2826` | Viền, bóng, chữ trên thẻ |
+| `colors.paper` | `#fffcf2` | Thẻ nội dung, nút, bàn đấu |
+| `colors.cream` | `#f5f1e8` | Chữ trên nền xanh |
+| `colors.board.*` | `#35544a` nền, `#5b9984` sáng ở đỉnh | Nền trang (gradient tỏa từ trên) |
+| `colors.mint` | `#7cf5c5` | Thẻ "Chơi với máy", đếm giờ, trạng thái tốt |
+| `colors.coral` | `#ff6b6b` | Thẻ "Xếp hạng", cảnh báo, đầu hàng |
+| `colors.pink` | `#ff6fbc` | Thẻ "Phòng riêng" |
+| `colors.sun` | `#ffd93d` | Thẻ "Bảng xếp hạng", mẹo, nổi bật |
+| `colors.pen.blue` / `colors.pen.red` | `#1e4fd8` / `#d8341e` | Nét vẽ người chơi 0 / 1 trên bàn đấu |
+| `shadows.sticker` | `5px 5px 0 0 rgba(26,40,38,.85)` | Mọi thẻ và nút |
+| `shadows.stickerSm` | `2px 2px 0 0 rgba(26,40,38,.85)` | Trạng thái nhấn |
+| `radii.sticker` | `24px` | Thẻ |
+| `borders.sticker` | `3px solid {colors.ink}` | Thẻ, nút |
+| `fonts.hand` | Patrick Hand | **Mọi chữ** (tiêu đề, thân, nút, số) |
+| `fonts.sans` | Be Vietnam Pro | Chỉ cho văn bản dài (chính sách, điều khoản) |
+
+**Một theme cố định**, không có chế độ sáng/tối (quyết định 2026-10-20: thống nhất với mẫu, đồng thời bỏ toàn bộ code color mode từng gây lỗi hydration trên React 19.3). Có thể thêm lại sau nếu người chơi yêu cầu.
+
+## Thành phần
+
+| Tên | Mô tả | Cách dùng |
+|---|---|---|
+| **Sticker card** | Nền màu (paper/mint/coral/pink/sun), viền `sticker`, bo `sticker`, bóng `sticker`; chấm tròn nhỏ màu đối lập ở góc trên phải làm trang trí | `<Box layerStyle="sticker" bg="mint">` |
+| **Pill button** | Nền paper, viền sticker, bo tròn hoàn toàn, chữ hand 600; nhấn → dịch `(3px, 3px)` và bóng thu về `stickerSm` | `<Button variant="sticker">`; màu: `bg="mint"` |
+| **Round icon button** | Như pill, hình tròn 44px+ | `<IconButton variant="sticker" rounded="full">` |
+| **Timer ring** | Vòng tròn viền mint 6px trên nền paper, số ở giữa (hand, đậm) | Màn chơi (P0-12 / P1-20) |
+| **Panel** | Sticker card nền paper chứa HUD / bàn đấu | Màn chơi |
+| **Bong bóng bot** | Tròn mint, viền sticker, góc dưới phải | Lời thoại bot (giai đoạn 3) |
+| **Nền** | `board.*` gradient + lưới ô li mờ 32px (`rgba(255,255,255,.06)`) | `globalCss` |
+
+Chuyển động: chỉ `transform`/`box-shadow` khi nhấn (120 ms), tôn trọng `prefers-reduced-motion`.
+
+## Bố cục trang chủ
+
+```
+┌──────────────────────────────┐
+│  Ô Kìa                  [EN] │  header trong suốt
+│ ┌──────────────────────────┐ │
+│ │        Ô Kìa  (hero)     │ │  sticker card nền ink mờ, chữ cream, text-shadow
+│ │  trò ăn ô trên giấy ô li │ │
+│ └──────────────────────────┘ │
+│ ┌───────────┐ ┌───────────┐  │
+│ │ 🎮 mint   │ │ ⚔ coral   │  │  2×2 (1 cột ở base): Chơi với máy, Xếp hạng,
+│ └───────────┘ └───────────┘  │  Phòng riêng, Bảng xếp hạng — tiêu đề + mô tả
+│ ┌───────────┐ ┌───────────┐  │  + icon tròn + nút mũi tên tròn góc dưới phải
+│ │ 👥 pink   │ │ 🏆 sun    │  │
+│ └───────────┘ └───────────┘  │
+│       (ⓘ)  (?)  (⇪)          │  nút tròn phụ
+└──────────────────────────────┘
+```
+
+Màn chơi (`/play`): không header; bàn đấu là một panel paper vuông ở giữa; HUD hai bên/trên dưới theo [11](11-responsive-i18n.md#bố-cục-màn-chơi); timer ring mint; nút đầu hàng coral.
+
+## Khả năng tiếp cận
+- Chữ ink trên các màu kẹo đều đạt tương phản ≥ 4.5:1 (ink rất tối). Chữ cream trên nền xanh ≥ 7:1.
+- Mọi nút ≥ 44×44px; trạng thái focus: viền ngoài `3px` màu `sun`.
+- Icon luôn kèm chữ hoặc `aria-label`.

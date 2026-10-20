@@ -1,44 +1,36 @@
 "use client";
 
-import { Button, Group } from "@chakra-ui/react";
+import { Button } from "@chakra-ui/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { routing, type Locale } from "@/i18n/routing";
+import type { Locale } from "@/i18n/routing";
 
-const LABELS: Record<Locale, string> = { vi: "VI", en: "EN" };
-
-// Đổi ngôn ngữ tại chỗ: giữ đường dẫn hiện tại, chỉ thay locale.
+// Một nút pill hiện ngôn ngữ CÒN LẠI; bấm để chuyển, giữ nguyên đường dẫn.
 // next-intl ghi cookie NEXT_LOCALE qua proxy khi điều hướng.
+const OTHER: Record<Locale, { locale: Locale; label: string }> = {
+  vi: { locale: "en", label: "EN" },
+  en: { locale: "vi", label: "VI" },
+};
+
 export function LanguageSwitcher() {
   const t = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-
-  function switchTo(next: Locale) {
-    if (next === locale) return;
-    startTransition(() => {
-      router.replace(pathname, { locale: next });
-    });
-  }
+  const target = OTHER[locale];
 
   return (
-    <Group attached role="group" aria-label={t("language")}>
-      {routing.locales.map((code) => (
-        <Button
-          key={code}
-          size="sm"
-          variant={code === locale ? "solid" : "outline"}
-          colorPalette="ink"
-          aria-pressed={code === locale}
-          disabled={isPending}
-          onClick={() => switchTo(code)}
-        >
-          {LABELS[code]}
-        </Button>
-      ))}
-    </Group>
+    <Button
+      variant="sticker"
+      size="sm"
+      minW="12"
+      aria-label={t("switchLanguage", { language: target.label })}
+      disabled={isPending}
+      onClick={() => startTransition(() => router.replace(pathname, { locale: target.locale }))}
+    >
+      {target.label}
+    </Button>
   );
 }

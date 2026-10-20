@@ -6,12 +6,19 @@
   "Common": {
     "appName": "Ô Kìa",
     "language": "Ngôn ngữ",
-    "toggleColorMode": "Đổi chế độ sáng/tối"
+    "switchLanguage": "Chuyển sang {language}"
   },
   "Home": {
-    "tagline": "Trò ăn ô trên giấy ô li.",
+    "tagline": "Trò ăn ô trên giấy ô li. Rủ bạn bè vào vẽ vài nét nào!",
     "playBot": "Chơi với máy",
-    "privateRoom": "Phòng riêng"
+    "playBotSub": "Luyện tay với bot, không cần chờ ai",
+    "ranked": "Xếp hạng",
+    "rankedSub": "Đấu xếp hạng, leo lên Thủ khoa",
+    "privateRoom": "Phòng riêng",
+    "privateRoomSub": "Tạo phòng, gửi link cho bạn bè",
+    "leaderboard": "Bảng xếp hạng",
+    "leaderboardSub": "Xem ai đang đứng đầu mùa này",
+    "comingSoon": "Sắp có"
   },
   "NotFound": {
     "title": "Không tìm thấy trang",

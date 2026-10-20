@@ -2,27 +2,25 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Patrick_Hand } from "next/font/google";
 import { notFound } from "next/navigation";
 import * as rootParams from "next/root-params";
-import Script from "next/script";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppShell } from "@/components/app-shell";
-import { COLOR_MODE_SCRIPT } from "@/components/ui/color-mode";
 import { Provider } from "@/components/ui/provider";
 import { routing } from "@/i18n/routing";
 
-// Font UI: có subset tiếng Việt, không phải variable font nên phải khai báo weight.
-const fontSans = Be_Vietnam_Pro({
-  variable: "--font-sans",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-// Font viết tay cho bàn đấu / HUD (next/font xác nhận có subset tiếng Việt khi build).
+// Font viết tay cho toàn bộ giao diện (docs/14); có subset tiếng Việt.
 const fontHand = Patrick_Hand({
   variable: "--font-hand",
   subsets: ["latin", "vietnamese"],
   weight: "400",
+  display: "swap",
+});
+
+// Font sans chỉ dùng cho văn bản dài (chính sách, điều khoản).
+const fontSans = Be_Vietnam_Pro({
+  variable: "--font-sans",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "600"],
   display: "swap",
 });
 
@@ -41,6 +39,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Để safe-area-inset-* có hiệu lực trên iOS.
   viewportFit: "cover",
+  themeColor: "#35544a",
 };
 
 export default async function LocaleLayout({ children }: LayoutProps<"/[locale]">) {
@@ -48,19 +47,8 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
   if (!hasLocale(routing.locales, locale)) notFound();
 
   return (
-    // suppressHydrationWarning: script color mode gán class "dark"/"light" lên <html> trước khi hydrate.
-    <html
-      lang={locale}
-      className={`${fontSans.variable} ${fontHand.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang={locale} className={`${fontHand.variable} ${fontSans.variable}`}>
       <body>
-        {/* Chống nháy theme; beforeInteractive chỉ được phép trong root layout. */}
-        <Script
-          id="okia-color-mode"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: COLOR_MODE_SCRIPT }}
-        />
         <NextIntlClientProvider>
           <Provider>
             <AppShell>{children}</AppShell>

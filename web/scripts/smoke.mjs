@@ -15,9 +15,13 @@ const browser = await chromium.launch({ channel: "msedge", headless: true });
 const page = await browser.newPage({ locale, viewport: { width: 390, height: 844 } });
 
 const problems = [];
+// Thông báo chỉ có ở next dev khi route gọi notFound() (docs/11): không phải lỗi của app.
+const DEV_ONLY_NOISE = [/Could not validate `instant`/, /Failed to load resource.*404/];
+const isNoise = (text) => DEV_ONLY_NOISE.some((re) => re.test(text));
 page.on("console", (msg) => {
   if (msg.type() === "error" || msg.type() === "warning") {
-    problems.push(`[console.${msg.type()}] ${msg.text().split("\n")[0].slice(0, 200)}`);
+    if (!isNoise(msg.text()))
+      problems.push(`[console.${msg.type()}] ${msg.text().split("\n")[0].slice(0, 200)}`);
   }
 });
 page.on("pageerror", (err) => {

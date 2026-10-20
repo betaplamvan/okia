@@ -6,12 +6,19 @@
   "Common": {
     "appName": "Ô Kìa",
     "language": "Language",
-    "toggleColorMode": "Toggle light/dark mode"
+    "switchLanguage": "Switch to {language}"
   },
   "Home": {
-    "tagline": "Dots & boxes, Vietnamese style.",
+    "tagline": "Dots & boxes on grid paper. Grab a friend and draw a few lines!",
     "playBot": "Play vs Bot",
-    "privateRoom": "Private Room"
+    "playBotSub": "Warm up against the bot, no waiting",
+    "ranked": "Ranked",
+    "rankedSub": "Climb the ladder to Valedictorian",
+    "privateRoom": "Private Room",
+    "privateRoomSub": "Create a room, send the link to friends",
+    "leaderboard": "Leaderboard",
+    "leaderboardSub": "See who leads this season",
+    "comingSoon": "Soon"
   },
   "NotFound": {
     "title": "Page not found",

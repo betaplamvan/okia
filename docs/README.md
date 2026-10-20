@@ -23,6 +23,7 @@ Game Dots & Boxes trên web, lấy cảm hứng từ trò chơi trên giấy ô 
 | 11 | [Responsive & đa ngôn ngữ](11-responsive-i18n.md) | Bố cục mobile-first, canvas, i18n vi/en ở FE và BE, bảng thuật ngữ |
 | 12 | [Asset](12-asset.md) | Ba nhóm asset theo nguồn, công cụ, font, pipeline build, quy chuẩn kỹ thuật |
 | 13 | [Xác thực & tài khoản](13-xac-thuc.md) | Khách, email + mật khẩu, Google OAuth, gộp tài khoản, phiên, email giao dịch, bảo mật |
+| 14 | [Thiết kế giao diện](14-thiet-ke-giao-dien.md) | Phong cách "sticker vở ô li", token màu/bóng/font, thành phần, bố cục trang chủ |
 | — | [Quyết định kiến trúc (ADR)](adr/) | Lý do của các lựa chọn quan trọng |
 
 ## Quy ước tài liệu
