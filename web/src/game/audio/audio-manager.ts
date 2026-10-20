@@ -87,8 +87,18 @@ class AudioManager {
         volume: 0,
       });
     }
-    if (!this.music.playing()) this.music.play();
-    this.music.fade(this.music.volume(), s.musicVolume, 400);
+    const music = this.music;
+    const target = s.musicVolume;
+    if (music.playing()) {
+      music.fade(music.volume(), target, 300);
+      return;
+    }
+    // play() với HTML5 Audio là bất đồng bộ và đặt lại volume đã lưu (0 sau fade-out) khi bắt đầu,
+    // nên fade lên chỉ được gọi sau sự kiện "play" — nếu không âm lượng kẹt ở 0.
+    music.volume(0);
+    music.off("play");
+    music.once("play", () => music.fade(0, target, 400));
+    music.play();
   }
 
   /** Phát một tiếng trong sprite. `rate` 0.5–4 đổi cao độ/tốc độ. */
