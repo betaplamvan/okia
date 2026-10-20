@@ -127,6 +127,14 @@ Các trường hiển thị cho người chơi lưu dạng JSONB có đủ hai n
 | Ghép trận thường | Casual Match |
 | Xếp hạng | Ranked |
 | Phòng riêng | Private Room |
+| Thành tựu | Achievements |
+| Cấp độ (Lv) | Level |
+| Rương | Chest |
+| Bộ sưu tập | Collection |
+| Tủ đồ | Inventory |
+| Tủ trưng bày | Showcase |
+| Trùng (vật phẩm) | Duplicate |
+| Thẻ đổi tên | Rename Card |
 | Thử | Try on |
 | Mua | Buy |
 | Ủng hộ | Donate |

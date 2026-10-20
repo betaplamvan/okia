@@ -1,7 +1,7 @@
 # ADR-0005 — Một loại tiền miễn phí, bỏ hẳn thanh toán, nhận donate
 
 - **Ngày:** 2026-10-20
-- **Trạng thái:** Chấp nhận — **thay thế [ADR-0002](0002-khoa-tien-cao-cap.md)**
+- **Trạng thái:** Chấp nhận — **thay thế [ADR-0002](0002-khoa-tien-cao-cap.md)**; điểm "Ruột chì chỉ từ xếp hạng" được **mở rộng bởi [ADR-0007](0007-thanh-tuu-cap-do-ruong.md)** (thêm thành tựu một lần, EXP, rương)
 
 ## Bối cảnh
 

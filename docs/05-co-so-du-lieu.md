@@ -123,7 +123,7 @@ CREATE TABLE wallet_ledger (            -- chỉ INSERT, không UPDATE/DELETE
   user_id          UUID NOT NULL REFERENCES users,
   delta            BIGINT NOT NULL,     -- dương: cộng, âm: trừ
   balance_after    BIGINT NOT NULL,
-  source           TEXT NOT NULL,       -- match | season | purchase | admin
+  source           TEXT NOT NULL,       -- match | season | achievement | chest_refund | purchase | chest | admin
   ref              TEXT,                -- match id, season id, item id…
   idempotency_key  TEXT NOT NULL UNIQUE
 );
@@ -133,6 +133,7 @@ CREATE TABLE items (
   id          TEXT PRIMARY KEY,         -- 'pen_ink_purple'
   type        TEXT NOT NULL,            -- pen | stroke | box | board
   rarity      TEXT NOT NULL,            -- common | rare | epic | legendary | reward
+  -- type: pen | stroke | box | board | frame | badge | card (tiêu hao)
   price       INT,                      -- Ruột chì; NULL = không bán (rarity 'reward')
   name        JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),
   description JSONB CHECK (description IS NULL OR (description ? 'vi' AND description ? 'en')),
@@ -144,9 +145,72 @@ CREATE TABLE items (
 CREATE TABLE inventory (
   user_id     UUID REFERENCES users,
   item_id     TEXT REFERENCES items,
-  source      TEXT NOT NULL,            -- default | purchase | reward
+  source      TEXT NOT NULL,            -- default | purchase | chest | reward | level | achievement
+  quantity    INT NOT NULL DEFAULT 1,   -- > 1 chỉ với vật phẩm tiêu hao (type 'card')
   PRIMARY KEY (user_id, item_id)
 );
+
+-- Bộ sưu tập & rương (ADR-0007)
+CREATE TABLE collections (
+  id          TEXT PRIMARY KEY,         -- 'set_ballpoint'
+  name        JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),
+  badge_item  TEXT REFERENCES items     -- huy hiệu "trọn bộ"
+);
+ALTER TABLE items ADD COLUMN collection_id TEXT REFERENCES collections;
+
+CREATE TABLE chests (
+  id              TEXT PRIMARY KEY,     -- 'chest_ink_purple'
+  name            JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),
+  collection_id   TEXT REFERENCES collections,
+  price           INT NOT NULL,
+  daily_price_step REAL,                -- 0.5 = +50% mỗi lần mua trong ngày; NULL = giá cố định
+  active          BOOLEAN NOT NULL DEFAULT true
+);
+
+CREATE TABLE chest_items (
+  chest_id    TEXT REFERENCES chests,
+  item_id     TEXT REFERENCES items,
+  weight      INT NOT NULL,             -- tỷ lệ = weight / tổng weight của rương (công khai)
+  PRIMARY KEY (chest_id, item_id)
+);
+
+CREATE TABLE chest_opens (               -- mỗi lần mở là một bản ghi, kiểm toán được
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users,
+  chest_id    TEXT NOT NULL REFERENCES chests,
+  item_id     TEXT NOT NULL REFERENCES items,
+  price_paid  INT NOT NULL,
+  duplicate   BOOLEAN NOT NULL,
+  refund      INT NOT NULL DEFAULT 0,
+  rng_seed    TEXT NOT NULL
+);
+CREATE INDEX ON chest_opens (user_id, created_at DESC);
+
+CREATE TABLE showcase (                  -- tủ trưng bày 3 ô
+  user_id     UUID REFERENCES users,
+  slot        SMALLINT CHECK (slot BETWEEN 0 AND 2),
+  item_id     TEXT REFERENCES items,
+  PRIMARY KEY (user_id, slot)
+);
+
+-- Thành tựu & cấp độ (ADR-0007)
+CREATE TABLE achievements (
+  id          TEXT PRIMARY KEY,         -- 'first_stroke'
+  title       JSONB NOT NULL CHECK (title ? 'vi' AND title ? 'en'),
+  description JSONB NOT NULL CHECK (description ? 'vi' AND description ? 'en'),
+  metric      TEXT NOT NULL,            -- games_completed | bot_wins | max_combo | ranked_games | ranked_streak | peak_tier | private_games | items_owned | sets_completed
+  tiers       JSONB NOT NULL,           -- [{"goal": 1, "reward": 10}, ...] tối đa 5 cấp
+  active      BOOLEAN NOT NULL DEFAULT true
+);
+
+CREATE TABLE user_achievements (
+  user_id         UUID REFERENCES users,
+  achievement_id  TEXT REFERENCES achievements,
+  progress        BIGINT NOT NULL DEFAULT 0,   -- giá trị hiện tại của metric (hoặc kỷ lục)
+  claimed_tier    SMALLINT NOT NULL DEFAULT 0, -- số cấp đã nhận thưởng
+  PRIMARY KEY (user_id, achievement_id)
+);
+-- users: thêm exp INT NOT NULL DEFAULT 0, level INT NOT NULL DEFAULT 1 (cấp n cần 50×n EXP)
 
 CREATE TABLE loadouts (
   user_id     UUID PRIMARY KEY REFERENCES users,
@@ -191,5 +255,6 @@ Trận có cờ `pending`/`confirmed` không trả thưởng Ruột chì và kh�
 | `token:used:{jti}` | String | theo hạn token | Link xác minh / đặt lại đã dùng |
 | `lb:{season}:{board}` | Sorted set | — | Cache bảng xếp hạng |
 | `bot:{userId}:streak` | String | 7 ngày | Chuỗi thắng/thua với bot (điều chỉnh `strength`) |
+| `chest:{userId}:{chestId}:{date}` | String | 1 ngày | Số lần mua rương có `daily_price_step` trong ngày |
 
 Khi ván kết thúc: ghi `matches`, cập nhật `ratings`, cộng thưởng vào ví — **trong một transaction Postgres** — rồi mới xóa `room:{id}`.

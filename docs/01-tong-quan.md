@@ -42,7 +42,8 @@ Kích thước bàn (tính theo số ô): **3×3** (nhanh), **5×5** (chuẩn, d
 ## Bản sắc
 
 - **Tên hạng:** Giấy nháp → Vở ô li → Học sinh khá → Học sinh giỏi → Thủ khoa.
-- **Tiền tệ:** *Ruột chì* — loại tiền duy nhất, miễn phí.
+- **Tiền tệ:** *Ruột chì* — loại tiền duy nhất, miễn phí; đến từ thắng xếp hạng và thành tựu nhiều cấp.
+- **Tiến trình:** cấp độ (EXP) cho mọi ván, thành tựu, rương sưu tầm theo bộ, tủ trưng bày 3 ô ([06](06-kinh-te.md)).
 - Tên tiếng Anh tương ứng: xem [bảng thuật ngữ](11-responsive-i18n.md#bảng-thuật-ngữ).
 - **Âm thanh:** tiếng bút sột soạt, trống trường khi vào trận, "ting" cao dần khi ăn chuỗi.
 - Tránh tên/logo thương hiệu thật (Thiên Long, Hồng Hà…).

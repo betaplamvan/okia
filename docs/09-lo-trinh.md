@@ -15,7 +15,7 @@
 | [0. Prototype offline](#giai-đoạn-0--prototype-offline) | Chơi được với bot trên trình duyệt, hai ngôn ngữ, mọi kích thước màn hình | ~20 buổi (~5 tuần) |
 | [1. Online phòng riêng](#giai-đoạn-1--online-phòng-riêng) | Hai người ở hai nơi chơi với nhau qua link; tài khoản email/Google | ~23 buổi (~6 tuần) |
 | [2A. Ghép trận & xếp hạng](#giai-đoạn-2a--ghép-trận--xếp-hạng) | Người lạ ghép trận, có hạng và BXH | ~14 buổi (~3,5 tuần) |
-| [2B. Kinh tế & skin](#giai-đoạn-2b--kinh-tế--skin) | Kiếm Ruột chì từ xếp hạng, mua và trang bị skin → **Beta công khai** | ~18 buổi (~4,5 tuần) |
+| [2B. Kinh tế & skin](#giai-đoạn-2b--kinh-tế--skin) | Ruột chì từ xếp hạng + thành tựu, EXP/cấp độ, rương sưu tầm, tủ trưng bày, shop → **Beta công khai** | ~26 buổi (~6,5 tuần) |
 | [3. Lan truyền & vận hành](#giai-đoạn-3--lan-truyền--vận-hành) | Bảo mật tài khoản nâng cao, sự kiện, admin, bot có cá tính | liên tục |
 | [4. Donate & duy trì](#giai-đoạn-4--donate--duy-trì) | Trang ủng hộ, minh bạch chi phí | ~3 buổi, sau beta |
 
@@ -170,10 +170,18 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [ ] **P2-19** Nút "Thử" trên bàn mẫu, luồng mua → đề nghị trang bị ngay; trang kho đồ & trang bị
 
 ### M2.10 Nội dung
-- [ ] **P2-20** Pipeline `pnpm assets:build` đầy đủ (SVG → PNG, atlas, audio sprite, kiểm tra manifest) chạy trong CI
-- [ ] **P2-21** 12 skin đầu tiên (3 mỗi loại, tên vi/en; ≥ 8 skin thuần thủ tục/SVG) + bộ âm thanh chính thức — *có thể làm song song từ giai đoạn 1*, xem [12](12-asset.md#lộ-trình-asset-song-song-với-09)
+### M2.11 Thành tựu, cấp độ, rương, tủ trưng bày ([ADR-0007](adr/0007-thanh-tuu-cap-do-ruong.md))
+- [ ] **P2-22** Model + migration `achievements`, `user_achievements`, `users.exp/level`; service cập nhật metric khi `game_over` (mọi chế độ) và trao thưởng theo cấp (idempotent, chỉ một lần mỗi cấp); test
+- [ ] **P2-23** Thành tựu & EXP cho **khách** ở client (store local) + gộp lên server khi tạo tài khoản với kiểm tra hợp lý; giao diện tab Thành tựu trong hồ sơ, toast "Thành tựu mới"
+- [ ] **P2-24** Model + migration `collections`, `chests`, `chest_items`, `chest_opens`, `inventory.quantity`; service mở rương (RNG có seed, trùng → hoàn 50%, giá tăng trong ngày qua Redis); trang tỷ lệ công khai; test
+- [ ] **P2-25** Giao diện rương (thẻ rương, danh sách vật phẩm + tỷ lệ, animation mở), tab Tủ đồ (lọc theo bộ, số lượng), tủ trưng bày 3 ô trong hồ sơ, hiển thị ở màn chờ/kết thúc
+- [ ] **P2-26** Vật phẩm tiêu hao: thẻ đổi tên (lần đầu miễn phí), thẻ avatar tùy chỉnh (upload có kiểm duyệt kích thước/định dạng); `showcase` API
 
-**🏁 Tiêu chí hoàn thành giai đoạn 2 (Beta công khai):** người chơi mới tạo tài khoản (email xác minh hoặc Google) → thắng trận xếp hạng → nhận Ruột chì → mua và trang bị skin → đối thủ nhìn thấy skin đó; thắng casual/bot/phòng riêng không sinh dòng ledger (đã có test chứng minh); trận bị cờ win-trading không trả thưởng.
+### M2.12 Pipeline asset & nội dung
+- [ ] **P2-20** Pipeline `pnpm assets:build` đầy đủ (SVG → PNG, atlas, audio sprite, kiểm tra manifest) chạy trong CI
+- [ ] **P2-21** 3 bộ sưu tập đầu tiên (Bút Bi, Mực Tím, Phấn Trắng; 12–20 vật phẩm/bộ, ≥ 70% thuần thủ tục/SVG) + khung/huy hiệu cấp độ + bộ âm thanh chính thức — *có thể làm song song từ giai đoạn 1*, xem [12](12-asset.md#lộ-trình-asset-song-song-với-09)
+
+**🏁 Tiêu chí hoàn thành giai đoạn 2 (Beta công khai):** người chơi mới chơi bot với tư cách khách → mở thành tựu đầu tiên → tạo tài khoản (giữ tiến trình) → thắng trận xếp hạng → nhận Ruột chì → mở rương / mua lẻ → trang bị và trưng bày → đối thủ nhìn thấy; ván casual/bot/phòng riêng chỉ sinh EXP, không sinh dòng ledger ngoài thành tựu (đã có test chứng minh); trận bị cờ win-trading không trả thưởng.
 
 ---
 
