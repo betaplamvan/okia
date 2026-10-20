@@ -138,8 +138,9 @@ export class NetworkController implements GameController {
         return;
       }
       case "game_over":
-        if (m.roomId === this.roomId)
-          this.emit({ result: resultOf(m) }, { status: "over", deadline: null });
+        if (m.roomId !== this.roomId) return;
+        this.clearActiveRoom();
+        this.emit({ result: resultOf(m) }, { status: "over", deadline: null });
         return;
       case "opponent_status":
         if (m.roomId === this.roomId) this.emit({}, { opponentOnline: m.online });
@@ -218,7 +219,15 @@ export class NetworkController implements GameController {
 
   leave(): void {
     this.ws.send({ t: "room_leave", roomId: this.roomId });
+    this.clearActiveRoom();
     this.onEvent({ type: "left" });
+  }
+
+  /** welcome.activeRoomId chỉ được server gửi lúc kết nối; phòng xong/rời thì xóa, nếu không sảnh
+   * (/room) sẽ tự đẩy người chơi về lại phòng cũ. */
+  private clearActiveRoom(): void {
+    if (useConnection.getState().activeRoomId === this.roomId)
+      useConnection.setState({ activeRoomId: null });
   }
 
   destroy(): void {

@@ -105,7 +105,36 @@ await dialog(A).getByRole("button", { name: "Về sảnh phòng" }).click();
 await A.waitForURL(/\/room$/);
 console.log("A về sảnh: ok");
 
+// Lỗi prod: sau ván, người tạo bấm "Tạo phòng mới" lần nữa → nút quay mãi. Phải sang được phòng mới.
+const framesA = [];
+A.on("websocket", (ws) => {
+  ws.on("framesent", (f) => framesA.push(`→ ${String(f.payload).slice(0, 120)}`));
+  ws.on("framereceived", (f) => framesA.push(`← ${String(f.payload).slice(0, 120)}`));
+  ws.on("close", () => framesA.push("× close"));
+});
+await A.waitForTimeout(500);
+await A.getByRole("button", { name: "Tạo phòng mới" }).click();
+const recreated = await A.waitForURL(
+  (u) => /\/r\/[A-Z2-9]{6}$/.test(u.pathname) && !u.pathname.endsWith(code),
+  { timeout: 15000 },
+)
+  .then(() => true)
+  .catch(() => false);
+console.log(`A tạo phòng lần 2: ${recreated ? A.url().split("/").pop() : "KHÔNG (nút treo)"}`);
+if (!recreated) {
+  problems.push("tạo phòng lần 2 sau ván không điều hướng");
+  for (const f of framesA.slice(-15)) console.log("    " + f);
+}
+
+// B đã tải lại giữa ván (welcome.activeRoomId = phòng cũ) → về sảnh phải ở lại /room, không bị đẩy về.
+await dialog(B).getByRole("button", { name: "Về sảnh phòng" }).click();
+await B.waitForURL(/\/room$/);
+await B.waitForTimeout(1500);
+const bStayed = /\/room$/.test(B.url());
+console.log(`B về sảnh: ${bStayed ? "ok" : `bị đẩy về ${B.url()}`}`);
+if (!bStayed) problems.push("B về sảnh bị đẩy lại phòng cũ");
+
 for (const p of problems) console.log("  " + p);
 await browser.close();
-const ok = finished && problems.length === 0 && titleA !== titleB;
+const ok = finished && recreated && problems.length === 0 && titleA !== titleB;
 process.exit(ok ? 0 : 1);

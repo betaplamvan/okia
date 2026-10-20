@@ -27,6 +27,9 @@ export function RoomLobby() {
 
   useEffect(() => {
     void wsClient.connect();
+    // cacheComponents: rời trang thì sảnh chỉ bị ẩn (<Activity>), state giữ nguyên → không reset ở đây
+    // thì quay lại sau ván, nút "Tạo phòng" vẫn quay (create() thành công không tự tắt loading).
+    return () => setCreating(false);
   }, []);
 
   // Đang dở phòng (welcome.activeRoomId) → vào lại luôn.
