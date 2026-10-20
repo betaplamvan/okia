@@ -1,0 +1,21 @@
+{
+  "Metadata": {
+    "title": "Ô Kìa",
+    "description": "Ô Kìa — dots & boxes, Vietnamese style"
+  },
+  "Common": {
+    "appName": "Ô Kìa",
+    "language": "Language",
+    "toggleColorMode": "Toggle light/dark mode"
+  },
+  "Home": {
+    "tagline": "Dots & boxes, Vietnamese style.",
+    "playBot": "Play vs Bot",
+    "privateRoom": "Private Room"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or was removed.",
+    "backHome": "Back to home"
+  }
+}

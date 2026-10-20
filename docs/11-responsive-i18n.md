@@ -79,6 +79,8 @@ Thứ tự ưu tiên, dùng chung cho frontend và backend:
 
 Đổi ngôn ngữ trong cài đặt → lưu cookie, và gọi `PATCH /me { locale }` nếu đã đăng nhập.
 
+Hệ quả của `localePrefix: "as-needed"`: URL **không có tiền tố** (`/`, `/play`) được đoán locale theo cookie rồi `Accept-Language`, nên trình duyệt tiếng Anh vào `/` sẽ được chuyển sang `/en`; URL có tiền tố `/en/...` luôn là tiếng Anh; `/vi/...` bị chuyển về dạng không tiền tố. Trang 404 cho URL lạ render qua catch-all `[locale]/[...rest]` và hiển thị sau bước hydrate (Partial Prerendering), nên kiểm tra bằng trình duyệt thật (`pnpm smoke`), không bằng `curl`.
+
 ### Frontend — `next-intl`
 - **URL:** tiếng Việt không có tiền tố (`/play`), tiếng Anh có `/en` (`/en/play`) — `localePrefix: "as-needed"`. Route đặt trong `app/[locale]/`.
 - **File dịch:** `web/messages/vi.json`, `web/messages/en.json`, chia theo namespace (`common`, `play`, `shop`, `rank`, `profile`, `errors`…).

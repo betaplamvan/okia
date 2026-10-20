@@ -1,0 +1,21 @@
+{
+  "Metadata": {
+    "title": "Ô Kìa",
+    "description": "Ô Kìa — trò ăn ô trên giấy ô li"
+  },
+  "Common": {
+    "appName": "Ô Kìa",
+    "language": "Ngôn ngữ",
+    "toggleColorMode": "Đổi chế độ sáng/tối"
+  },
+  "Home": {
+    "tagline": "Trò ăn ô trên giấy ô li.",
+    "playBot": "Chơi với máy",
+    "privateRoom": "Phòng riêng"
+  },
+  "NotFound": {
+    "title": "Không tìm thấy trang",
+    "description": "Trang bạn tìm không tồn tại hoặc đã bị xóa.",
+    "backHome": "Về trang chủ"
+  }
+}

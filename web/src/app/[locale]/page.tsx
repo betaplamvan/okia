@@ -1,9 +1,12 @@
 import { Button, Container, Heading, HStack, Stack, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { ColorModeButton } from "@/components/ui/color-mode";
 
-// Trang chủ tạm cho P0-01: chỉ để kiểm tra theme, font và color mode.
-// Chuỗi hiển thị sẽ chuyển sang i18n ở P0-03.
+// Trang chủ tạm (P0-03/P0-04): kiểm tra theme, font, color mode và i18n.
 export default function Home() {
+  const t = useTranslations("Home");
+
   return (
     <Container maxW="md" py={{ base: 8, md: 16 }} px={4}>
       <Stack gap={6}>
@@ -11,15 +14,18 @@ export default function Home() {
           <Heading as="h1" size={{ base: "3xl", md: "4xl" }} fontFamily="hand" color="ink.fg">
             Ô Kìa
           </Heading>
-          <ColorModeButton />
+          <HStack gap={2}>
+            <LanguageSwitcher />
+            <ColorModeButton />
+          </HStack>
         </HStack>
-        <Text color="fg.muted">Trò ăn ô trên giấy ô li.</Text>
+        <Text color="fg.muted">{t("tagline")}</Text>
         <Stack gap={3}>
           <Button colorPalette="ink" size="lg" disabled>
-            Chơi với máy
+            {t("playBot")}
           </Button>
           <Button colorPalette="redink" variant="outline" size="lg" disabled>
-            Phòng riêng
+            {t("privateRoom")}
           </Button>
         </Stack>
       </Stack>
