@@ -42,15 +42,25 @@ type AuthState = {
   closeProfile(): void;
 };
 
+/** UUID v4 không cần secure context (crypto.randomUUID chỉ có trên https/localhost — khi chơi
+ *  qua LAN http://192.168.x.x nó undefined). getRandomValues có ở mọi origin. */
+function uuid(): string {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 function deviceId(): string {
   try {
     const existing = localStorage.getItem(DEVICE_KEY);
     if (existing) return existing;
-    const id = crypto.randomUUID();
+    const id = uuid();
     localStorage.setItem(DEVICE_KEY, id);
     return id;
   } catch {
-    return crypto.randomUUID();
+    return uuid();
   }
 }
 

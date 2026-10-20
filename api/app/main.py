@@ -39,6 +39,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
+        # Dev: chấp nhận thêm origin từ dải IP riêng (RFC 1918) / tên .local để máy khác trong LAN
+        # mở web qua http://<ip>:3000 gọi được API. Production chỉ dùng CORS_ORIGINS.
+        allow_origin_regex=(
+            r"^https?://(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+"
+            r"|[\w-]+\.local|localhost|127\.0\.0\.1)(:\d+)?$"
+            if settings.env != "production"
+            else None
+        ),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

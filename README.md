@@ -34,3 +34,15 @@ uv run pytest
 ```
 
 Yêu cầu Python 3.13, [uv](https://docs.astral.sh/uv/) và Docker.
+
+## Chơi thử qua mạng LAN
+
+Máy khác (điện thoại, laptop cùng Wi-Fi) mở `http://<ip-máy-này>:3000`. Đã cấu hình sẵn:
+
+- `web/next.config.ts`: `allowedDevOrigins` cho dải IP riêng (`192.168.*.*`, `10.*.*.*`, `172.*.*.*`, `*.local`). Chỉ ảnh hưởng `next dev`.
+- Web tự gọi API ở `http://<hostname-của-trang>:8000`, không cần `.env.local`.
+- API (dev) chấp nhận CORS từ mọi origin thuộc dải IP riêng; production chỉ dùng `CORS_ORIGINS`.
+
+Cần chạy API lắng nghe mọi interface: `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+(`pnpm dev` của Next mặc định đã lắng nghe `0.0.0.0`). Windows Firewall phải cho Node và Python nhận kết nối
+(lần đầu chạy Windows sẽ hỏi). Xem IP: `ipconfig` → IPv4 của card Ethernet/Wi-Fi.

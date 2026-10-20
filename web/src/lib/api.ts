@@ -3,10 +3,19 @@
  * Refresh cookie đi kèm nhờ `credentials: "include"` (cookie Path=/auth, SameSite=Lax).
  */
 
-export const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(
-  /\/$/,
-  "",
-);
+// Không đặt NEXT_PUBLIC_API_URL → dùng cùng host với trang web, cổng 8000. Nhờ vậy máy khác trong
+// LAN mở http://192.168.x.x:3000 sẽ tự gọi API ở http://192.168.x.x:8000 (api chạy --host 0.0.0.0).
+function defaultBase(): string {
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
+  return "http://localhost:8000";
+}
+
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || defaultBase()).replace(/\/$/, "");
+
+/** URL WebSocket tương ứng (http → ws). */
+export const WS_URL = (process.env.NEXT_PUBLIC_WS_URL || API_BASE.replace(/^http/, "ws")) + "/ws";
 
 export class ApiError extends Error {
   constructor(
