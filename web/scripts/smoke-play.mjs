@@ -81,6 +81,15 @@ if (finished) {
   );
 }
 
+// Đổi kích thước liên tiếp sau khi đã chơi (từng gây lỗi khi renderer bị tạo lại).
+for (const n of [7, 3, 7, 5]) {
+  await page.getByRole("button", { name: `${n}×${n}` }).click();
+  await page.waitForTimeout(250);
+  await page.mouse.click(offX + cell * 0.5, offY);
+  await page.waitForTimeout(200);
+}
+console.log(`đổi kích thước 7/3/7/5: lỗi=${problems.length}`);
+
 await browser.close();
 const ok = finished && you + bot === N * N && problems.length === 0;
 process.exit(ok ? 0 : 1);

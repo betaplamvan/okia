@@ -108,6 +108,7 @@ export class BoardRenderer {
   // ---------- Public ----------
 
   setSession(session: GameSession) {
+    if (this.destroyed) return;
     const prev = this.session;
     this.session = session;
     const sizeChanged =
@@ -122,12 +123,20 @@ export class BoardRenderer {
     this.setPreview(null);
   }
 
+  /** Bật/tắt chạm hai lần (bàn 7×7 trên màn hình hẹp) mà không tạo lại renderer. */
+  setTwoTapTouch(on: boolean) {
+    this.opts.twoTapTouch = on;
+    this.setPreview(null);
+  }
+
   setInteractive(on: boolean) {
+    if (this.destroyed) return;
     this.interactive = on;
     if (!on) this.setPreview(null);
   }
 
   destroy() {
+    if (this.destroyed) return;
     this.destroyed = true;
     this.gsap.globalTimeline.getChildren().forEach((t) => t.kill());
     this.app.destroy(true, { children: true });

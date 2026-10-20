@@ -13,8 +13,8 @@ type BoardCanvasProps = {
   label: string;
 };
 
-// Mount BoardRenderer (PixiJS) vào một div vuông; React không re-render theo frame —
-// mọi cập nhật đi qua renderer.setSession().
+// Mount BoardRenderer (PixiJS) đúng một lần cho mỗi lần mount; mọi cập nhật (ván, chế độ chạm)
+// đi qua phương thức của renderer, không tạo lại renderer.
 export function BoardCanvas({ session, onSelectEdge, twoTapTouch, label }: BoardCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [renderer, setRenderer] = useState<BoardRenderer | null>(null);
@@ -35,7 +35,6 @@ export function BoardCanvas({ session, onSelectEdge, twoTapTouch, label }: Board
       if (cancelled) return;
       created = await BoardRenderer.create(host, {
         onSelectEdge: (edge) => onSelectRef.current(edge),
-        twoTapTouch,
         reducedMotion,
       });
       if (cancelled) {
@@ -50,7 +49,11 @@ export function BoardCanvas({ session, onSelectEdge, twoTapTouch, label }: Board
       created?.destroy();
       setRenderer(null);
     };
-  }, [twoTapTouch]);
+  }, []);
+
+  useEffect(() => {
+    renderer?.setTwoTapTouch(!!twoTapTouch);
+  }, [renderer, twoTapTouch]);
 
   useEffect(() => {
     renderer?.setSession(session);
