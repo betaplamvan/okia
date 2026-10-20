@@ -3,11 +3,22 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, CreatedAtMixin
+from app.models.economy import Wallet
 
 
 class User(Base, CreatedAtMixin):
@@ -18,7 +29,10 @@ class User(Base, CreatedAtMixin):
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
     display_name: Mapped[str] = mapped_column(String(32), nullable=False)
-    avatar_url: Mapped[str | None] = mapped_column(String(512))
+    avatar_url: Mapped[str | None] = mapped_column(String(512))  # ảnh ngoài (Google)
+    # Ảnh tự tải lên (ADR-0010): WebP 256px ≤ 100 KB lưu ngay trong DB, chỉ nạp khi cần.
+    avatar_blob: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    avatar_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     email: Mapped[str | None] = mapped_column(
         String(254), unique=True
     )  # đã lower(); NULL với khách
@@ -33,6 +47,7 @@ class User(Base, CreatedAtMixin):
     identities: Mapped[list["AuthIdentity"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    wallet: Mapped["Wallet | None"] = relationship(lazy="selectin", uselist=False)
 
 
 class AuthIdentity(Base, CreatedAtMixin):

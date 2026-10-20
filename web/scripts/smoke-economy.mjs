@@ -1,0 +1,112 @@
+// Smoke test ví / điểm danh / nhiệm vụ / avatar (ADR-0010) trên Edge thật.
+// Khách: thấy ví 0/0, dải điểm danh + nhiệm vụ nhưng không nhận được. Đăng ký (chưa xác minh):
+// tải avatar, chơi một ván với máy → nhiệm vụ "Khởi động" 1/3. Cần web (3000) + api (8000).
+//
+//   node scripts/smoke-economy.mjs http://localhost:3000
+import { chromium } from "playwright";
+
+const [base = "http://localhost:3000"] = process.argv.slice(2);
+const email = `econ-${Date.now()}@example.com`;
+const password = "giay-o-li-2026!";
+const browser = await chromium.launch({ channel: "msedge", headless: true });
+const page = await browser.newPage({ locale: "vi-VN", viewport: { width: 390, height: 844 } });
+const problems = [];
+page.on("console", (m) => {
+  if (m.type() === "error" && !/status of 401/.test(m.text()))
+    problems.push(`[console.error] ${m.text().split("\n")[0].slice(0, 200)}`);
+});
+page.on("pageerror", (e) => problems.push(`[pageerror] ${String(e.message).slice(0, 200)}`));
+
+const pill = page.getByTestId("player-pill");
+const dialog = page.getByRole("dialog");
+
+await page.goto(base + "/", { waitUntil: "networkidle" });
+await page.waitForFunction(() => /Bạn [0-9a-f]{6}/.test(document.body.innerText), null, {
+  timeout: 15000,
+});
+// Ví hai chip trên pill.
+const chips = await pill.locator("[title]").allInnerTexts();
+console.log("ví trên pill:", chips.map((s) => s.trim()).join(" | "));
+
+// Khách mở hồ sơ: điểm danh + nhiệm vụ hiện, nút nhận bị thay bằng gợi ý tạo tài khoản.
+await pill.click();
+await dialog.waitFor();
+await dialog.getByText("Điểm danh mỗi ngày").waitFor();
+await dialog.getByText("Ngày 7").waitFor();
+await dialog.getByText("Tạo tài khoản và xác minh email").first().waitFor();
+await dialog.getByRole("tab", { name: "Nhiệm vụ" }).click();
+await dialog.getByText("Khởi động").waitFor();
+await dialog.getByText("Chăm chỉ").waitFor();
+await page.screenshot({ path: ".shots/econ-quests-guest-390.png" });
+console.log("khách: thấy điểm danh + 6 nhiệm vụ, không có nút Nhận");
+
+// Đăng ký (chưa xác minh) để tải avatar và nuôi nhiệm vụ.
+await dialog.getByRole("tab", { name: "Tài khoản" }).click();
+await dialog.getByRole("button", { name: /Dùng email/ }).click();
+await dialog.getByLabel("Email").fill(email);
+await dialog.getByLabel("Mật khẩu").fill(password);
+await dialog.getByRole("button", { name: "Tạo tài khoản" }).click();
+await page.getByText("Đã tạo tài khoản").first().waitFor({ timeout: 10000 });
+
+// Avatar: chọn file → hộp cắt → lưu → ảnh đổi sang /avatars/<id>.webp?v=1.
+await dialog.getByRole("button", { name: "Chỉnh sửa hồ sơ" }).click();
+const png = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQIW2P8z8DwnwEIGBmQAFgAAHe9A/1l4m2kAAAAAElFTkSuQmCC",
+  "base64",
+);
+await page
+  .getByTestId("avatar-input")
+  .setInputFiles({ name: "a.png", mimeType: "image/png", buffer: png });
+await page.getByRole("dialog", { name: "Cắt ảnh đại diện" }).waitFor();
+await page.waitForTimeout(600);
+await page.getByRole("button", { name: "Lưu ảnh" }).click();
+await page.getByText("Đã đổi ảnh đại diện").waitFor({ timeout: 10000 });
+await page.waitForFunction(() =>
+  [...document.querySelectorAll("img")].some((i) => /\/avatars\/.+\.webp\?v=1/.test(i.src)),
+);
+console.log("avatar: tải lên, hiện /avatars/<id>.webp?v=1");
+await dialog.getByRole("button", { name: "Dùng ảnh mặc định" }).click();
+await page.getByText("Đã dùng lại ảnh mặc định").waitFor();
+console.log("avatar: xóa về mặc định ok");
+await page.keyboard.press("Escape");
+await dialog.waitFor({ state: "hidden" });
+
+// Chơi một ván với máy → nhiệm vụ ngày "Khởi động" 1/3 (POST /me/events).
+await page.goto(base + "/play", { waitUntil: "networkidle" });
+await page.getByRole("application").locator("canvas").waitFor({ timeout: 20000 });
+const events = [];
+page.on("response", (r) => {
+  if (r.url().endsWith("/me/events")) events.push(r.status());
+});
+await page.waitForTimeout(500);
+const box = await page.getByRole("application").locator("canvas").boundingBox();
+// Bấm lung tung quanh bàn tới khi có kết quả (bot sẽ đi hộ phần còn lại khi ta bấm cạnh hợp lệ).
+const status = page.getByRole("status");
+for (let i = 0; i < 400; i++) {
+  if (await page.getByRole("dialog").isVisible()) break;
+  const text = (await status.innerText()).trim();
+  if (!text.includes("Đến lượt bạn")) {
+    await page.waitForTimeout(120);
+    continue;
+  }
+  const x = box.x + box.width * (0.1 + Math.random() * 0.8);
+  const y = box.y + box.height * (0.1 + Math.random() * 0.8);
+  await page.mouse.click(x, y);
+  await page.waitForTimeout(90);
+}
+await page.getByRole("dialog").waitFor({ timeout: 15000 });
+await page.waitForTimeout(800);
+console.log("ván với máy xong; /me/events →", events.join(",") || "(chưa gọi)");
+await page.getByRole("dialog").getByRole("button", { name: "Chơi lại" }).click();
+
+// Hồ sơ: nhiệm vụ "Khởi động" 1/3.
+await page.getByTestId("user-button").click();
+await dialog.waitFor();
+await dialog.getByRole("tab", { name: "Nhiệm vụ" }).click();
+await dialog.getByText("1/3").first().waitFor({ timeout: 10000 });
+console.log("nhiệm vụ Khởi động: 1/3");
+await page.screenshot({ path: ".shots/econ-quests-390.png" });
+
+for (const p of problems) console.log("  " + p);
+await browser.close();
+process.exit(problems.length === 0 && events.includes(200) ? 0 : 1);

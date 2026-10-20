@@ -2,7 +2,7 @@
 
 import { Avatar, Button, HStack, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
-import { LuPencil } from "react-icons/lu";
+import { WalletChips } from "@/components/economy/wallet-chips";
 import { useAuth } from "@/stores/auth";
 
 // Pill người chơi trên trang chủ (học từ noitu): avatar + tên + Ruột chì; bấm mở hồ sơ.
@@ -34,21 +34,7 @@ export function PlayerPill() {
         <Text fontWeight="600" pe={2} truncate maxW="40">
           {user?.displayName ?? t("guest")}
         </Text>
-        <HStack
-          gap={1}
-          bg="sun"
-          border="2px solid"
-          borderColor="ink"
-          borderRadius="full"
-          px={3}
-          py={0.5}
-          fontWeight="600"
-          aria-label={t("lead")}
-          title={t("lead")}
-        >
-          <LuPencil />
-          <Text as="span">0</Text>
-        </HStack>
+        <WalletChips wallet={user?.wallet} size="sm" />
       </HStack>
     </Button>
   );

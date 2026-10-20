@@ -12,7 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { LuBot, LuFlag, LuMap, LuRotateCcw, LuUser } from "react-icons/lu";
 import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
@@ -31,6 +31,7 @@ import { LocalBotController, type GameResult } from "@/game/controller";
 import { DEFAULT_MAP_ID } from "@/game/maps";
 import type { RendererEvent } from "@/game/renderer/board-renderer";
 import { Link } from "@/i18n/navigation";
+import { useAuth } from "@/stores/auth";
 
 export function PlayScreen() {
   const t = useTranslations("Play");
@@ -116,6 +117,22 @@ export function PlayScreen() {
     const id = setTimeout(() => setSettled(result), 4000);
     return () => clearTimeout(id);
   }, [result]);
+
+  // Nhiệm vụ (ADR-0010): ghi combo lớn nhất của mình trong ván, báo server khi ván kết thúc.
+  const reportBotGame = useAuth((s) => s.reportBotGame);
+  const maxComboRef = useRef(0);
+  useEffect(() => {
+    if (state.moveNo === 0) maxComboRef.current = 0;
+    if (state.turn === human && combo > maxComboRef.current) maxComboRef.current = combo;
+  }, [state.moveNo, state.turn, human, combo]);
+  useEffect(() => {
+    if (!result || result.reason !== "complete") return;
+    void reportBotGame({
+      won: result.winner === human,
+      maxCombo: maxComboRef.current,
+      moves: state.moveNo,
+    });
+  }, [result, human, state.moveNo, reportBotGame]);
   const youScore = numberFormat.format(state.scores[human]);
   const botScore = numberFormat.format(state.scores[bot]);
   const yourTurn = state.turn === human && !result;

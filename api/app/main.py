@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.router import router as auth_router
 from app.config import Settings, get_settings
 from app.db import dispose_engine, get_db
+from app.economy.router import router as economy_router
 from app.errors import install_error_handlers
 from app.game.timer import TimerWorker
 from app.i18n import Locale, resolve_locale, t
@@ -62,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(auth_router)
+    app.include_router(economy_router)
     app.include_router(ws_router)
 
     @app.get("/healthz", tags=["ops"])

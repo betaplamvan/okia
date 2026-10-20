@@ -5,12 +5,21 @@
  * trong localStorage (giống noitu: vào là có tài khoản ngay, không cần màn đăng nhập).
  */
 import { create } from "zustand";
-import { api, ApiError, type ApiInit, type TokenOut, type User } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  type ApiInit,
+  type ProgressOut,
+  type Reward,
+  type RewardOut,
+  type TokenOut,
+  type User,
+} from "@/lib/api";
 
 const DEVICE_KEY = "okia:device";
 const SKEW_MS = 30_000;
 
-export type ProfileTab = "overview" | "account";
+export type ProfileTab = "overview" | "quests" | "account";
 
 type AuthState = {
   status: "idle" | "loading" | "ready" | "offline";
@@ -20,6 +29,8 @@ type AuthState = {
   locale: string;
   profileOpen: boolean;
   profileTab: ProfileTab;
+  /** Ví + điểm danh + nhiệm vụ (GET /me/progress); null khi chưa tải. */
+  progress: ProgressOut | null;
 
   boot(locale: string): Promise<void>;
   /** Gọi API kèm Bearer; hết hạn thì refresh trước, 401 thì refresh rồi thử lại một lần. */
@@ -40,6 +51,13 @@ type AuthState = {
   applyToken(tok: TokenOut): void;
   openProfile(tab?: ProfileTab): void;
   closeProfile(): void;
+  loadProgress(): Promise<ProgressOut | null>;
+  checkin(): Promise<Reward>;
+  claimQuest(id: string): Promise<Reward>;
+  /** Ván với máy xong → nuôi nhiệm vụ (bỏ qua với khách). */
+  reportBotGame(input: { won: boolean; maxCombo: number; moves: number }): Promise<void>;
+  uploadAvatar(file: Blob): Promise<User>;
+  deleteAvatar(): Promise<User>;
 };
 
 /** UUID v4 không cần secure context (crypto.randomUUID chỉ có trên https/localhost — khi chơi
@@ -74,6 +92,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   locale: "vi",
   profileOpen: false,
   profileTab: "overview",
+  progress: null,
 
   applyToken(tok) {
     set({
@@ -207,8 +226,60 @@ export const useAuth = create<AuthState>()((set, get) => ({
 
   openProfile(tab) {
     set({ profileOpen: true, profileTab: tab ?? get().profileTab });
+    void get().loadProgress();
   },
   closeProfile() {
     set({ profileOpen: false });
+  },
+
+  async loadProgress() {
+    const u = get().user;
+    if (!u) return null;
+    try {
+      const progress = await get().authed<ProgressOut>("/me/progress");
+      set({ progress, user: { ...u, wallet: progress.wallet } });
+      return progress;
+    } catch {
+      return null;
+    }
+  },
+
+  async checkin() {
+    const out = await get().authed<RewardOut>("/me/checkin", { method: "POST" });
+    set({ progress: out.progress, user: { ...get().user!, wallet: out.progress.wallet } });
+    return out.reward;
+  },
+
+  async claimQuest(id) {
+    const out = await get().authed<RewardOut>(`/me/quests/${id}/claim`, { method: "POST" });
+    set({ progress: out.progress, user: { ...get().user!, wallet: out.progress.wallet } });
+    return out.reward;
+  },
+
+  async reportBotGame(input) {
+    const u = get().user;
+    if (!u || u.isGuest) return;
+    try {
+      const progress = await get().authed<ProgressOut>("/me/events", {
+        body: { type: "bot_game", ...input },
+      });
+      set({ progress });
+    } catch {
+      // Không chặn trải nghiệm chơi vì lỗi báo nhiệm vụ.
+    }
+  },
+
+  async uploadAvatar(file) {
+    const form = new FormData();
+    form.append("file", file, "avatar.jpg");
+    const user = await get().authed<User>("/me/avatar", { form });
+    set({ user });
+    return user;
+  },
+
+  async deleteAvatar() {
+    const user = await get().authed<User>("/me/avatar", { method: "DELETE" });
+    set({ user });
+    return user;
   },
 }));

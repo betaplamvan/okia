@@ -378,7 +378,45 @@ async def _finish(
     )
     room.result = over.model_dump(by_alias=True)
     await _record_match(room, over)
+    await _record_progress(room, over)
     return over
+
+
+def _max_combo(room: Room, seat: int) -> int:
+    """Combo lớn nhất của một ghế: số nước liên tiếp có ăn ô (tính lại từ moves + luật)."""
+    best = run = 0
+    state = maps.create_game(maps.resolve(room.board, allow_hidden=True))  # type: ignore[arg-type]
+    for mv in room.moves:
+        state, captured = rules.apply_move(state, mv["by"], mv["edge"])
+        if mv["by"] == seat and captured:
+            run += len(captured)
+            best = max(best, run)
+        elif mv["by"] == seat:
+            run = 0
+    return best
+
+
+async def _record_progress(room: Room, over: m.GameOver) -> None:
+    """Nuôi nhiệm vụ cho hai người chơi (ADR-0010). Ván afk hoặc đầu hàng sớm (< 10 nước): bỏ."""
+    if over.reason == "afk" or (over.reason != "complete" and len(room.moves) < 10):
+        return
+    from app.economy import quests
+
+    try:
+        async with get_session_factory()() as db:
+            for p in room.players:
+                await quests.record_game(
+                    db,
+                    uuid.UUID(p.user_id),
+                    won=over.winner == p.seat,
+                    online=True,
+                    max_combo=_max_combo(room, p.seat),
+                )
+            await db.commit()
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger("okia.room").exception("không ghi được tiến trình %s", room.id)
 
 
 async def _record_match(room: Room, over: m.GameOver) -> None:

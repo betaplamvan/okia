@@ -159,9 +159,11 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ## Giai đoạn 2B — Kinh tế & skin
 
-### M2.5 Ví & sổ cái
-- [ ] **P2-10** Model + migration `wallets`, `wallet_ledger` (một loại tiền, xem [05](05-co-so-du-lieu.md#kinh-tế)); tạo ví khi tạo tài khoản
-- [ ] **P2-11** Service `credit` / `debit` với idempotency theo [06](06-kinh-te.md#quy-tắc-ví); đủ bộ test bắt buộc
+### M2.5 Ví & sổ cái ([ADR-0010](adr/0010-hai-tien-diem-danh-nhiem-vu.md))
+- [x] **P2-10** Model + migration `wallets` (hai loại tiền), `wallet_ledger`, `checkins`, `quest_progress`, `users.avatar_blob/avatar_version` (xem [05](05-co-so-du-lieu.md#kinh-tế)); ví tạo lười khi cộng lần đầu
+- [x] **P2-11** Service `credit` / `debit` / `grant` với idempotency theo [06](06-kinh-te.md#quy-tắc-ví); test idempotency + `INSUFFICIENT_FUNDS`
+- [x] **P2-11b** Điểm danh 7 ngày + nhiệm vụ ngày/tuần (`api/app/economy/`), `GET /me/progress`, `POST /me/checkin`, `POST /me/quests/{id}/claim`, `POST /me/events`; nuôi tiến trình từ `game_over` phòng online và ván bot ở client; giao diện tab Tổng quan / Nhiệm vụ trong hồ sơ, ví hai chip
+- [x] **P2-11c** Ảnh đại diện tự tải: cắt ở client (react-easy-crop), server WebP 256px lưu Postgres, `GET /avatars/{id}.webp?v=N`
 
 ### M2.6 Thưởng
 - [ ] **P2-12** Thưởng thắng trận xếp hạng khi `game_over` (cùng transaction với rating); không thưởng casual/bot/phòng riêng/afk/đầu hàng sớm; thông báo rõ ở màn hình chọn chế độ rằng chỉ xếp hạng mới cho Ruột chì
@@ -185,7 +187,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [ ] **P2-23** Thành tựu & EXP cho **khách** ở client (store local) + gộp lên server khi tạo tài khoản với kiểm tra hợp lý; giao diện tab Thành tựu trong hồ sơ, toast "Thành tựu mới"
 - [ ] **P2-24** Model + migration `collections`, `chests`, `chest_items`, `chest_opens`, `inventory.quantity`; service mở rương (RNG có seed, trùng → hoàn 50%, giá tăng trong ngày qua Redis); trang tỷ lệ công khai; test
 - [ ] **P2-25** Giao diện rương (thẻ rương, danh sách vật phẩm + tỷ lệ, animation mở), tab Tủ đồ (lọc theo bộ, số lượng), tủ trưng bày 3 ô trong hồ sơ, hiển thị ở màn chờ/kết thúc
-- [ ] **P2-26** Vật phẩm tiêu hao: thẻ đổi tên (lần đầu miễn phí), thẻ avatar tùy chỉnh (upload có kiểm duyệt kích thước/định dạng); `showcase` API
+- [ ] **P2-26** Vật phẩm tiêu hao: thẻ đổi tên (lần đầu miễn phí); `showcase` API. (Avatar tùy chỉnh đã miễn phí ở P2-11c)
 
 ### M2.12 Pipeline asset & nội dung
 - [ ] **P2-20** Pipeline `pnpm assets:build` đầy đủ (SVG → PNG, atlas, audio sprite, kiểm tra manifest) chạy trong CI

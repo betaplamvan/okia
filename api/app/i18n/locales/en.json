@@ -34,10 +34,16 @@
     "OAUTH_EMAIL_UNVERIFIED": "Your Google email is not verified.",
     "ROOM_BUSY": "Room is busy, try again.",
     "UNSUPPORTED": "This feature is not available yet.",
-    "BAD_MESSAGE": "Invalid message."
+    "BAD_MESSAGE": "Invalid message.",
+    "ALREADY_CHECKED_IN": "You already checked in today.",
+    "QUEST_NOT_DONE": "Quest not completed yet.",
+    "QUEST_CLAIMED": "You already claimed this quest.",
+    "AVATAR_INVALID": "Invalid image.",
+    "AVATAR_TOO_LARGE": "Image too large (max 2 MB)."
   },
   "currency": {
-    "lead": "Lead"
+    "lead": "Lead",
+    "flower": "Merit flower"
   },
   "tiers": {
     "scratch": "Scratch Paper",
@@ -65,6 +71,32 @@
     "google_only": {
       "subject": "Your Ô Kìa account signs in with Google",
       "body": "Hi {name},\n\nYou requested a password reset, but this account signs in with Google and has no password. Use \"Continue with Google\" to play."
+    }
+  },
+  "quests": {
+    "d_play3": {
+      "name": "Warm-up",
+      "desc": "Finish 3 games (any mode)"
+    },
+    "d_win1": {
+      "name": "Perfect 10",
+      "desc": "Win 1 game"
+    },
+    "d_combo3": {
+      "name": "Oh my!",
+      "desc": "Capture 3 boxes in a row in one turn"
+    },
+    "w_play15": {
+      "name": "Diligent",
+      "desc": "Finish 15 games this week"
+    },
+    "w_win_online3": {
+      "name": "Class champion",
+      "desc": "Win 3 online games this week"
+    },
+    "w_daily5": {
+      "name": "Consistent",
+      "desc": "Claim 5 daily quests this week"
     }
   }
 }

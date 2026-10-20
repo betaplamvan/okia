@@ -15,18 +15,23 @@ import {
 } from "@chakra-ui/react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { LuPencil, LuPencilLine } from "react-icons/lu";
+import { LuPencilLine } from "react-icons/lu";
 import { AccountTab } from "@/components/auth/account-tab";
+import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { EditProfileForm } from "@/components/auth/edit-profile-form";
+import { CheckinStrip } from "@/components/economy/checkin-strip";
+import { QuestsList } from "@/components/economy/quests-list";
+import { WalletChips } from "@/components/economy/wallet-chips";
 import { type ProfileTab, useAuth } from "@/stores/auth";
 
-// Hồ sơ người chơi dạng hộp thoại (học từ noitu): đầu trang là avatar + tên + huy hiệu,
-// hàng nút "Chỉnh sửa hồ sơ" / Ruột chì, rồi các tab Tổng quan / Tài khoản.
+// Hồ sơ người chơi dạng hộp thoại (học từ noitu): avatar + tên + huy hiệu, ví hai loại tiền,
+// "Chỉnh sửa hồ sơ" (tên, ngôn ngữ, ảnh đại diện), tab Tổng quan (điểm danh) / Nhiệm vụ / Tài khoản.
 export function ProfileDialog() {
   const t = useTranslations("Auth");
-  const tc = useTranslations("Common");
+  const te = useTranslations("Economy");
   const format = useFormatter();
   const user = useAuth((s) => s.user);
+  const progress = useAuth((s) => s.progress);
   const open = useAuth((s) => s.profileOpen);
   const tab = useAuth((s) => s.profileTab);
   const openProfile = useAuth((s) => s.openProfile);
@@ -94,15 +99,21 @@ export function ProfileDialog() {
                   </HStack>
 
                   {editing ? (
-                    <EditProfileForm onDone={() => setEditing(false)} />
+                    <Stack gap={3}>
+                      <EditProfileForm onDone={() => setEditing(false)} />
+                      <Box bg="cream" border="2px solid" borderColor="ink" borderRadius="lg" p={3}>
+                        <Text fontWeight="700" mb={2}>
+                          {te("avatar")}
+                        </Text>
+                        <AvatarUpload />
+                      </Box>
+                    </Stack>
                   ) : (
                     <HStack gap={2} justify="center" flexWrap="wrap">
                       <Button variant="sticker" size="sm" bg="sun" onClick={() => setEditing(true)}>
                         <LuPencilLine /> {t("editProfile")}
                       </Button>
-                      <Button variant="sticker" size="sm" disabled title={tc("lead")}>
-                        <LuPencil /> 0 {tc("lead")}
-                      </Button>
+                      <WalletChips wallet={user.wallet} />
                     </HStack>
                   )}
 
@@ -113,7 +124,7 @@ export function ProfileDialog() {
                     lazyMount
                   >
                     <Tabs.List gap={2} justifyContent="center" flexWrap="wrap">
-                      {(["overview", "account"] as const).map((key) => (
+                      {(["overview", "quests", "account"] as const).map((key) => (
                         <Tabs.Trigger
                           key={key}
                           value={key}
@@ -126,14 +137,34 @@ export function ProfileDialog() {
                           fontWeight="600"
                           fontFamily="hand"
                         >
-                          {t(key)}
+                          {key === "quests" ? te("quests") : t(key)}
                         </Tabs.Trigger>
                       ))}
                     </Tabs.List>
                     <Tabs.Content value="overview" pt={4}>
-                      <Box bg="cream" border="2px dashed" borderColor="ink" borderRadius="lg" p={4}>
-                        <Text>{t("overviewSoon")}</Text>
-                      </Box>
+                      <Stack gap={3}>
+                        {progress ? (
+                          <CheckinStrip progress={progress} />
+                        ) : (
+                          <Text fontSize="sm">{t("loading")}</Text>
+                        )}
+                        <Box
+                          bg="cream"
+                          border="2px dashed"
+                          borderColor="ink"
+                          borderRadius="lg"
+                          p={3}
+                        >
+                          <Text fontSize="sm">{t("overviewSoon")}</Text>
+                        </Box>
+                      </Stack>
+                    </Tabs.Content>
+                    <Tabs.Content value="quests" pt={4}>
+                      {progress ? (
+                        <QuestsList progress={progress} />
+                      ) : (
+                        <Text fontSize="sm">{t("loading")}</Text>
+                      )}
                     </Tabs.Content>
                     <Tabs.Content value="account" pt={4}>
                       <AccountTab />

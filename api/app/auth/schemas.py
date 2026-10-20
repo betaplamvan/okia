@@ -89,10 +89,17 @@ class IdentityOut(CamelModel):
     subject: str | None = None  # email với password; ẩn với google (sub) và guest
 
 
+class WalletBrief(CamelModel):
+    lead: int = 0
+    flower: int = 0
+
+
 class UserOut(CamelModel):
     id: uuid.UUID
     display_name: str
     avatar_url: str | None
+    has_custom_avatar: bool = False
+    wallet: WalletBrief = WalletBrief()
     email: str | None
     email_verified: bool
     is_guest: bool

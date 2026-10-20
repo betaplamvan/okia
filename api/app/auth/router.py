@@ -24,6 +24,7 @@ from app.auth.schemas import (
     TokenOut,
     UserOut,
     VerifyIn,
+    WalletBrief,
 )
 from app.config import get_settings
 from app.db import get_db
@@ -47,10 +48,20 @@ def to_user_out(user: User) -> UserOut:
             provider=i.provider, subject=i.subject if i.provider == "password" else None
         )
 
+    from sqlalchemy import inspect
+    from sqlalchemy.orm.base import NO_VALUE
+
+    from app.economy.router import avatar_url_for
+
+    # Ví chỉ đọc khi đã nạp (selectin lúc query); user vừa tạo trong session thì chưa có ví → 0.
+    loaded = inspect(user).attrs.wallet.loaded_value
+    w = None if loaded is NO_VALUE else loaded
     return UserOut(
         id=user.id,
         display_name=user.display_name,
-        avatar_url=user.avatar_url,
+        avatar_url=avatar_url_for(user),
+        has_custom_avatar=user.avatar_version > 0,
+        wallet=WalletBrief(lead=w.lead if w else 0, flower=w.flower if w else 0),
         email=user.email,
         email_verified=user.email_verified_at is not None,
         is_guest=user.is_guest,

@@ -32,6 +32,8 @@ export class ApiError extends Error {
 export type ApiInit = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
+  /** multipart/form-data (upload) — không JSON hóa, trình duyệt tự đặt Content-Type. */
+  form?: FormData;
   token?: string | null;
   locale?: string;
   query?: Record<string, string>;
@@ -39,16 +41,16 @@ export type ApiInit = {
 
 export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (init.body !== undefined) headers["Content-Type"] = "application/json";
+  if (init.body !== undefined && !init.form) headers["Content-Type"] = "application/json";
   if (init.token) headers.Authorization = `Bearer ${init.token}`;
   if (init.locale) headers["Accept-Language"] = init.locale;
   const qs = init.query ? `?${new URLSearchParams(init.query)}` : "";
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}${qs}`, {
-      method: init.method ?? (init.body !== undefined ? "POST" : "GET"),
+      method: init.method ?? (init.body !== undefined || init.form ? "POST" : "GET"),
       headers,
-      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      body: init.form ?? (init.body !== undefined ? JSON.stringify(init.body) : undefined),
       credentials: "include",
     });
   } catch {
@@ -71,10 +73,15 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
 
 export type Identity = { provider: "password" | "google"; subject: string | null };
 
+export type Wallet = { lead: number; flower: number };
+export type Currency = keyof Wallet;
+
 export type User = {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  hasCustomAvatar: boolean;
+  wallet: Wallet;
   email: string | null;
   emailVerified: boolean;
   isGuest: boolean;
@@ -82,6 +89,38 @@ export type User = {
   createdAt: string;
   identities: Identity[];
 };
+
+// ---------- Kinh tế (api/app/economy/router.py) ----------
+
+export type Reward = Partial<Wallet>;
+
+export type CheckinOut = {
+  checkedToday: boolean;
+  streak: number;
+  cycleDay: number;
+  rewards: Reward[];
+  nextReset: number;
+};
+
+export type QuestOut = {
+  id: string;
+  scope: "daily" | "weekly";
+  target: number;
+  progress: number;
+  reward: Reward;
+  claimed: boolean;
+};
+
+export type ProgressOut = {
+  wallet: Wallet;
+  canClaim: boolean;
+  checkin: CheckinOut;
+  quests: QuestOut[];
+  dailyReset: number;
+  weeklyReset: number;
+};
+
+export type RewardOut = { reward: Reward; progress: ProgressOut };
 
 export type TokenOut = {
   accessToken: string;

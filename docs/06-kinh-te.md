@@ -1,10 +1,10 @@
 # 06 — Kinh tế trong game & donate
 
-Quyết định: [ADR-0005](adr/0005-mot-tien-te-donate.md) (một loại tiền, không thanh toán, donate) + [ADR-0007](adr/0007-thanh-tuu-cap-do-ruong.md) (thành tựu, cấp độ, rương, tủ trưng bày).
+Quyết định: [ADR-0005](adr/0005-mot-tien-te-donate.md) (không thanh toán, donate) + [ADR-0007](adr/0007-thanh-tuu-cap-do-ruong.md) (thành tựu, cấp độ, rương, tủ trưng bày) + [ADR-0010](adr/0010-hai-tien-diem-danh-nhiem-vu.md) (**hai loại tiền**, điểm danh, nhiệm vụ, ảnh đại diện).
 
 ## Nguyên tắc
 
-- **Một loại tiền duy nhất: Ruột chì** (`lead`). Hoàn toàn miễn phí, **không có cách nào mua bằng tiền thật**.
+- **Hai loại tiền, đều miễn phí, không có cách nào mua bằng tiền thật:** **Ruột chì** (`lead`, tiền chính) và **Hoa điểm tốt** (`flower`, tiền phụ hiếm — xem [ADR-0010](adr/0010-hai-tien-diem-danh-nhiem-vu.md)).
 - **Không có cổng thanh toán**, không bán vật phẩm, không battle pass, không quảng cáo. Chi phí vận hành bù bằng **donate** tự nguyện, không đổi lấy gì trong game.
 - Chỉ có **vật phẩm trang trí và chức năng** (đổi tên, avatar). Không vật phẩm nào ảnh hưởng tới kết quả trận.
 - Động cơ chính: **thành tựu nhiều cấp** và **sưu tầm theo bộ** (học từ noitu.fun, xem phụ lục).
@@ -19,11 +19,35 @@ Quyết định: [ADR-0005](adr/0005-mot-tien-te-donate.md) (một loại tiền
 | Thắng 5 trận phân hạng đầu mùa | 30 mỗi trận | Mỗi mùa |
 | **Thành tựu** (xem bảng dưới) | 10–100 mỗi cấp | **Không** — mỗi cấp nhận đúng một lần |
 | Thưởng cuối mùa theo `peak_tier` | Giấy nháp 100 · Vở ô li 200 · Học sinh khá 350 · Học sinh giỏi 500 · Thủ khoa 800 | Mỗi mùa |
-| Hoàn tiền vật phẩm trùng khi mở rương | 50% giá rương | Theo rương |
+| **Điểm danh** mỗi ngày | 10 / 10 / 15 / 15 / 20 / 20 / 30 theo ngày trong chu kỳ 7 ngày | Hằng ngày |
+| **Nhiệm vụ** ngày (3) / tuần (3) | 10–15 mỗi nhiệm vụ ngày; 30–50 nhiệm vụ tuần | Hằng ngày / tuần |
+| Vật phẩm trùng khi mở rương | 0 Ruột chì — nhận **Hoa điểm tốt** (xem dưới) | Theo rương |
 | Thua trận xếp hạng; ván casual/bot/phòng riêng | 0 (chỉ nhận EXP) | — |
 
 - **Khách** (chưa tài khoản) vẫn nhận tiến trình thành tựu và EXP **tại chỗ**; khi tạo tài khoản, tiến trình đó được giữ (gộp tài khoản — [13](13-xac-thuc.md#gộp-tài-khoản)). Khách không chơi xếp hạng và **không mở được shop/rương** cho tới khi có tài khoản — đây là lý do tự nhiên để đăng ký.
 - Trần tự nhiên: thành tựu có số cấp hữu hạn; xếp hạng tự giới hạn bởi thời gian chơi → **không cần trần ngày**.
+
+## Hoa điểm tốt
+
+Tiền phụ, hiếm, không mua được. Nguồn: ngày 7 của chu kỳ điểm danh (1), nhiệm vụ tuần "Chăm chỉ" (1) và "Đều đặn" (1), vật phẩm trùng khi mở rương (1–3 theo độ hiếm rương; giai đoạn 2B). Dùng mua vật phẩm giới hạn/huyền thoại và một số thẻ. Tối đa ≈ 3 Hoa/tuần ngoài rương.
+
+## Điểm danh & nhiệm vụ ([ADR-0010](adr/0010-hai-tien-diem-danh-nhiem-vu.md))
+
+- **Điểm danh:** `POST /me/checkin` một lần/ngày (ngày theo giờ Việt Nam). Chuỗi liên tiếp quyết định ngày trong chu kỳ 7; lỡ một ngày → về ngày 1. Bảng thưởng ở `api/app/economy/checkin.py`.
+- **Nhiệm vụ** (`api/app/economy/quests.py`, tên/mô tả trong catalog i18n `quests.*`):
+
+| Id | Kỳ | Điều kiện | Thưởng |
+|---|---|---|---|
+| `d_play3` | ngày | chơi xong 3 ván | 10 Ruột chì |
+| `d_win1` | ngày | thắng 1 ván | 15 Ruột chì |
+| `d_combo3` | ngày | combo ≥ 3 trong một lượt | 10 Ruột chì |
+| `w_play15` | tuần | chơi xong 15 ván | 30 Ruột chì + 1 Hoa |
+| `w_win_online3` | tuần | thắng 3 ván online | 50 Ruột chì |
+| `w_daily5` | tuần | nhận 5 nhiệm vụ ngày | 1 Hoa |
+
+- Tiến trình: phòng online do server ghi khi `game_over` (bỏ `afk` và đầu hàng trước nước 10); ván với máy do client báo `POST /me/events` (≤ 30/giờ, ván ≥ 24 nước) cho tới khi bot chạy ở server (P2-06).
+- `GET /me/progress` trả ví + điểm danh + nhiệm vụ + mốc reset; nhận thưởng qua `POST /me/checkin`, `POST /me/quests/{id}/claim` — chỉ tài khoản **đã xác minh email**; khách và chưa xác minh vẫn thấy tiến trình.
+- Giao diện: hộp thoại hồ sơ, tab *Tổng quan* (dải 7 ngày) và *Nhiệm vụ* (thanh tiến trình, nút Nhận, đếm giờ tới lúc làm mới); ví hai chip trên pill người chơi.
 
 ### Thành tựu (bộ khởi điểm, mỗi thành tựu 5 cấp)
 
@@ -56,8 +80,8 @@ Tổng Ruột chì tối đa từ thành tựu khởi điểm ≈ 2.300 (tương
 
 - Một dòng `wallets` mỗi người chơi; mọi thay đổi số dư: `SELECT … FOR UPDATE` → cập nhật `balance` → `INSERT wallet_ledger` **trong cùng transaction**.
 - Không bao giờ `UPDATE balance` ở chỗ nào khác.
-- `credit(user, amount, source, ref, idem_key)` với `source ∈ {match, season, achievement, chest_refund, admin}`; `debit(user, amount, source ∈ {purchase, chest}, ref, idem_key)`.
-- `idempotency_key` gợi ý: `match:{matchId}:{userId}`, `season:{seasonId}:{userId}`, `ach:{achievementId}:{tier}:{userId}`, `chest:{openId}`, `buy:{requestId}`.
+- `credit(user, currency, amount, source, ref, idem_key)` với `source ∈ {match, season, achievement, checkin, quest, chest_refund, admin}`; `debit(user, currency, amount, source ∈ {purchase, chest}, ref, idem_key)`; `grant(user, {lead, flower}, …)` cộng một gói (mỗi loại một dòng ledger, khóa + hậu tố `:lead` / `:flower`). **Đã làm:** `api/app/economy/wallet.py`.
+- `idempotency_key` gợi ý: `match:{matchId}:{userId}`, `season:{seasonId}:{userId}`, `ach:{achievementId}:{tier}:{userId}`, `checkin:{userId}:{YYYY-MM-DD}`, `quest:{userId}:{questId}:{period}`, `chest:{openId}`, `buy:{requestId}`.
 
 ### Test bắt buộc
 - Gọi `credit` hai lần cùng `idempotency_key` → chỉ cộng một lần.
@@ -75,7 +99,7 @@ Tổng Ruột chì tối đa từ thành tựu khởi điểm ≈ 2.300 (tương
 |---|---|---|
 | `pen` / `stroke` / `box` / `board` (skin, [08](08-skin.md)) | theo độ hiếm | common 150 · rare 450 · epic 1.200 · legendary 3.000 |
 | `frame` (khung avatar), `badge` (huy hiệu) | chỉ từ cấp độ / mùa / thành tựu | không bán (`reward`) |
-| `card` — vật phẩm tiêu hao | Thẻ đổi tên 500 (lần đổi đầu miễn phí) · Thẻ avatar tùy chỉnh 1.000 | có `quantity` |
+| `card` — vật phẩm tiêu hao | Thẻ đổi tên 500 (lần đổi đầu miễn phí). Ảnh đại diện tự tải **miễn phí** (ADR-0010) | có `quantity` |
 | `reward` | khung mùa giải, dấu ô kỷ niệm | không bán |
 
 - Mỗi người chơi mới có sẵn 1 skin `default` mỗi loại và 1 lần đổi tên miễn phí.
@@ -85,7 +109,7 @@ Tổng Ruột chì tối đa từ thành tựu khởi điểm ≈ 2.300 (tương
 
 - Mỗi rương là một **bộ** có chủ đề (khởi điểm 3 bộ: *Bộ Bút Bi*, *Bộ Mực Tím*, *Bộ Phấn Trắng*; sau đó *Bộ Giấy Kiểm Tra*, *Bộ Khai Giảng*…), 12–20 vật phẩm/bộ gồm đủ 4 loại skin + 1 huy hiệu "trọn bộ" chỉ có khi sưu tầm đủ.
 - Giá khởi điểm 300 (common-heavy) đến 800 (có epic). **Tỷ lệ công khai** trên thẻ rương: ví dụ common 70% · rare 25% · epic 5%; danh sách đầy đủ vật phẩm có thể nhận.
-- **Trùng → hoàn 50% giá rương** bằng Ruột chì, ghi ledger `chest_refund`. Vật phẩm trong bộ vẫn mua lẻ được.
+- **Trùng → nhận Hoa điểm tốt** (1 với rương common-heavy, 2–3 với rương có epic), ghi ledger `chest_refund` (ADR-0010 thay cho hoàn 50% Ruột chì). Vật phẩm trong bộ vẫn mua lẻ được.
 - Rương "Vở nháp" 100 Ruột chì: **giá tăng 50% sau mỗi lần mua trong ngày** (100 → 150 → 225…), reset 0h — cách chặn cày học từ noitu, không cần trần ngày cứng.
 - Mỗi lần mở là một bản ghi `chest_opens` (kiểm toán được). Server chọn vật phẩm bằng RNG có seed ghi lại.
 
@@ -108,7 +132,7 @@ Tổng Ruột chì tối đa từ thành tựu khởi điểm ≈ 2.300 (tương
 - Tab: **Rương** · **Vật phẩm** (mua lẻ, lọc theo loại) · **Thẻ** (chức năng) · **Tủ đồ**.
 - **Thử:** xem skin trên bàn mẫu, chỉ ở client, không lưu.
 - **Mở rương:** animation mở (nắp bật, vật phẩm bay lên, "TRÙNG — hoàn 250" nếu trùng); nút "Mở tiếp".
-- **Header:** hiện Ruột chì, Lv + thanh EXP, lối tắt tới shop (pill người chơi).
+- **Header:** hiện Ruột chì + Hoa điểm tốt, Lv + thanh EXP, lối tắt tới shop (pill người chơi).
 - **Shop xoay vòng:** mỗi ngày 6 vật phẩm lẻ ngẫu nhiên (seed ngày) **giảm 20%**.
 
 ## Donate

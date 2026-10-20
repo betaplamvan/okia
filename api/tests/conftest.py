@@ -33,7 +33,16 @@ from app.db import dispose_engine  # noqa: E402
 from app.main import create_app  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-TABLES = ["sessions", "auth_identities", "matches", "users"]
+TABLES = [
+    "wallet_ledger",
+    "wallets",
+    "checkins",
+    "quest_progress",
+    "sessions",
+    "auth_identities",
+    "matches",
+    "users",
+]
 
 
 def _pg_dsn(url: str) -> str:

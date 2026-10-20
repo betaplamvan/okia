@@ -24,7 +24,8 @@
     "smoke:auth": "node scripts/smoke-auth.mjs",
     "gen:ws": "node scripts/gen-ws-types.mjs",
     "smoke:room": "node scripts/smoke-room.mjs",
-    "gen:maps": "node scripts/gen-maps.mjs"
+    "gen:maps": "node scripts/gen-maps.mjs",
+    "smoke:economy": "node scripts/smoke-economy.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.37.0",
@@ -37,6 +38,7 @@
     "pixi.js": "^8.22.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-easy-crop": "^6.2.4",
     "react-icons": "^5.7.0",
     "zustand": "^5.0.15"
   },

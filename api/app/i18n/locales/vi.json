@@ -34,10 +34,16 @@
     "OAUTH_EMAIL_UNVERIFIED": "Email Google của bạn chưa được xác minh.",
     "ROOM_BUSY": "Phòng đang bận, thử lại.",
     "UNSUPPORTED": "Tính năng này chưa có.",
-    "BAD_MESSAGE": "Tin nhắn không hợp lệ."
+    "BAD_MESSAGE": "Tin nhắn không hợp lệ.",
+    "ALREADY_CHECKED_IN": "Hôm nay bạn đã điểm danh rồi.",
+    "QUEST_NOT_DONE": "Nhiệm vụ chưa hoàn thành.",
+    "QUEST_CLAIMED": "Bạn đã nhận thưởng nhiệm vụ này rồi.",
+    "AVATAR_INVALID": "Ảnh không hợp lệ.",
+    "AVATAR_TOO_LARGE": "Ảnh quá lớn (tối đa 2 MB)."
   },
   "currency": {
-    "lead": "Ruột chì"
+    "lead": "Ruột chì",
+    "flower": "Hoa điểm tốt"
   },
   "tiers": {
     "scratch": "Giấy nháp",
@@ -65,6 +71,32 @@
     "google_only": {
       "subject": "Tài khoản Ô Kìa của bạn đăng nhập bằng Google",
       "body": "Chào {name},\n\nBạn vừa yêu cầu đặt lại mật khẩu, nhưng tài khoản này đăng nhập bằng Google và chưa có mật khẩu. Hãy bấm \"Tiếp tục với Google\" để vào game."
+    }
+  },
+  "quests": {
+    "d_play3": {
+      "name": "Khởi động",
+      "desc": "Chơi xong 3 ván (chế độ nào cũng được)"
+    },
+    "d_win1": {
+      "name": "Điểm 10",
+      "desc": "Thắng 1 ván"
+    },
+    "d_combo3": {
+      "name": "Ô kìa!",
+      "desc": "Ăn 3 ô liên tiếp trong một lượt"
+    },
+    "w_play15": {
+      "name": "Chăm chỉ",
+      "desc": "Chơi xong 15 ván trong tuần"
+    },
+    "w_win_online3": {
+      "name": "Cao thủ lớp",
+      "desc": "Thắng 3 ván online trong tuần"
+    },
+    "w_daily5": {
+      "name": "Đều đặn",
+      "desc": "Nhận thưởng 5 nhiệm vụ ngày trong tuần"
     }
   }
 }

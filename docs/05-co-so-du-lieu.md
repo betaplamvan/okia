@@ -111,23 +111,46 @@ CREATE INDEX ON matches (player1, ended_at DESC);
 ### Kinh tế
 
 ```sql
--- Một loại tiền duy nhất (Ruột chì), xem 06. Tên tiền nằm trong file dịch, không cần bảng.
+-- Hai loại tiền miễn phí (ADR-0010): Ruột chì (lead) và Hoa điểm tốt (flower). Tên tiền trong file dịch.
+-- ĐÃ LÀM: api/app/models/economy.py + migration c2523bc2a547.
 
 CREATE TABLE wallets (
-  user_id   UUID PRIMARY KEY REFERENCES users,
-  balance   BIGINT NOT NULL DEFAULT 0 CHECK (balance >= 0)
+  user_id   UUID PRIMARY KEY REFERENCES users ON DELETE CASCADE,
+  lead      BIGINT NOT NULL DEFAULT 0 CHECK (lead >= 0),
+  flower    BIGINT NOT NULL DEFAULT 0 CHECK (flower >= 0)
 );
 
 CREATE TABLE wallet_ledger (            -- chỉ INSERT, không UPDATE/DELETE
   id               BIGSERIAL PRIMARY KEY,
-  user_id          UUID NOT NULL REFERENCES users,
+  user_id          UUID NOT NULL REFERENCES users ON DELETE CASCADE,
+  currency         TEXT NOT NULL CHECK (currency IN ('lead', 'flower')),
   delta            BIGINT NOT NULL,     -- dương: cộng, âm: trừ
   balance_after    BIGINT NOT NULL,
-  source           TEXT NOT NULL,       -- match | season | achievement | chest_refund | purchase | chest | admin
-  ref              TEXT,                -- match id, season id, item id…
+  source           TEXT NOT NULL,       -- match | season | achievement | checkin | quest | chest_refund | purchase | chest | admin
+  ref              TEXT,                -- match id, season id, item id, ngày điểm danh…
   idempotency_key  TEXT NOT NULL UNIQUE
 );
-CREATE INDEX ON wallet_ledger (user_id, id DESC);
+CREATE INDEX ON wallet_ledger (user_id, id);
+
+CREATE TABLE checkins (                 -- điểm danh: một dòng mỗi ngày (giờ VN)
+  user_id  UUID REFERENCES users ON DELETE CASCADE,
+  day      DATE,
+  streak   INT NOT NULL DEFAULT 1,      -- ngày thứ mấy trong chuỗi liên tiếp
+  PRIMARY KEY (user_id, day)
+);
+
+CREATE TABLE quest_progress (           -- nhiệm vụ theo kỳ: '2026-10-21' (ngày) | '2026-W43' (tuần)
+  user_id     UUID REFERENCES users ON DELETE CASCADE,
+  quest_id    TEXT,                     -- id trong api/app/economy/quests.py
+  period      TEXT,
+  progress    INT NOT NULL DEFAULT 0,
+  claimed_at  TIMESTAMPTZ,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, quest_id, period)
+);
+CREATE INDEX ON quest_progress (user_id, period);
+
+-- users: thêm avatar_blob BYTEA (WebP 256px, nạp deferred) và avatar_version INT (0 = chưa có ảnh riêng).
 
 CREATE TABLE items (
   id          TEXT PRIMARY KEY,         -- 'pen_ink_purple'
