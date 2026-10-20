@@ -27,7 +27,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M0.1 Khởi tạo dự án
 - [x] **P0-01** Tạo Next.js + TypeScript trong `web/`; Chakra UI v3 (provider, theme, color mode); ESLint, Prettier; cài PixiJS, GSAP, Howler, Zustand
-- [ ] **P0-02** Cài Vitest; tạo cấu trúc thư mục theo [02](02-kien-truc.md#cấu-trúc-repo); khởi tạo git, `.gitignore`
+- [x] **P0-02** Cài Vitest; tạo cấu trúc thư mục theo [02](02-kien-truc.md#cấu-trúc-repo); khởi tạo git, `.gitignore`
 - [ ] **P0-03** i18n: `next-intl`, route `app/[locale]/` (vi không tiền tố, en có `/en`), `messages/vi.json` + `en.json`, nút đổi ngôn ngữ, script kiểm tra hai file có cùng tập key
 - [ ] **P0-04** Khung giao diện responsive: layout mobile-first, `100dvh`, safe-area; chọn font UI và font viết tay (script kiểm tra đủ dấu tiếng Việt, xem [12](12-asset.md#font)); trang chủ tạm
 

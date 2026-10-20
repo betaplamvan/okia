@@ -1,0 +1,21 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Môi trường
+.env
+.env.*
+!.env.example
+
+# Python (api/)
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Output pipeline asset (xem docs/12-asset.md)
+web/public/assets/
