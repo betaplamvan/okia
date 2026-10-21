@@ -61,21 +61,25 @@ Màn chơi (`/play`): không header; bàn đấu là một panel paper vuông �
 
 ## Nhận diện (logo, favicon)
 
-Chốt 2026-10-21 (phương án A trong 4 mẫu): **mark "ô vừa ăn đội mũ"** — 4 chấm ink + hộp mint vừa
-được ăn + dấu mũ phía trên, đọc thành chữ **Ô**. Logo ngang = mark thay chữ Ô + chữ **Kìa**
-(Baloo 2 ExtraBold, đã chuyển thành path). Chữ trong UI vẫn là Patrick Hand; Baloo 2 chỉ có trong logo.
+Chốt 2026-10-21 (mẫu K, bản v3 "mềm và đơn giản", sau hai vòng A và E–H): **mark "một nét"** —
+ô bo tròn chỉ có nét viền (không tô, không chấm, không bóng) và dấu mũ là một nét cong, cùng một màu;
+đọc thành chữ **ô**. Logo ngang = mark thay chữ ô + chữ **kìa** viết thường (Quicksand Bold, đã chuyển
+thành path). Chữ trong UI vẫn là Patrick Hand; Quicksand chỉ có trong logo. Ở cỡ 16–32px ô được tô
+mint và nét dày hơn cho đỡ rỗng; icon app/PWA là nét mực trên nền mint.
 
 | File | Dùng ở |
 |---|---|
 | `web/public/brand/mark.svg`, `mark-dark.svg` | mark đơn (nét ink cho nền sáng / nét giấy cho nền tối) |
 | `web/public/brand/logo.svg`, `logo-dark.svg` | logo ngang (header, hero trang chủ dùng bản dark) |
-| `web/public/brand/wordmark.svg`, `wordmark-dark.svg` | chữ "Ô Kìa" thuần, khi cần đặt cạnh mark lớn |
-| `web/src/app/icon.svg`, `favicon.ico` (16 lược chấm, 32, 48), `apple-icon.png` | favicon theo quy ước file của Next |
-| `web/public/brand/icon-192.png`, `icon-512.png` + `src/app/manifest.ts` | PWA / thêm vào màn hình chính, nền vàng `sun` |
+| `web/public/brand/wordmark.svg`, `wordmark-dark.svg` | chữ "ô kìa" thuần, khi cần đặt cạnh mark lớn |
+| `web/public/brand/logo-email.png` | logo trong thư (client mail không hiện SVG) |
+| `web/src/app/icon.svg`, `favicon.ico` (16 lược, 32, 48), `apple-icon.png` | favicon theo quy ước file của Next |
+| `web/public/brand/icon-192.png`, `icon-512.png` + `src/app/manifest.ts` | PWA / thêm vào màn hình chính, nền mint |
 | `web/src/app/[locale]/opengraph-image.png` | ảnh chia sẻ 1200×630 |
 
 Tất cả sinh từ **một nguồn** `web/scripts/build-brand.mjs` (`pnpm assets:brand`): sửa mark ở đó rồi chạy
-lại, không sửa tay file xuất ra. Bản 16px bỏ chấm góc và tăng nét để còn đọc được trên tab trình duyệt.
+lại, không sửa tay file xuất ra. Các bản thăm dò (A hộp đội mũ, E–H, I–L) nằm trong canvas thiết kế, không
+đưa vào repo.
 
 ## Khả năng tiếp cận
 - Chữ ink trên các màu kẹo đều đạt tương phản ≥ 4.5:1 (ink rất tối). Chữ cream trên nền xanh ≥ 7:1.

@@ -17,7 +17,7 @@ Các gói Kenney khác đã tải để chọn (UI Audio, Music Jingles, Impact 
 |---|---|---|
 | Patrick Hand | Google Fonts (Patrick Wagesreiter) | OFL 1.1 |
 | Be Vietnam Pro | Google Fonts (Lâm Bảo) | OFL 1.1 |
-| Baloo 2 (chỉ dùng để vẽ chữ trong logo, đã chuyển thành path — không tải lúc chạy) | Google Fonts (Ek Type) | OFL 1.1 |
+| Quicksand (chỉ dùng để vẽ chữ trong logo, đã chuyển thành path — không tải lúc chạy) | Google Fonts (Andrew Paglinawan) | OFL 1.1 |
 
 ## Hình ảnh
 

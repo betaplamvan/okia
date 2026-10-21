@@ -48,7 +48,6 @@ export default function Home() {
               alt="Ô Kìa"
               h={{ base: "84px", md: "120px" }}
               w="auto"
-              filter="drop-shadow(0 4px 0 rgba(26, 40, 38, 0.4))"
             />
           </Heading>
           <Text mt={3} fontSize={{ base: "lg", md: "xl" }} opacity={0.9}>

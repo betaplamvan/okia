@@ -34,7 +34,6 @@ export function AppShell({ children }: AppShellProps) {
                 h={{ base: "36px", md: "44px" }}
                 w="auto"
                 display="block"
-                filter="drop-shadow(0 3px 0 rgba(26, 40, 38, 0.4))"
               />
             </Link>
             <HStack gap={2}>
