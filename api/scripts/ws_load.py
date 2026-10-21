@@ -2,8 +2,12 @@
 
 Chạy trong container API production (cùng máy, không qua Cloudflare):
 
-    docker cp api/scripts/ws_load.py okia-api:/tmp/ws_load.py
-    docker exec okia-api python /tmp/ws_load.py 300 20
+    b64=$(base64 -w0 api/scripts/ws_load.py)
+    docker exec okia-api sh -c "echo $b64 | base64 -d > /tmp/ws_load_run.py"
+    docker exec okia-api python -u /tmp/ws_load_run.py 300 20
+
+(`docker cp` từ stdin tạo symlink tới /proc/self/fd/0 trong container — đừng dùng.) Chạy nhiều lần
+thì xóa bộ đếm `rl:guest:*` trong Redis giữa các lần (30 khách/giờ/IP).
 
 Tham số: N kết nối (mặc định 300), K tài khoản khách (mặc định 20; `/auth/guest` giới hạn
 30/giờ/IP — mỗi khách mở N/K kết nối, tối đa `ws_max_conn_per_user` × số worker). Không đi nước,
@@ -36,8 +40,10 @@ def rss_kb() -> int:
             continue
         try:
             with open(f"/proc/{pid}/cmdline", "rb") as f:
-                if b"uvicorn" not in f.read():
-                    continue
+                cmd = f.read()
+            # Worker của uvicorn --workers có cmdline "python -c from multiprocessing.spawn …".
+            if b"uvicorn" not in cmd and b"multiprocessing.spawn" not in cmd:
+                continue
             with open(f"/proc/{pid}/status") as f:
                 for line in f:
                     if line.startswith("VmRSS:"):
