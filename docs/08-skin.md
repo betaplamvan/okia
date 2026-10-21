@@ -133,6 +133,7 @@ Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt pa
 - **Bộ tiếng theo bút:** `capture` (ting mặc định), `capture_soft` (chì/sáp), `capture_marker` (dạ), `capture_ink` (mực "ục"), `capture_chalk` (gõ phấn), `capture_neon` (blip sóng vuông), `capture_bell` (chuông), `capture_fire` (whoosh lửa); `combo` (lấp lánh mặc định), `combo_ink`, `combo_chalk`, `combo_neon`, `combo_bell`, `combo_fire` (bùng lửa + rumble + lách tách).
 - **Combo:** ô thứ `n` trong một lượt phát `capture` của bút với `rate = 1 + 0.08 × (n−1)` (tối đa 1.6); từ ô thứ 2 phát thêm `combo` (`rate = 1 + 0.06 × (n−2)`, tối đa 1.5). Hai tiếng là của **bút người vừa đi** (`use-game-sounds.ts` đọc `SeatSkins`).
 - Rung (`navigator.vibrate`) 15 ms khi ăn ô, mẫu `[15, 30, 25]` từ combo ×3.
+- **Tiếng bấm chung** (`web/src/game/audio/ui-sounds.ts`, 2026-10-21): một listener `click` (capture) trên `document` do `AudioProvider` gắn, bắt mọi nút / link / tab / công tắc / ô chọn và phát `ui_click` — không gắn tay từng nút. Đổi tiếng bằng `data-sfx` trên phần tử hoặc tổ tiên: `confirm` (hành động chính: Chơi luôn!, Tạo phòng, Mua, Trang bị, Ván mới…), `back` (Hủy / Từ chối), `open` (Thử skin), `close`, `none` (im). Nút vô hiệu không kêu; hai click cách < 40 ms chỉ kêu một. Code chỉ còn gọi `audio.playUi` cho sự kiện không phải click (WS `matched` → confirm, `match_cancelled` → back, lỗi API → error, bật lại SFX → confirm).
 
 ## Shop & trang bị
 

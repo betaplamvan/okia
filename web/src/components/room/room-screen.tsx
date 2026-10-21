@@ -455,7 +455,6 @@ function WaitingRoom({ code, onCancel }: { code: string; onCancel: () => void })
     try {
       await navigator.clipboard.writeText(kind === "code" ? code : link);
       setCopied(kind);
-      audio.playUi("confirm");
     } catch {
       toaster.error({ title: t("noConnection") });
     }

@@ -86,6 +86,7 @@ const config = defineConfig({
       },
       shadows: {
         sticker: { value: "5px 5px 0 0 rgba(26, 40, 38, 0.85)" },
+        stickerLg: { value: "8px 10px 0 0 rgba(26, 40, 38, 0.85)" },
         stickerSm: { value: "2px 2px 0 0 rgba(26, 40, 38, 0.85)" },
         stickerText: { value: "0 3px 0 rgba(26, 40, 38, 0.4)" },
       },

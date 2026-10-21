@@ -88,13 +88,11 @@ export function PlayScreen() {
   useGameSounds(session, skins);
 
   const openMaps = () => {
-    audio.playUi("click");
     setPickedMap(getSettings().mapId);
     setMapsOpen(true);
   };
 
   const applyMap = () => {
-    audio.playUi("confirm");
     updateSettings({ mapId: pickedMap });
     controller.newGame({ mapId: pickedMap });
     setSettled(null);
@@ -102,13 +100,11 @@ export function PlayScreen() {
   };
 
   const toggleShowLastMove = (on: boolean) => {
-    audio.playUi("click");
     updateSettings({ showLastMove: on });
     controller.setShowLastMove(on);
   };
 
   const newGame = () => {
-    audio.playUi("confirm");
     controller.newGame();
   };
 
@@ -216,7 +212,7 @@ export function PlayScreen() {
               </Button>
             </HStack>
             <HStack justify="center" gap={2}>
-              <Button variant="sticker" size="sm" onClick={newGame}>
+              <Button variant="sticker" size="sm" onClick={newGame} data-sfx="confirm">
                 <LuRotateCcw /> {t("newGame")}
               </Button>
               <Button
@@ -267,7 +263,7 @@ export function PlayScreen() {
                 <Button variant="sticker" onClick={() => setMapsOpen(false)}>
                   {t("cancel")}
                 </Button>
-                <Button variant="sticker" bg="mint" onClick={applyMap}>
+                <Button variant="sticker" bg="mint" onClick={applyMap} data-sfx="confirm">
                   {tm("apply")}
                 </Button>
               </Dialog.Footer>
@@ -347,7 +343,7 @@ export function PlayScreen() {
                 <Button asChild variant="sticker">
                   <Link href="/">{t("backHome")}</Link>
                 </Button>
-                <Button variant="sticker" bg="mint" onClick={newGame}>
+                <Button variant="sticker" bg="mint" onClick={newGame} data-sfx="confirm">
                   {t("playAgain")}
                 </Button>
               </Dialog.Footer>

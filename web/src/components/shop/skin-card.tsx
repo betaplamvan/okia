@@ -76,7 +76,7 @@ export function SkinCard({ skin, owned, equipped, canBuy, busy, onTry, onBuy, on
         ) : (
           <RewardChips reward={price} />
         )}
-        <Button variant="sticker" size="xs" onClick={onTry} aria-label={t("try")}>
+        <Button variant="sticker" size="xs" onClick={onTry} aria-label={t("try")} data-sfx="open">
           <LuEye /> {t("try")}
         </Button>
       </HStack>
@@ -90,6 +90,7 @@ export function SkinCard({ skin, owned, equipped, canBuy, busy, onTry, onBuy, on
           size="sm"
           bg="sun"
           onClick={onEquip}
+          data-sfx="confirm"
           loading={busy}
           disabled={!canBuy}
         >

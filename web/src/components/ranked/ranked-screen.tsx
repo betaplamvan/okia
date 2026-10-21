@@ -149,7 +149,6 @@ export function RankedScreen() {
   }, [active, router, openProfile, t]);
 
   async function find() {
-    audio.playUi("confirm");
     setSearch({ phase: "requesting" });
     await wsClient.connect();
     if (!wsClient.send({ t: "queue", mode: "ranked" })) {
@@ -159,20 +158,17 @@ export function RankedScreen() {
   }
 
   function cancel() {
-    audio.playUi("back");
     setSearch({ phase: "idle" });
   }
 
   function acceptMatch() {
     if (search.phase !== "found") return;
-    audio.playUi("confirm");
     wsClient.send({ t: "match_accept", matchId: search.matchId });
     setSearch({ ...search, accepted: true });
   }
 
   function declineMatch() {
     if (search.phase !== "found") return;
-    audio.playUi("back");
     wsClient.send({ t: "match_decline", matchId: search.matchId });
     setSearch({ phase: "idle" });
   }
@@ -220,6 +216,7 @@ export function RankedScreen() {
                 size="lg"
                 disabled={guest || status === "offline"}
                 onClick={find}
+                data-sfx="confirm"
                 data-testid="find-match"
               >
                 <LuSwords /> {t("find")}
@@ -334,7 +331,7 @@ function SearchingBox({
       >
         {search.phase === "searching" && search.widened ? t("widened") : t("widenHint")}
       </Box>
-      <Button variant="sticker" size="sm" bg="paper" onClick={onCancel}>
+      <Button variant="sticker" size="sm" bg="paper" onClick={onCancel} data-sfx="back">
         <LuX /> {t("cancel")}
       </Button>
     </Stack>

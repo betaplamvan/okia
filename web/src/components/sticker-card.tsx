@@ -88,9 +88,17 @@ export function ModeCard({ title, description, icon, tone, badge, href, ...rest 
     flexDirection: "column",
     justifyContent: "space-between",
     transitionProperty: "transform, box-shadow",
-    transitionDuration: "fast",
-    _hover: href ? { transform: "translate(-1px, -1px)" } : undefined,
-    _active: href ? { transform: "translate(3px, 3px)", boxShadow: "stickerSm" } : undefined,
+    transitionDuration: "normal",
+    transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+    // Hover (học noitu): thẻ nhếch mép phải lên — xoay nhẹ ngược chiều kim đồng hồ, nhấc lên,
+    // bóng dài ra; bấm thì lún xuống. Giảm chuyển động: chỉ nhấc nhẹ, không xoay.
+    _hover: href
+      ? { transform: "translate(-2px, -4px) rotate(-1.5deg)", boxShadow: "stickerLg" }
+      : undefined,
+    _active: href
+      ? { transform: "translate(3px, 3px) rotate(0deg)", boxShadow: "stickerSm" }
+      : undefined,
+    _motionReduce: href ? { _hover: { transform: "translate(-1px, -1px)" } } : undefined,
     _focusVisible: { outline: "3px solid", outlineColor: "sun", outlineOffset: "2px" },
     opacity: href ? 1 : 0.92,
     ...rest,

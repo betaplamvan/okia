@@ -6,7 +6,6 @@ import { useCallback, useMemo, useState } from "react";
 import { LuPencil, LuRotateCcw } from "react-icons/lu";
 import { BoardCanvas } from "@/components/play/board-canvas";
 import { useGameSounds } from "@/components/play/use-game-sounds";
-import { audio } from "@/game/audio/audio-manager";
 import { nextLastTurn, type GameSession } from "@/game/controller";
 import { createGameForMap } from "@/game/maps";
 import { applyMove, type Player } from "@/game/rules";
@@ -82,7 +81,6 @@ export function TryDialog({ skin, onClose }: Props) {
   }, [step]);
 
   const reset = () => {
-    audio.playUi("click");
     setSession(fresh());
     setStep(0);
   };

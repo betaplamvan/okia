@@ -139,11 +139,18 @@ export function AcceptDialog({
                   maxW="260px"
                   disabled={accepted}
                   onClick={onAccept}
+                  data-sfx="confirm"
                   data-testid="accept-match"
                 >
                   {accepted ? t("accepted") : t("acceptNow")}
                 </Button>
-                <Button variant="sticker" size="sm" onClick={onDecline} data-testid="decline-match">
+                <Button
+                  variant="sticker"
+                  size="sm"
+                  onClick={onDecline}
+                  data-sfx="back"
+                  data-testid="decline-match"
+                >
                   {t("decline")}
                 </Button>
               </Stack>

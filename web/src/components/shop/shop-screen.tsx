@@ -67,7 +67,6 @@ export function ShopScreen() {
     setBusy(skin.id);
     try {
       await buySkin(skin.id);
-      audio.playUi("confirm");
       toaster.success({ title: t("bought", { name: skinName(skin) }) });
       setConfirm(null);
     } catch (e) {
@@ -89,7 +88,6 @@ export function ShopScreen() {
     setBusy(skin.id);
     try {
       await equipSkin({ [skin.type]: skin.id });
-      audio.playUi("confirm");
       toaster.success({ title: t("equippedToast", { name: skinName(skin) }) });
     } catch (e) {
       toaster.error({ title: e instanceof ApiError && e.message ? e.message : t("loadError") });
@@ -163,14 +161,8 @@ export function ShopScreen() {
               equipped={loadout?.[skin.type] === skin.id}
               canBuy={canBuy}
               busy={busy === skin.id}
-              onTry={() => {
-                audio.playUi("open");
-                setTrying(skin);
-              }}
-              onBuy={() => {
-                audio.playUi("click");
-                setConfirm(skin);
-              }}
+              onTry={() => setTrying(skin)}
+              onBuy={() => setConfirm(skin)}
               onEquip={() => doEquip(skin)}
             />
           ))}
@@ -213,6 +205,7 @@ export function ShopScreen() {
                   bg="coral"
                   loading={!!confirm && busy === confirm.id}
                   onClick={() => confirm && doBuy(confirm)}
+                  data-sfx="confirm"
                   data-testid="confirm-buy"
                 >
                   {t("buy")}

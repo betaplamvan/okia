@@ -7,7 +7,6 @@ import { LuLogIn, LuPlus } from "react-icons/lu";
 import { TextInput } from "@/components/auth/account-tab";
 import { MapPicker, ShowLastMoveToggle } from "@/components/play/map-picker";
 import { toaster } from "@/components/ui/toaster";
-import { audio } from "@/game/audio/audio-manager";
 import { DEFAULT_MAP_ID } from "@/game/maps";
 import type { ServerMsg } from "@/game/ws-types";
 import { useRouter } from "@/i18n/navigation";
@@ -42,7 +41,6 @@ export function RoomLobby() {
   }, [activeRoomId, router]);
 
   async function create() {
-    audio.playUi("confirm");
     setCreating(true);
     try {
       await wsClient.connect();
@@ -79,7 +77,6 @@ export function RoomLobby() {
       .trim()
       .toUpperCase();
     if (code.length < 4) return;
-    audio.playUi("confirm");
     router.push(`/r/${code}`);
   }
 
@@ -135,6 +132,7 @@ export function RoomLobby() {
               loadingText={t("creating")}
               disabled={status === "offline"}
               onClick={create}
+              data-sfx="confirm"
             >
               <LuPlus /> {t("create")}
             </Button>
@@ -160,7 +158,7 @@ export function RoomLobby() {
                     textAlign="center"
                   />
                 </Field.Root>
-                <Button type="submit" variant="sticker" bg="sun">
+                <Button type="submit" variant="sticker" bg="sun" data-sfx="confirm">
                   <LuLogIn /> {t("joinButton")}
                 </Button>
               </Stack>
