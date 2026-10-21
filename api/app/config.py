@@ -20,6 +20,12 @@ class Settings(BaseSettings):
 
     # Xác thực (docs/13)
     access_token_ttl_seconds: int = 60 * 60
+    # Giới hạn WebSocket (docs/04 — Giới hạn): tính trên MỖI tiến trình uvicorn.
+    ws_max_conn_per_user: int = 4
+    ws_max_conn_per_ip: int = 40
+    ws_msg_per_second: float = 20
+    ws_msg_burst: int = 40
+    ws_max_msg_bytes: int = 16 * 1024
     refresh_token_ttl_days: int = 30
     # Cookie refresh: Secure chỉ khi https (production); dev trên http://localhost thì tắt.
     cookie_secure: bool = False

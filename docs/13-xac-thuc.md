@@ -89,7 +89,8 @@ Một tài khoản chỉ có identity `google`; không có thao tác gỡ identi
 ## Bảo mật — checklist
 
 - Không lưu mật khẩu; không log token hay nội dung thư.
-- `/auth/guest` rate limit theo IP; Google `state` một lần, 10 phút.
+- `/auth/guest` rate limit theo IP (IP từ `CF-Connecting-IP`, rồi `X-Forwarded-For`); Google `state` một lần, 10 phút.
+- WebSocket: tối đa 4 kết nối/tài khoản và 40/IP mỗi tiến trình, 20 tin/giây, tin ≤ 16 KB — xem [04](04-giao-thuc-ws.md#giới-hạn-chống-lạm-dụng-2026-10-21). Token thu hồi có hiệu lực với WS trong ≤ 5 phút nhờ `ws_cache.invalidate` gọi ở mọi chỗ đổi `token_version`.
 - Cookie refresh `httpOnly`; access token giữ trong bộ nhớ client, không `localStorage`.
 - CORS chỉ cho origin của web; CSRF cho `/auth/refresh` dựa trên `SameSite=Lax` + kiểm tra `Origin`.
 - Xóa tài khoản: `DELETE /me` → xóa mềm, ẩn ngay, xóa cứng sau 30 ngày; identity và session xóa ngay

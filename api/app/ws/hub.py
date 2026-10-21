@@ -24,7 +24,20 @@ class Connection:
     ws: WebSocket
     user_id: str
     locale: str
+    ip: str = ""
     rooms: set[str] = field(default_factory=set)
+    # Token bucket chống spam tin (docs/04 — Giới hạn): nạp `rate` tin/giây, tối đa `burst`.
+    tokens: float = 0.0
+    tokens_at: float = 0.0
+
+    def take(self, now: float, rate: float, burst: int) -> bool:
+        """Lấy một token; False = đang vượt tần suất."""
+        self.tokens = min(burst, self.tokens + (now - self.tokens_at) * rate)
+        self.tokens_at = now
+        if self.tokens < 1:
+            return False
+        self.tokens -= 1
+        return True
 
     async def send(self, msg: m.Msg) -> None:
         try:
@@ -38,6 +51,7 @@ class Hub:
         self.redis = redis
         self.by_room: dict[str, set[Connection]] = defaultdict(set)
         self.by_user: dict[str, set[Connection]] = defaultdict(set)
+        self.by_ip: dict[str, int] = defaultdict(int)
         self.conns: set[Connection] = set()
         self._task: asyncio.Task[None] | None = None
 
@@ -81,9 +95,17 @@ class Hub:
     def add(self, conn: Connection) -> None:
         self.conns.add(conn)
         self.by_user[conn.user_id].add(conn)
+        if conn.ip:
+            self.by_ip[conn.ip] += 1
 
     def remove(self, conn: Connection) -> None:
+        if conn not in self.conns:
+            return
         self.conns.discard(conn)
+        if conn.ip:
+            self.by_ip[conn.ip] -= 1
+            if self.by_ip[conn.ip] <= 0:
+                del self.by_ip[conn.ip]
         s = self.by_user.get(conn.user_id)
         if s:
             s.discard(conn)

@@ -11,6 +11,10 @@
 #                   nếu có giá trị (biến rỗng bị bỏ qua → app dùng mặc định trong config)
 #   REQUIRED_ENV    (tùy chọn) các biến bắt buộc phải có giá trị
 #   HEALTH_TIMEOUT  (tùy chọn) số giây chờ container healthy, mặc định 120
+#   MEM_LIMIT       (tùy chọn) giới hạn RAM cho `docker run --memory`, ví dụ 1g (bảo vệ máy chạy chung)
+#   CPU_LIMIT       (tùy chọn) giới hạn CPU cho `docker run --cpus`, ví dụ 2
+#   NOFILE          (tùy chọn) ulimit số file mở, mặc định 65536 (mỗi WebSocket tốn một fd;
+#                   mặc định Docker 1024 → API chỉ nhận ~1 000 kết nối, đo 2026-10-21)
 #   KEEP_IMAGES     (tùy chọn) số image cũ của repo giữ lại để quay về, mặc định 3
 #   SKIP_PULL=1     (tùy chọn) dùng image có sẵn trên máy, không pull (thử script với image build local)
 set -euo pipefail
@@ -18,6 +22,7 @@ set -euo pipefail
 : "${NAME:?}" "${IMAGE:?}" "${PORT_MAP:?}" "${NETWORK:?}"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-120}"
 KEEP_IMAGES="${KEEP_IMAGES:-3}"
+NOFILE="${NOFILE:-65536}"
 REPO="${IMAGE%:*}"
 
 for var in ${REQUIRED_ENV:-}; do
@@ -32,6 +37,10 @@ for var in ${PASS_ENV:-}; do
   if [ -n "${!var:-}" ]; then env_args+=(-e "$var"); fi
 done
 
+limit_args=(--ulimit "nofile=${NOFILE}:${NOFILE}" --log-opt max-size=20m --log-opt max-file=3)
+if [ -n "${MEM_LIMIT:-}" ]; then limit_args+=(--memory "$MEM_LIMIT"); fi
+if [ -n "${CPU_LIMIT:-}" ]; then limit_args+=(--cpus "$CPU_LIMIT"); fi
+
 run_container() {
   docker run -d \
     --name "$NAME" \
@@ -39,6 +48,7 @@ run_container() {
     --restart unless-stopped \
     --add-host host.docker.internal:host-gateway \
     -p "$PORT_MAP" \
+    "${limit_args[@]}" \
     "${env_args[@]}" \
     "$1" >/dev/null
 }

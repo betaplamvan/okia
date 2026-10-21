@@ -27,6 +27,8 @@ pull_request ─► chỉ Build, không push image, không deploy
   Chạy tay: Actions → chọn workflow → *Run workflow* → chọn `runner`.
 - **Deploy** ([`deploy-container.sh`](deploy-container.sh)): pull image theo sha, thay container, chờ
   healthcheck; không healthy thì chạy lại image cũ và báo đỏ. Giữ 3 image gần nhất trên máy, 10 bản trên GHCR.
+  Container chạy với `--ulimit nofile=65536` (mỗi WebSocket một fd; mặc định Docker 1024 chỉ đủ ~1 000
+  kết nối), `--memory`/`--cpus` theo biến ở trên, log rotation 3 × 20 MB. API chạy `WEB_CONCURRENCY=2` worker.
 - **pytest của API:** trên GitHub dùng Postgres/Redis tạm (service container, tự hủy). Trên minisforum
   **không dựng thêm** Postgres/Redis — dùng bản có sẵn qua secret `TEST_DATABASE_URL`/`TEST_REDIS_URL`.
 
@@ -97,6 +99,7 @@ TEST_DATABASE_URL=$LOCAL_TEST_DATABASE_URL TEST_REDIS_URL=$LOCAL_TEST_REDIS_URL 
 | Variable | `COOKIE_SECURE` | `true` khi chạy https |
 | Variable | `COOKIE_DOMAIN`, `GOOGLE_CLIENT_ID`, `EMAIL_PROVIDER`, `EMAIL_FROM` | Tùy chọn (ý nghĩa: [docs/02](../docs/02-kien-truc.md#môi-trường), `api/.env.example`) |
 | Variable | `WEB_PORT`, `API_PORT` | Cổng trên máy, mặc định `3000`, `8000` |
+| Variable | `API_MEM_LIMIT`, `API_CPU_LIMIT`, `WEB_MEM_LIMIT`, `WEB_CPU_LIMIT` | Giới hạn `--memory`/`--cpus` cho container, mặc định `1g`/`2` và `768m`/`1.5` (máy chạy chung nhiều dịch vụ) |
 | Variable | `DOCKER_NETWORK` | Mặc định `okia` |
 
 Biến để trống không được truyền vào container → API dùng mặc định trong `app/config.py`.

@@ -26,6 +26,9 @@ os.environ["REDIS_URL"] = TEST_REDIS_URL
 os.environ["EMAIL_PROVIDER"] = "console"
 os.environ["JWT_SECRET"] = "test-secret-not-for-prod-" + "x" * 16
 os.environ["GOOGLE_CLIENT_ID"] = "test-client-id.apps.googleusercontent.com"
+# Test gửi nước đi dồn dập (không phải người thật) → nới chống spam WS; test_ws_limits tự siết lại.
+os.environ["WS_MSG_BURST"] = "1000"
+os.environ["WS_MSG_PER_SECOND"] = "500"
 os.environ["GOOGLE_CLIENT_SECRET"] = "test-secret"
 # Không đụng MinIO thật: storage trong bộ nhớ, URL ảnh đi qua API.
 os.environ["S3_ENDPOINT_URL"] = ""

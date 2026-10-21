@@ -121,7 +121,9 @@ okia/                        # repo (monorepo)
 - Giám sát: Sentry (lỗi), PostHog (hành vi).
 
 ### Mở rộng
-- Bắt đầu với **1 worker uvicorn** — game theo lượt, tải thấp, asyncio chịu được vài nghìn kết nối WS.
+- ~~Bắt đầu với **1 worker uvicorn**~~ Từ 2026-10-21: **2 worker** (`WEB_CONCURRENCY=2` trong `api/Dockerfile`, ghi đè được lúc deploy). Hub dùng Redis pub/sub, timer và ghép trận có khóa Redis nên nhiều tiến trình chạy song song được.
+- **Đo trên minisforum 2026-10-21** (Celeron J4125 4 nhân, 7 GB, ~75 Mbps): mỗi kết nối WS ≈ 94 KB RSS; API < 1 % CPU khi giữ 300 kết nối. Trần cũ là `ulimit -n 1024` của container (~1 000 kết nối) → `deploy/deploy-container.sh` đặt `--ulimit nofile=65536`, `--memory`/`--cpus` (vars `API_MEM_LIMIT` 1g / `API_CPU_LIMIT` 2, `WEB_MEM_LIMIT` 768m / `WEB_CPU_LIMIT` 1.5), log rotation. Đo lại bằng `api/scripts/ws_load.py`. Giới hạn chống lạm dụng và cache đường nối: [04](04-giao-thuc-ws.md#giới-hạn-chống-lạm-dụng-2026-10-21).
+- Static: `/_next/static` immutable 1 năm; `public/` (`/assets`, `/brand`) `s-maxage` 1 ngày cho Cloudflare (`web/next.config.ts` headers).
 - Khi cần nhiều worker: trạng thái phòng đã nằm ở Redis và sự kiện phát qua Redis pub/sub, nên không cần sticky session cho logic. Các worker nền (ghép trận, quét timer) chỉ chạy **một bản** nhờ khóa Redis (`SET lock:mm NX PX`).
 
 ## Môi trường

@@ -104,6 +104,8 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository_owner }}/okia-web:${{ github.sha }}
           PORT_MAP: ${{ vars.WEB_PORT || '3000' }}:3000
           NETWORK: ${{ vars.DOCKER_NETWORK || 'okia' }}
+          MEM_LIMIT: ${{ vars.WEB_MEM_LIMIT || '768m' }}
+          CPU_LIMIT: ${{ vars.WEB_CPU_LIMIT || '1.5' }}
         run: |
           export IMAGE="${IMAGE,,}"
           bash deploy/deploy-container.sh

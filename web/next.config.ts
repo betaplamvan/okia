@@ -18,6 +18,22 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@chakra-ui/react"],
   },
+  // Asset trong public/ không có hash tên file (sprite âm thanh, logo): để Cloudflare giữ ở edge
+  // 1 ngày (s-maxage) và trình duyệt 1 giờ; đổi file thì tối đa một ngày sau mới thấy ở mọi nơi.
+  // /_next/static đã immutable 1 năm sẵn (tên có hash).
+  async headers() {
+    return [
+      {
+        source: "/:prefix(assets|brand|sounds)/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

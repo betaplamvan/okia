@@ -1,6 +1,7 @@
 """Dependency: user hiện tại từ `Authorization: Bearer` (docs/13 — Phiên & token)."""
 
 import uuid
+from collections.abc import Mapping
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -60,7 +61,21 @@ async def verified_user(user: Annotated[User, Depends(account_user)]) -> User:
 
 
 def client_ip(request: Request) -> str:
-    fwd = request.headers.get("x-forwarded-for")
+    return real_ip(request.headers, request.client.host if request.client else "unknown")
+
+
+def real_ip(headers: Mapping[str, str], peer: str) -> str:
+    """IP người dùng thật. `CF-Connecting-IP` do Cloudflare đặt (client không giả được) được ưu
+    tiên; `X-Forwarded-For` chỉ dùng khi không qua Cloudflare (uvicorn --forwarded-allow-ips='*' đã
+    tin header này nên `peer` cũng là IP từ XFF)."""
+    cf = headers.get("cf-connecting-ip")
+    if cf:
+        return cf.strip()
+    fwd = headers.get("x-forwarded-for")
     if fwd:
         return fwd.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    return peer
+
+
+def is_loopback(ip: str) -> bool:
+    return ip in ("127.0.0.1", "::1", "localhost")

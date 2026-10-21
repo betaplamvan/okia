@@ -3,12 +3,15 @@
 import asyncio
 import contextlib
 import logging
+import time
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
-from app.auth import security, service
+from app.auth import security, service, ws_cache
+from app.auth.deps import is_loopback, real_ip
+from app.config import get_settings
 from app.db import get_session_factory
 from app.errors import AppError
 from app.game import room as rooms
@@ -22,6 +25,10 @@ log = logging.getLogger("okia.ws")
 router = APIRouter()
 
 CLOSE_UNAUTHORIZED = 4401
+# Quá số kết nối cho phép (mỗi tài khoản / mỗi IP) — client không nên tự nối lại ngay.
+CLOSE_TOO_MANY = 4429
+# Gửi tin quá dày hoặc quá lớn — client bị ngắt, nối lại theo backoff.
+CLOSE_FLOOD = 4430
 
 
 def hub_of(ws: WebSocket) -> Hub:
@@ -41,17 +48,36 @@ async def ws_endpoint(ws: WebSocket, token: str = "", lang: str | None = None) -
         await ws.close(code=CLOSE_UNAUTHORIZED, reason="UNAUTHORIZED")
         return
     user_id = payload["sub"]
+    redis = ws.app.state.redis
+    # token_version / locale / tên lấy từ cache Redis (ws_cache), DB chỉ khi cache trống.
     async with get_session_factory()() as db:
-        user = await service.get_user(db, uuid.UUID(user_id))
+        user = await ws_cache.load(redis, db, user_id)
     if user is None or payload.get("tv") != user.token_version:
         await ws.close(code=CLOSE_UNAUTHORIZED, reason="UNAUTHORIZED")
         return
     locale: Locale = resolve_locale(user.locale, ws.headers.get("accept-language"), lang)
 
-    await ws.accept()
+    # Giới hạn số kết nối (docs/04 — Giới hạn), đếm trên tiến trình này. Loopback (script đo tải
+    # chạy trên máy; cổng API chỉ bind 127.0.0.1) được miễn.
     hub = hub_of(ws)
-    redis = ws.app.state.redis
-    conn = Connection(ws=ws, user_id=user_id, locale=locale)
+    cfg = get_settings()
+    ip = real_ip(ws.headers, ws.client.host if ws.client else "")
+    if not is_loopback(ip) and (
+        len(hub.by_user.get(user_id, ())) >= cfg.ws_max_conn_per_user
+        or hub.by_ip.get(ip, 0) >= cfg.ws_max_conn_per_ip
+    ):
+        await ws.close(code=CLOSE_TOO_MANY, reason="TOO_MANY_CONNECTIONS")
+        return
+
+    await ws.accept()
+    conn = Connection(
+        ws=ws,
+        user_id=user_id,
+        locale=locale,
+        ip=ip,
+        tokens=cfg.ws_msg_burst,
+        tokens_at=time.monotonic(),
+    )
     hub.add(conn)
     name = user.display_name
     await mmq.touch_online(redis, user_id)
@@ -65,6 +91,13 @@ async def ws_endpoint(ws: WebSocket, token: str = "", lang: str | None = None) -
         )
         while True:
             raw = await ws.receive_text()
+            # Tin quá lớn hoặc quá dày → ngắt kết nối (không xử lý, không trả lời từng tin).
+            if len(raw) > cfg.ws_max_msg_bytes or not conn.take(
+                time.monotonic(), cfg.ws_msg_per_second, cfg.ws_msg_burst
+            ):
+                log.warning("ws flood: user=%s ip=%s", user_id, ip)
+                await ws.close(code=CLOSE_FLOOD, reason="FLOOD")
+                break
             try:
                 msg = m.client_adapter.validate_json(raw)
             except ValidationError:

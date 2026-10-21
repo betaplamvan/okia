@@ -70,6 +70,27 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 
 **Triển khai (M1.4–M1.7):** model Pydantic ở `api/app/ws/messages.py`; `uv run python -m scripts.export_ws_schema` xuất `shared/ws-schema.json`; `pnpm gen:ws` sinh `web/src/game/ws-types.ts`. Token sai → đóng với code **4401** trước khi accept; client refresh rồi nối lại. Presence: hash `presence:{room}` đếm số kết nối mỗi user; về 0 → `opponent_status(false)`. Khi socket đóng, phần dọn dẹp chạy trong task được shield để server tắt handler cũng không mất `opponent_status`.
 
+## Giới hạn (chống lạm dụng, 2026-10-21)
+
+Tính trên **mỗi tiến trình uvicorn** (`WEB_CONCURRENCY=2` trên production → nhân đôi), cấu hình qua
+`app/config.py` (`WS_MAX_CONN_PER_USER` 4, `WS_MAX_CONN_PER_IP` 40, `WS_MSG_PER_SECOND` 20,
+`WS_MSG_BURST` 40, `WS_MAX_MSG_BYTES` 16 KB; uvicorn `--ws-max-size 65536` chặn frame lớn ở tầng giao thức).
+
+| Mã đóng | Khi nào | Client nên |
+|---|---|---|
+| `4401` | Token sai / hết hạn / đã thu hồi | Refresh token rồi nối lại (0,3 s) |
+| `4429` | Quá số kết nối cho phép của tài khoản hoặc IP | Không nối lại ngay; đóng tab thừa |
+| `4430` | Gửi tin quá dày (token bucket 20 tin/giây, cộng dồn tối đa 40) hoặc tin > 16 KB | Nối lại theo backoff thường |
+
+IP thật lấy từ `CF-Connecting-IP` (Cloudflare đặt, client không giả được), không qua Cloudflare thì
+`X-Forwarded-For`. Kết nối từ loopback (script đo tải `api/scripts/ws_load.py` chạy trên máy; cổng API chỉ
+bind 127.0.0.1) được miễn giới hạn số kết nối.
+
+**Cache đường nối** (`app/auth/ws_cache.py`): `token_version`, `locale`, `display_name` giữ ở Redis
+`wsu:{user_id}` TTL 5 phút; mọi chỗ đổi ba trường này (đăng xuất mọi thiết bị, sửa hồ sơ, xóa tài khoản,
+cấp token mới, bỏ khách khi gộp) xóa cache. Trước đó mỗi kết nối tra Postgres — 300 kết nối cùng lúc làm
+welcome p50 2 s.
+
 ## Kết nối lại
 
 - Server lưu `user:{id}:room` (TTL bằng thời gian còn lại của trận + 5 phút).

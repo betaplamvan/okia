@@ -127,6 +127,8 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository_owner }}/okia-api:${{ github.sha }}
           PORT_MAP: ${{ vars.API_PORT || '8000' }}:8000
           NETWORK: ${{ vars.DOCKER_NETWORK || 'okia' }}
+          MEM_LIMIT: ${{ vars.API_MEM_LIMIT || '1g' }}
+          CPU_LIMIT: ${{ vars.API_CPU_LIMIT || '2' }}
           REQUIRED_ENV: DATABASE_URL REDIS_URL JWT_SECRET
           PASS_ENV: >-
             DATABASE_URL REDIS_URL JWT_SECRET APP_BASE_URL API_BASE_URL CORS_ORIGINS COOKIE_SECURE

@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import google, ratelimit, service
+from app.auth import google, ratelimit, service, ws_cache
 from app.auth.deps import client_ip, current_user, get_redis, optional_user
 from app.auth.schemas import (
     DevLoginIn,
@@ -100,6 +100,7 @@ async def _issue(
 ) -> TokenOut:
     issued = await service.issue(db, user, request.headers.get("user-agent"))
     set_refresh_cookie(response, issued.refresh_token)
+    await ws_cache.invalidate(request.app.state.redis, user.id)
     return TokenOut(
         access_token=issued.access_token,
         expires_in=get_settings().access_token_ttl_seconds,
@@ -163,6 +164,7 @@ async def logout_all(
     """Đăng xuất mọi thiết bị: tăng token_version + thu hồi mọi refresh."""
     user.token_version += 1
     await service.revoke_all(db, user.id)
+    await ws_cache.invalidate(request.app.state.redis, user.id)
     clear_refresh_cookie(response)
     return OkOut()
 
@@ -215,6 +217,9 @@ async def google_callback(
         user, switched, created = await link_or_login_google(db, profile, current, ctx.locale)
     except AppError as e:
         return back(ctx.return_to, auth="error", code=e.code)
+    if switched and current is not None:
+        # Khách vừa bị bỏ (xóa mềm, token_version tăng) → bỏ cache đường nối WS của khách.
+        await ws_cache.invalidate(redis, current.id)
     if created:
         tasks.add_task(service.send_welcome, user)
     issued = await service.issue(db, user, request.headers.get("user-agent"))
@@ -305,6 +310,8 @@ async def dev_login(
         sub=f"dev:{body.email}", email=body.email, name=body.display_name, picture=None
     )
     user, switched, _ = await link_or_login_google(db, profile, current, req_locale(request))
+    if switched and current is not None:
+        await ws_cache.invalidate(request.app.state.redis, current.id)
     if body.lead or body.flower:
         from app.economy import wallet
 
@@ -330,15 +337,19 @@ async def me(user: Annotated[User, Depends(current_user)]) -> UserOut:
 
 
 @router.patch("/me", response_model=UserOut, tags=["me"])
-async def patch_me(body: MePatch, db: Db, user: Annotated[User, Depends(current_user)]) -> UserOut:
+async def patch_me(
+    body: MePatch, db: Db, redis: Rd, user: Annotated[User, Depends(current_user)]
+) -> UserOut:
     await service.update_me(db, user, display_name=body.display_name, locale=body.locale)
+    await ws_cache.invalidate(redis, user.id)
     return to_user_out(user)
 
 
 @router.delete("/me", response_model=OkOut, tags=["me"])
 async def delete_me(
-    response: Response, db: Db, user: Annotated[User, Depends(current_user)]
+    response: Response, db: Db, redis: Rd, user: Annotated[User, Depends(current_user)]
 ) -> OkOut:
     await service.soft_delete(db, user)
+    await ws_cache.invalidate(redis, user.id)
     clear_refresh_cookie(response)
     return OkOut()
