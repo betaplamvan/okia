@@ -10,7 +10,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    LargeBinary,
     String,
     text,
 )
@@ -30,8 +29,10 @@ class User(Base, CreatedAtMixin):
     )
     display_name: Mapped[str] = mapped_column(String(32), nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(String(512))  # ảnh ngoài (Google)
-    # Ảnh tự tải lên (ADR-0010): WebP 256px ≤ 100 KB lưu ngay trong DB, chỉ nạp khi cần.
-    avatar_blob: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    # Ảnh tự tải lên (ADR-0010): object `avatars/{id}/{n}.webp` trên MinIO/S3 (app/storage.py).
+    # avatar_seq đếm số lần tải (không giảm) → mỗi lần tải một URL mới, CDN cache bất biến không
+    # dính ảnh cũ; avatar_version = seq đang dùng, 0 = không có ảnh riêng.
+    avatar_seq: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     avatar_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     email: Mapped[str | None] = mapped_column(
         String(254), unique=True

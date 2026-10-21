@@ -1,5 +1,5 @@
-"""Ảnh đại diện tự tải lên (ADR-0010): nhận ảnh ≤ 2 MB, chuẩn hóa thành WebP vuông 256px,
-lưu `users.avatar_blob`; phục vụ qua GET /avatars/{id}.webp?v=N (cache bất biến theo version)."""
+"""Ảnh đại diện tự tải lên (ADR-0010): nhận ảnh ≤ 2 MB, chuẩn hóa thành WebP vuông 256px;
+router ghi lên object storage (app/storage.py) dưới khóa avatars/{id}.webp, URL kèm ?v=N."""
 
 import io
 

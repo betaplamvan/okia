@@ -150,7 +150,9 @@ CREATE TABLE quest_progress (           -- nhiệm vụ theo kỳ: '2026-10-21' 
 );
 CREATE INDEX ON quest_progress (user_id, period);
 
--- users: thêm avatar_blob BYTEA (WebP 256px, nạp deferred) và avatar_version INT (0 = chưa có ảnh riêng).
+-- users: avatar_seq INT đếm số lần tải ảnh (không giảm), avatar_version INT = seq đang dùng (0 = không có
+-- ảnh riêng); object avatars/{id}/{seq}.webp trên MinIO/S3 (app/storage.py). Cột avatar_blob BYTEA từng
+-- giữ ảnh trong DB đã bỏ (2026-10-21).
 
 CREATE TABLE items (
   id          TEXT PRIMARY KEY,         -- 'pen_ink_purple'

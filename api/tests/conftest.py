@@ -27,6 +27,9 @@ os.environ["EMAIL_PROVIDER"] = "console"
 os.environ["JWT_SECRET"] = "test-secret-not-for-prod-" + "x" * 16
 os.environ["GOOGLE_CLIENT_ID"] = "test-client-id.apps.googleusercontent.com"
 os.environ["GOOGLE_CLIENT_SECRET"] = "test-secret"
+# Không đụng MinIO thật: storage trong bộ nhớ, URL ảnh đi qua API.
+os.environ["S3_ENDPOINT_URL"] = ""
+os.environ["S3_PUBLIC_URL"] = ""
 
 from app.auth.emails import outbox  # noqa: E402
 from app.db import dispose_engine  # noqa: E402

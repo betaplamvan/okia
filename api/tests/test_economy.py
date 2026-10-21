@@ -210,8 +210,8 @@ async def test_avatar_upload_serve_delete(client: AsyncClient) -> None:
     assert r.status_code == 200, r.text
     u = r.json()
     assert u["hasCustomAvatar"] is True
-    assert u["avatarUrl"] == f"http://localhost:8000/avatars/{uid}.webp?v=1"
-    r = await client.get(f"/avatars/{uid}.webp", params={"v": 1})
+    assert u["avatarUrl"] == f"http://localhost:8000/avatars/{uid}/1.webp"
+    r = await client.get(f"/avatars/{uid}/1.webp")
     assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
     assert "immutable" in r.headers["cache-control"]
     im = Image.open(io.BytesIO(r.content))
@@ -220,10 +220,16 @@ async def test_avatar_upload_serve_delete(client: AsyncClient) -> None:
     r = await client.post(
         "/me/avatar", files={"file": ("b.png", png_bytes(50, 50), "image/png")}, headers=bearer(tok)
     )
-    assert r.json()["avatarUrl"].endswith("?v=2")
+    assert r.json()["avatarUrl"].endswith(f"/avatars/{uid}/2.webp")
+    assert (await client.get(f"/avatars/{uid}/1.webp")).status_code == 404  # object cũ đã dọn
     r = await client.delete("/me/avatar", headers=bearer(tok))
     assert r.json()["hasCustomAvatar"] is False and r.json()["avatarUrl"] is None
-    assert (await client.get(f"/avatars/{uid}.webp")).status_code == 404
+    assert (await client.get(f"/avatars/{uid}/2.webp")).status_code == 404
+    # Tải lại sau khi xóa → seq tiếp tục tăng (URL mới, không dính cache CDN của ảnh cũ).
+    r = await client.post(
+        "/me/avatar", files={"file": ("c.png", png_bytes(60, 60), "image/png")}, headers=bearer(tok)
+    )
+    assert r.json()["avatarUrl"].endswith(f"/avatars/{uid}/3.webp")
 
 
 async def test_avatar_rejects_garbage_and_guest(client: AsyncClient) -> None:
@@ -239,3 +245,40 @@ async def test_avatar_rejects_garbage_and_guest(client: AsyncClient) -> None:
         "/me/avatar", files={"file": ("a.png", png_bytes(), "image/png")}, headers=bearer(g)
     )
     assert r.status_code == 403
+
+
+async def test_avatar_public_bucket_url(monkeypatch) -> None:
+    """Đặt S3_PUBLIC_URL → URL ảnh trỏ thẳng vào bucket, vẫn kèm ?v= để cache bất biến."""
+    from app import storage
+    from app.config import Settings
+    from app.economy.router import avatar_url_for
+    from app.models import User
+
+    monkeypatch.setattr(
+        storage, "get_settings", lambda: Settings(s3_public_url="https://minio.test/okia-bucket/")
+    )
+    uid = uuid.uuid4()
+    u = User(id=uid, display_name="x", avatar_version=3)
+    assert avatar_url_for(u) == f"https://minio.test/okia-bucket/avatars/{uid}/3.webp"
+    u.avatar_version = 0
+    u.avatar_url = "https://lh3.example/pic"
+    assert avatar_url_for(u) == "https://lh3.example/pic"
+
+
+async def test_avatar_storage_down_keeps_version(client: AsyncClient, monkeypatch) -> None:
+    """Storage lỗi → 503 STORAGE_UNAVAILABLE, không tăng avatar_version."""
+    from app import storage
+    from app.errors import AppError
+
+    class Broken:
+        async def put(self, key: str, data: bytes, content_type: str) -> None:
+            raise AppError("STORAGE_UNAVAILABLE", 503)
+
+    tok, _ = await verified_account(client)
+    monkeypatch.setattr(storage, "get_storage", lambda: Broken())
+    r = await client.post(
+        "/me/avatar", files={"file": ("a.png", png_bytes(), "image/png")}, headers=bearer(tok)
+    )
+    assert r.status_code == 503 and r.json()["code"] == "STORAGE_UNAVAILABLE"
+    me = await client.get("/me", headers=bearer(tok))
+    assert me.json()["hasCustomAvatar"] is False

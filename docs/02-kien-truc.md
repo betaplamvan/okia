@@ -138,6 +138,9 @@ okia/                        # repo (monorepo)
 | `EMAIL_PROVIDER` | `resend` \| `console` (chỉ in log khi chạy test) | `resend` |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend; `EMAIL_FROM` dạng `Ô Kìa <no-reply@okia.vn>` (chưa có tên miền thì `onboarding@resend.dev` chỉ gửi được tới email chủ tài khoản Resend) | — |
 | `RESEND_WEBHOOK_SECRET` | Xác minh chữ ký webhook bounce/complaint | — |
+| `S3_ENDPOINT_URL`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | MinIO/S3 giữ ảnh người dùng tải lên (`avatars/{id}/{n}.webp`, mỗi lần tải một khóa mới); để trống = giữ trong bộ nhớ, mất khi restart (chỉ test/dev) | — |
+| `S3_BUCKET`, `S3_REGION` | Bucket và region ký S3v4 | `okia-bucket`, `us-east-1` |
+| `S3_PUBLIC_URL` | URL gốc đọc ẩn danh của bucket (vd `https://minio.example.com/okia-bucket`, cấp quyền bằng `python -m scripts.s3_setup`); trống = API phục vụ hộ qua `/avatars/{id}/{n}.webp` | — |
 | `LLM_BASE_URL` | Địa chỉ server Qwen | — (để trống = tắt, chỉ dùng câu soạn sẵn) |
 | `LLM_MODEL` | Tên model | — |
 | `LLM_TIMEOUT_MS` | Timeout mỗi lần gọi | `3000` |

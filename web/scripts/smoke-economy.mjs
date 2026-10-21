@@ -48,7 +48,7 @@ await dialog.getByLabel("Mật khẩu").fill(password);
 await dialog.getByRole("button", { name: "Tạo tài khoản" }).click();
 await page.getByText("Đã tạo tài khoản").first().waitFor({ timeout: 10000 });
 
-// Avatar: chọn file → hộp cắt → lưu → ảnh đổi sang /avatars/<id>.webp?v=1.
+// Avatar: chọn file → hộp cắt → lưu → ảnh đổi sang .../avatars/<id>/1.webp (MinIO hoặc API).
 await dialog.getByRole("button", { name: "Chỉnh sửa hồ sơ" }).click();
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQIW2P8z8DwnwEIGBmQAFgAAHe9A/1l4m2kAAAAAElFTkSuQmCC",
@@ -62,9 +62,9 @@ await page.waitForTimeout(600);
 await page.getByRole("button", { name: "Lưu ảnh" }).click();
 await page.getByText("Đã đổi ảnh đại diện").waitFor({ timeout: 10000 });
 await page.waitForFunction(() =>
-  [...document.querySelectorAll("img")].some((i) => /\/avatars\/.+\.webp\?v=1/.test(i.src)),
+  [...document.querySelectorAll("img")].some((i) => /\/avatars\/[0-9a-f-]+\/\d+\.webp/.test(i.src)),
 );
-console.log("avatar: tải lên, hiện /avatars/<id>.webp?v=1");
+console.log("avatar: tải lên, hiện /avatars/<id>/<n>.webp");
 await dialog.getByRole("button", { name: "Dùng ảnh mặc định" }).click();
 await page.getByText("Đã dùng lại ảnh mặc định").waitFor();
 console.log("avatar: xóa về mặc định ok");

@@ -91,6 +91,8 @@ TEST_DATABASE_URL=$LOCAL_TEST_DATABASE_URL TEST_REDIS_URL=$LOCAL_TEST_REDIS_URL 
 | Secret | `REDIS_URL` | **Bắt buộc.** `redis://…/0` |
 | Secret | `JWT_SECRET` | **Bắt buộc**, ≥ 32 ký tự (`openssl rand -hex 32`) |
 | Secret | `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET` | Tùy chọn |
+| Secret | `S3_ACCESS_KEY`, `S3_SECRET_KEY` | MinIO/S3 giữ ảnh đại diện; thiếu thì ảnh chỉ nằm trong bộ nhớ container (mất khi deploy) |
+| Variable | `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_PUBLIC_URL` | Endpoint MinIO, bucket, URL đọc công khai (xem [docs/02](../docs/02-kien-truc.md#môi-trường)) |
 | Variable | `APP_BASE_URL`, `API_BASE_URL`, `CORS_ORIGINS` | URL public của web / API; CORS = origin của web |
 | Variable | `COOKIE_SECURE` | `true` khi chạy https |
 | Variable | `COOKIE_DOMAIN`, `GOOGLE_CLIENT_ID`, `EMAIL_PROVIDER`, `EMAIL_FROM` | Tùy chọn (ý nghĩa: [docs/02](../docs/02-kien-truc.md#môi-trường), `api/.env.example`) |

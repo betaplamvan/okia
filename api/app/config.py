@@ -39,6 +39,20 @@ class Settings(BaseSettings):
     email_from: str = "Ô Kìa <onboarding@resend.dev>"
     resend_webhook_secret: str = ""
 
+    # Object storage S3/MinIO cho ảnh người dùng tải lên (ADR-0010). Trống → giữ trong bộ nhớ
+    # (test/dev; mất khi restart). S3_PUBLIC_URL = URL gốc đọc ẩn danh của bucket
+    # (vd https://minio.example.com/okia-bucket); trống → API tự phục vụ qua /avatars/{id}.webp.
+    s3_endpoint_url: str = ""
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    s3_bucket: str = "okia-bucket"
+    s3_region: str = "us-east-1"
+    s3_public_url: str = ""
+
+    @property
+    def s3_enabled(self) -> bool:
+        return bool(self.s3_endpoint_url and self.s3_access_key and self.s3_secret_key)
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

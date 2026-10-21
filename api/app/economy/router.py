@@ -6,9 +6,9 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Request, Response, UploadFile
 from pydantic import Field
 from redis.asyncio import Redis
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import storage
 from app.auth import ratelimit
 from app.auth.deps import account_user, current_user, get_redis, verified_user
 from app.auth.schemas import CamelModel, UserOut
@@ -148,11 +148,19 @@ async def me_event(
 # ---------- Avatar ----------
 
 
+def avatar_key(user_id: uuid.UUID, seq: int) -> str:
+    return f"avatars/{user_id}/{seq}.webp"
+
+
 def avatar_url_for(user: User) -> str | None:
+    """Ảnh riêng (object storage) ưu tiên: mỗi lần tải một khóa mới nên URL bất biến, CDN cache
+    thoải mái. Không có ảnh riêng → ảnh ngoài (Google) nếu có. Bucket không đọc công khai →
+    đi qua API (/avatars/{id}/{n}.webp)."""
     from app.config import get_settings
 
     if user.avatar_version > 0:
-        return f"{get_settings().api_base_url}/avatars/{user.id}.webp?v={user.avatar_version}"
+        key = avatar_key(user.id, user.avatar_version)
+        return storage.public_url(key) or f"{get_settings().api_base_url}/{key}"
     return user.avatar_url
 
 
@@ -164,9 +172,16 @@ async def me_upload_avatar(
 
     data = await file.read(avatar.MAX_UPLOAD + 1)
     blob = avatar.normalize(data)
-    user.avatar_blob = blob
-    user.avatar_version += 1
+    st = storage.get_storage()
+    seq = user.avatar_seq + 1
+    # Ghi object mới trước, thành công mới đổi DB (lỗi storage → 503, DB không đổi).
+    await st.put(avatar_key(user.id, seq), blob, "image/webp")
+    old = user.avatar_version
+    user.avatar_seq = seq
+    user.avatar_version = seq
     await db.commit()
+    if old > 0:
+        await _delete_quietly(st, avatar_key(user.id, old))
     await db.refresh(user, attribute_names=["identities"])
     return to_user_out(user)
 
@@ -175,21 +190,29 @@ async def me_upload_avatar(
 async def me_delete_avatar(db: Db, user: Annotated[User, Depends(account_user)]) -> UserOut:
     from app.auth.router import to_user_out
 
-    user.avatar_blob = None
+    old = user.avatar_version
     user.avatar_version = 0
     await db.commit()
+    if old > 0:
+        await _delete_quietly(storage.get_storage(), avatar_key(user.id, old))
     await db.refresh(user, attribute_names=["identities"])
     return to_user_out(user)
 
 
-@router.get("/avatars/{user_id}.webp", include_in_schema=False)
-async def avatar_file(user_id: uuid.UUID, db: Db, v: int = 0) -> Response:
-    res = await db.execute(select(User.avatar_blob, User.avatar_version).where(User.id == user_id))
-    row = res.first()
-    if row is None or not row[0]:
+async def _delete_quietly(st: storage.ObjectStorage, key: str) -> None:
+    """Dọn object cũ sau khi DB đã đổi; lỗi storage không làm hỏng thao tác của người dùng."""
+    try:
+        await st.delete(key)
+    except AppError:
+        pass
+
+
+@router.get("/avatars/{user_id}/{seq}.webp", include_in_schema=False)
+async def avatar_file(user_id: uuid.UUID, seq: int) -> Response:
+    """Phục vụ hộ khi bucket không cho đọc ẩn danh (S3_PUBLIC_URL trống) hoặc dev không có S3."""
+    data = await storage.get_storage().get(avatar_key(user_id, seq))
+    if data is None:
         raise AppError("NOT_FOUND", 404)
     return Response(
-        content=row[0],
-        media_type="image/webp",
-        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        content=data, media_type="image/webp", headers={"Cache-Control": storage.CACHE_IMMUTABLE}
     )
