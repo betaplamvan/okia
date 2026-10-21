@@ -22,8 +22,7 @@ export function GiftDialog() {
   const dots: Record<GiftTab, boolean> = {
     checkin: !!progress?.canClaim && !progress.checkin.checkedToday,
     quests:
-      !!progress?.canClaim &&
-      progress.quests.some((q) => !q.claimed && q.progress >= q.target),
+      !!progress?.canClaim && progress.quests.some((q) => !q.claimed && q.progress >= q.target),
   };
   const TAB_ICON = { checkin: LuCalendarCheck, quests: LuCheck } as const;
 
