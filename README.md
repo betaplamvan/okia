@@ -41,22 +41,3 @@ GitHub Actions: [`web.yml`](.github/workflows/web.yml) chạy khi đổi `web/`,
 khi đổi `api/`. Build trên `ubuntu-latest` (hết quota thì self-hosted runner minisforum), deploy container lên
 minisforum. Cài runner, secret, biến môi trường: [deploy/README.md](deploy/README.md).
 
-## Chơi thử với máy khác trong mạng LAN
-
-1. Chạy API mở ra mạng: `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` (CORS dev đã chấp nhận dải IP riêng).
-2. Chạy web như bình thường (`pnpm dev`; `allowedDevOrigins` trong `next.config.ts` đã mở cho IP LAN).
-3. Trên máy/điện thoại khác mở `http://<ip-máy-này>:3000`. Web tự gọi API ở cùng IP, cổng 8000;
-   nếu API ở máy khác thì đặt `NEXT_PUBLIC_API_URL` trong `web/.env.local`.
-4. Tạo phòng ở **Phòng riêng**, gửi mã 6 ký tự hoặc link `/r/<mã>` cho người kia.
-
-## Chơi thử qua mạng LAN
-
-Máy khác (điện thoại, laptop cùng Wi-Fi) mở `http://<ip-máy-này>:3000`. Đã cấu hình sẵn:
-
-- `web/next.config.ts`: `allowedDevOrigins` cho dải IP riêng (`192.168.*.*`, `10.*.*.*`, `172.*.*.*`, `*.local`). Chỉ ảnh hưởng `next dev`.
-- Web tự gọi API ở `http://<hostname-của-trang>:8000`, không cần `.env.local`.
-- API (dev) chấp nhận CORS từ mọi origin thuộc dải IP riêng; production chỉ dùng `CORS_ORIGINS`.
-
-Cần chạy API lắng nghe mọi interface: `uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
-(`pnpm dev` của Next mặc định đã lắng nghe `0.0.0.0`). Windows Firewall phải cho Node và Python nhận kết nối
-(lần đầu chạy Windows sẽ hỏi). Xem IP: `ipconfig` → IPv4 của card Ethernet/Wi-Fi.
