@@ -8,6 +8,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { SoundSettings } from "@/components/sound-settings";
 import { Toaster } from "@/components/ui/toaster";
 import { Link } from "@/i18n/navigation";
+// Import tĩnh → URL có hash, đổi logo là đổi URL (Cloudflare/trình duyệt không giữ bản cũ).
+import logoDark from "../../public/brand/logo-dark.svg";
 
 type AppShellProps = { children: React.ReactNode };
 
@@ -26,10 +28,10 @@ export function AppShell({ children }: AppShellProps) {
       <Box as="header">
         <Container maxW="4xl" px={4} py={3}>
           <HStack justify="space-between">
-            {/* Logo ngang (mark thay chữ Ô + "Kìa"), bản nét giấy cho nền xanh — public/brand. */}
+            {/* Logo ngang (mark thay chữ ô + "kìa"), bản nét giấy cho nền xanh — public/brand. */}
             <Link href="/" aria-label="Ô Kìa">
               <Image
-                src="/brand/logo-dark.svg"
+                src={logoDark.src}
                 alt="Ô Kìa"
                 h={{ base: "36px", md: "44px" }}
                 w="auto"

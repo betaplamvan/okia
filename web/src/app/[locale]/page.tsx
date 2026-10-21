@@ -5,6 +5,7 @@ import { GuideArticle } from "@/components/guide-article";
 import { HomeActions } from "@/components/home-actions";
 import { PlayerPill } from "@/components/player-pill";
 import { ModeCard } from "@/components/sticker-card";
+import logoDark from "../../../public/brand/logo-dark.svg";
 
 // Trang chủ theo docs/14. Thẻ chế độ được nối vào route ở P0-07+ / giai đoạn 1–2.
 export default function Home() {
@@ -43,12 +44,7 @@ export default function Home() {
           />
           {/* Logo thay chữ; vẫn là h1 với alt "Ô Kìa" cho SEO/đọc màn hình. */}
           <Heading as="h1" lineHeight="1" display="flex" justifyContent="center">
-            <Image
-              src="/brand/logo-dark.svg"
-              alt="Ô Kìa"
-              h={{ base: "84px", md: "120px" }}
-              w="auto"
-            />
+            <Image src={logoDark.src} alt="Ô Kìa" h={{ base: "84px", md: "120px" }} w="auto" />
           </Heading>
           <Text mt={3} fontSize={{ base: "lg", md: "xl" }} opacity={0.9}>
             {t("tagline")}
