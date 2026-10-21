@@ -52,12 +52,16 @@ Yêu cầu: Linux x64, Docker Engine, user chạy runner thuộc nhóm `docker`.
 ## Bí mật: file local là nguồn gốc
 
 `deploy/.env.production` (gitignore, chỉ có trên máy người phát triển) giữ mọi bí mật kèm bản URL để chạy
-từ máy local qua SSH tunnel. Sửa file đó rồi đẩy lên GitHub:
+từ máy local qua SSH tunnel. Sửa file đó rồi đẩy lên GitHub (cần `gh auth login` một lần):
 
 ```bash
 bash deploy/sync-secrets.sh --dry-run   # xem sẽ đặt gì
-bash deploy/sync-secrets.sh             # gh secret set cho Environment production + cấp repo
+bash deploy/sync-secrets.sh             # secret + variable cho Environment production, secret cấp repo
 ```
+
+File tải về từ bên thứ ba (JSON OAuth client của Google…) để trong `deploy/secrets/` (gitignore); giá trị
+`client_id`/`client_secret` trong đó chép vào `.env.production` và `api/.env`. Đổi secret trên Google
+Console thì phải cập nhật cả hai file rồi chạy lại script.
 
 Chạy test API từ máy local trên DB thật của minisforum (`okia_test`, Redis db 3): mở tunnel theo lệnh ghi
 trong file, rồi

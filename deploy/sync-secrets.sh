@@ -8,6 +8,8 @@ set -euo pipefail
 REPO="${REPO:-betaplamvan/okia}"
 FILE="$(dirname "$0")/.env.production"
 ENV_SECRETS="DATABASE_URL REDIS_URL JWT_SECRET GOOGLE_CLIENT_SECRET RESEND_API_KEY RESEND_WEBHOOK_SECRET"
+# Biến không mật (gh variable set) — cùng Environment production.
+ENV_VARS="APP_BASE_URL API_BASE_URL CORS_ORIGINS COOKIE_SECURE COOKIE_DOMAIN GOOGLE_CLIENT_ID EMAIL_PROVIDER EMAIL_FROM"
 REPO_SECRETS="TEST_DATABASE_URL TEST_REDIS_URL"
 DRY=0; [ "${1:-}" = "--dry-run" ] && DRY=1
 
@@ -26,7 +28,17 @@ push() { # push <tên> <cờ phạm vi...>
   printf '%s' "$value" | gh secret set "$name" -R "$REPO" "$@" >/dev/null && echo "  ✔ $name $*"
 }
 
-echo "Environment production:"
+push_var() { # push_var <tên> — Variable (không mật) của Environment production
+  local name="$1"
+  local value="${!name:-}"
+  if [ -z "$value" ]; then echo "  bỏ qua $name (rỗng)"; return; fi
+  if [ "$DRY" = 1 ]; then echo "  sẽ đặt variable $name"; return; fi
+  gh variable set "$name" -R "$REPO" -e production --body "$value" >/dev/null && echo "  ✔ variable $name"
+}
+
+echo "Environment production — secret:"
 for n in $ENV_SECRETS; do push "$n" -e production; done
+echo "Environment production — variable:"
+for n in $ENV_VARS; do push_var "$n"; done
 echo "Cấp repo:"
 for n in $REPO_SECRETS; do push "$n"; done

@@ -10,6 +10,10 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Bí mật tải về (Google OAuth client JSON…) — chỉ nằm trên máy dev, xem deploy/README.md
+deploy/secrets/
+client_secret_*.json
+
 # Python (api/)
 __pycache__/
 *.py[cod]
