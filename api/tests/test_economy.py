@@ -1,7 +1,6 @@
 """Ví hai loại tiền, điểm danh, nhiệm vụ, avatar (ADR-0010, docs/06 — test bắt buộc)."""
 
 import io
-import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -9,13 +8,11 @@ import pytest
 from httpx import AsyncClient
 from PIL import Image
 
-from app.auth.emails import outbox
 from app.db import get_session_factory
 from app.economy import checkin, quests, wallet
 from app.errors import AppError
 
 EMAIL = "an@example.com"
-PASSWORD = "giay-o-li-2026"
 
 
 def bearer(token: str) -> dict[str, str]:
@@ -23,13 +20,9 @@ def bearer(token: str) -> dict[str, str]:
 
 
 async def verified_account(client: AsyncClient, email: str = EMAIL) -> tuple[str, str]:
-    """Đăng ký + xác minh email → (access token, user id)."""
-    r = await client.post("/auth/register", json={"email": email, "password": PASSWORD})
+    """Tài khoản đã xác minh (dev-login, như đăng nhập Google) → (access token, user id)."""
+    r = await client.post("/auth/dev-login", json={"email": email})
     assert r.status_code == 200, r.text
-    msg = [m for m in outbox().sent if m.purpose == "verify"][-1]
-    token = re.search(r"token=([\w\-.]+)", msg.text).group(1)  # type: ignore[union-attr]
-    r = await client.post("/auth/verify", json={"token": token})
-    assert r.status_code == 200
     return r.json()["accessToken"], r.json()["user"]["id"]
 
 
@@ -112,12 +105,6 @@ async def test_checkin_endpoint_requires_verified(client: AsyncClient) -> None:
     r = await client.get("/me/progress", headers=bearer(g))
     assert r.status_code == 200 and r.json()["canClaim"] is False
     assert len(r.json()["quests"]) == len(quests.CATALOG)
-
-    client.cookies.clear()
-    r = await client.post("/auth/register", json={"email": "b@example.com", "password": PASSWORD})
-    unverified = r.json()["accessToken"]
-    r = await client.post("/me/checkin", headers=bearer(unverified))
-    assert r.status_code == 403 and r.json()["code"] == "EMAIL_NOT_VERIFIED"
 
     client.cookies.clear()
     tok, _ = await verified_account(client)

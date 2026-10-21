@@ -84,10 +84,8 @@ export function ProfileDialog() {
                       <HStack gap={2} flexWrap="wrap">
                         {user.isGuest ? (
                           <Pill tone="paper">{t("guestBadge")}</Pill>
-                        ) : user.emailVerified ? (
-                          <Pill tone="mint">{t("verifiedBadge")}</Pill>
                         ) : (
-                          <Pill tone="sun">{t("unverifiedBadge")}</Pill>
+                          <Pill tone="mint">{t("verifiedBadge")}</Pill>
                         )}
                         <Pill tone="paper">
                           {t("joined", {

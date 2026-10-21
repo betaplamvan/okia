@@ -1,6 +1,5 @@
-"""Luồng xác thực theo docs/13: khách, đăng ký/đăng nhập, phiên, email, Google, hồ sơ."""
+"""Luồng xác thực theo docs/13 (ADR-0011): khách, phiên, Google, dev-login, hồ sơ."""
 
-import re
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -11,7 +10,6 @@ from app.auth.emails import outbox
 
 DEVICE = "device-0123456789abcdef"
 EMAIL = "an@example.com"
-PASSWORD = "giay-o-li-2026"
 
 
 def bearer(token: str) -> dict[str, str]:
@@ -24,12 +22,12 @@ async def guest(client: AsyncClient, device: str = DEVICE) -> dict:
     return r.json()
 
 
-def link_token(purpose: str) -> str:
-    """Lấy token từ email cuối cùng trong outbox (console provider)."""
-    msg = [m for m in outbox().sent if m.purpose == purpose][-1]
-    m = re.search(r"/auth/(?:verify|reset)\?token=([\w\-.]+)", msg.text)
-    assert m, msg.text
-    return m.group(1)
+async def dev_login(client: AsyncClient, email: str = EMAIL, access: str | None = None) -> dict:
+    r = await client.post(
+        "/auth/dev-login", json={"email": email}, headers=bearer(access) if access else {}
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
 
 
 # ---------- Khách ----------
@@ -71,6 +69,13 @@ async def test_patch_me(client: AsyncClient) -> None:
     assert r.json()["locale"] == "en"
 
 
+async def test_password_endpoints_are_gone(client: AsyncClient) -> None:
+    """ADR-0011: không còn đăng ký/đăng nhập/đặt lại mật khẩu."""
+    for path in ("/auth/register", "/auth/login", "/auth/forgot", "/auth/reset", "/auth/verify"):
+        r = await client.post(path, json={"email": EMAIL, "password": "x" * 12})
+        assert r.status_code in (404, 405), path
+
+
 # ---------- Phiên ----------
 
 
@@ -104,140 +109,6 @@ async def test_logout_all_invalidates_access_tokens(client: AsyncClient) -> None
     assert r.status_code == 401
     r = await client.post("/auth/refresh")
     assert r.status_code == 401
-
-
-# ---------- Email + mật khẩu ----------
-
-
-async def test_register_upgrades_guest_and_sends_verify(client: AsyncClient) -> None:
-    g = await guest(client)
-    r = await client.post(
-        "/auth/register",
-        json={"email": " An@Example.com ", "password": PASSWORD, "displayName": "An"},
-        headers=bearer(g["accessToken"]),
-    )
-    assert r.status_code == 200, r.text
-    u = r.json()["user"]
-    assert u["id"] == g["user"]["id"]  # giữ user_id khi nâng cấp khách
-    assert u["isGuest"] is False
-    assert u["email"] == EMAIL
-    assert u["emailVerified"] is False
-    assert u["identities"] == [{"provider": "password", "subject": EMAIL}]
-    assert [m.purpose for m in outbox().sent] == ["verify"]
-    assert outbox().sent[0].to == EMAIL
-    assert "Xác minh email" in outbox().sent[0].subject
-
-    # Xác minh: một lần duy nhất.
-    token = link_token("verify")
-    r = await client.post("/auth/verify", json={"token": token})
-    assert r.status_code == 200
-    assert r.json()["user"]["emailVerified"] is True
-    r = await client.post("/auth/verify", json={"token": token})
-    assert r.json()["code"] == "TOKEN_USED"
-    r = await client.post("/auth/verify", json={"token": "x.y.z"})
-    assert r.json()["code"] == "TOKEN_INVALID"
-
-
-async def test_register_without_guest_and_login(client: AsyncClient) -> None:
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    assert r.status_code == 200
-    assert r.json()["user"]["displayName"].startswith("Bạn ")
-    r = await client.post("/auth/login", json={"email": EMAIL, "password": "sai-roi-nhe"})
-    assert r.status_code == 401
-    assert r.json()["code"] == "INVALID_CREDENTIALS"
-    r = await client.post("/auth/login", json={"email": EMAIL, "password": PASSWORD})
-    assert r.status_code == 200
-    assert r.json()["switched"] is False
-
-
-@pytest.mark.parametrize(
-    ("email", "pw"),
-    [
-        (EMAIL, "ngan"),
-        (EMAIL, "123456789"),
-        (EMAIL, "Password"),
-        ("hocsinhgioi@example.com", "hocsinhgioi"),  # trùng phần tên của email
-    ],
-)
-async def test_weak_password_rejected(client: AsyncClient, email: str, pw: str) -> None:
-    r = await client.post("/auth/register", json={"email": email, "password": pw})
-    assert r.status_code == 422
-    assert r.json()["code"] == "WEAK_PASSWORD"
-
-
-async def test_duplicate_register_does_not_leak(client: AsyncClient) -> None:
-    await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    outbox().sent.clear()
-    g = await guest(client, "device-khac-0123456789")
-    r = await client.post(
-        "/auth/register",
-        json={"email": EMAIL, "password": "mat-khau-khac-123"},
-        headers=bearer(g["accessToken"]),
-    )
-    assert r.status_code == 200  # phản hồi như thành công
-    assert r.json()["user"]["isGuest"] is True  # nhưng khách không được nâng cấp
-    assert [m.purpose for m in outbox().sent] == ["duplicate"]
-    # Không có phiên nào: trả 202 CHECK_EMAIL.
-    client.cookies.clear()
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": "mat-khau-khac-123"})
-    assert r.status_code == 202
-    assert r.json()["code"] == "CHECK_EMAIL"
-
-
-async def test_guest_login_into_existing_account_switches(client: AsyncClient) -> None:
-    await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    client.cookies.clear()
-    g = await guest(client, "device-moi-0123456789")
-    r = await client.post(
-        "/auth/login", json={"email": EMAIL, "password": PASSWORD}, headers=bearer(g["accessToken"])
-    )
-    assert r.status_code == 200
-    assert r.json()["switched"] is True
-    assert r.json()["user"]["id"] != g["user"]["id"]
-    # User khách đã bị xóa mềm → token cũ hết hiệu lực.
-    r = await client.get("/me", headers=bearer(g["accessToken"]))
-    assert r.status_code == 401
-
-
-async def test_login_rate_limited(client: AsyncClient) -> None:
-    for _ in range(5):
-        r = await client.post("/auth/login", json={"email": EMAIL, "password": "x" * 8})
-        assert r.status_code == 401
-    r = await client.post("/auth/login", json={"email": EMAIL, "password": "x" * 8})
-    assert r.status_code == 429
-    assert r.json()["code"] == "RATE_LIMITED"
-    assert r.json()["retryAfter"] > 0
-    assert "Retry-After" in r.headers
-
-
-async def test_forgot_and_reset(client: AsyncClient) -> None:
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    old_access = r.json()["accessToken"]
-    outbox().sent.clear()
-    r = await client.post("/auth/forgot", json={"email": "khong-co@example.com"})
-    assert r.status_code == 200 and outbox().sent == []
-    r = await client.post("/auth/forgot", json={"email": EMAIL})
-    assert r.status_code == 200
-    token = link_token("reset")
-    r = await client.post("/auth/reset", json={"token": token, "password": "mat-khau-moi-2026"})
-    assert r.status_code == 200, r.text
-    assert r.json()["user"]["emailVerified"] is True
-    # Phiên cũ bị vô hiệu (token_version tăng), mật khẩu mới dùng được, token một lần.
-    r = await client.get("/me", headers=bearer(old_access))
-    assert r.status_code == 401
-    r = await client.post("/auth/login", json={"email": EMAIL, "password": "mat-khau-moi-2026"})
-    assert r.status_code == 200
-    r = await client.post("/auth/reset", json={"token": token, "password": "mat-khau-moi-2027"})
-    assert r.json()["code"] == "TOKEN_USED"
-
-
-async def test_resend_verify_limited(client: AsyncClient) -> None:
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    tok = r.json()["accessToken"]
-    for _ in range(3):
-        assert (await client.post("/auth/resend-verify", headers=bearer(tok))).status_code == 200
-    assert (await client.post("/auth/resend-verify", headers=bearer(tok))).status_code == 429
-    assert len([m for m in outbox().sent if m.purpose == "verify"]) == 4
 
 
 # ---------- Google ----------
@@ -276,7 +147,8 @@ async def google_roundtrip(client: AsyncClient, access: str | None = None, retur
     return loc.path, parse_qs(loc.query)
 
 
-async def test_google_new_account(client: AsyncClient, fake_google) -> None:
+async def test_google_new_account_sends_welcome(client: AsyncClient, fake_google) -> None:
+    outbox().sent.clear()
     path, q = await google_roundtrip(client)
     assert path == "/" and q["auth"] == ["google"] and q["switched"] == ["0"]
     assert "okia_refresh" in client.cookies
@@ -285,38 +157,55 @@ async def test_google_new_account(client: AsyncClient, fake_google) -> None:
     assert u["email"] == EMAIL and u["emailVerified"] is True and u["isGuest"] is False
     assert u["displayName"] == "An Nguyễn"
     assert u["avatarUrl"] == "https://img/x.png"
-    assert u["identities"] == [{"provider": "google", "subject": None}]
+    assert u["identities"] == [{"provider": "google"}]
+    # Thư chào mừng theo locale, bố cục sticker có logo + nút vào game.
+    assert [m.purpose for m in outbox().sent] == ["welcome"]
+    m = outbox().sent[0]
+    assert m.to == EMAIL and "An Nguyễn" in m.subject
+    assert "/brand/logo-email.png" in m.html and "http://localhost:3000" in m.text
+    # Đăng nhập lại cùng Google → không gửi thêm thư.
+    client.cookies.clear()
+    await google_roundtrip(client)
+    assert len(outbox().sent) == 1
 
 
 async def test_google_upgrades_guest(client: AsyncClient, fake_google) -> None:
+    outbox().sent.clear()
     g = await guest(client)
     path, q = await google_roundtrip(client, g["accessToken"], return_to="/play")
     assert path == "/play" and q["switched"] == ["0"]
     r = await client.post("/auth/refresh")
     assert r.json()["user"]["id"] == g["user"]["id"]
     assert r.json()["user"]["emailVerified"] is True
+    assert [m.purpose for m in outbox().sent] == ["welcome"]
+
+
+async def test_guest_switches_to_existing_google_account(client: AsyncClient, fake_google) -> None:
+    first, _ = await google_roundtrip(client)
+    uid = (await client.post("/auth/refresh")).json()["user"]["id"]
+    client.cookies.clear()
+    g = await guest(client, "device-moi-0123456789")
+    path, q = await google_roundtrip(client, g["accessToken"])
+    assert q["switched"] == ["1"]
+    assert (await client.post("/auth/refresh")).json()["user"]["id"] == uid
+    # User khách đã bị xóa mềm → token cũ hết hiệu lực.
+    assert (await client.get("/me", headers=bearer(g["accessToken"]))).status_code == 401
 
 
 async def test_google_links_verified_email_account(client: AsyncClient, fake_google) -> None:
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    uid = r.json()["user"]["id"]
-    # Chưa xác minh → không tự gộp.
-    path, q = await google_roundtrip(client)
-    assert q["auth"] == ["error"] and q["code"] == ["IDENTITY_TAKEN"]
-    await client.post("/auth/verify", json={"token": link_token("verify")})
+    """Tài khoản cũ cùng email đã xác minh (vd. từ trước ADR-0011) → Google liên kết vào."""
+    uid = (await dev_login(client))["user"]["id"]
     client.cookies.clear()
     path, q = await google_roundtrip(client)
     assert q["auth"] == ["google"]
     u = (await client.post("/auth/refresh")).json()["user"]
     assert u["id"] == uid
-    assert sorted(i["provider"] for i in u["identities"]) == ["google", "password"]
 
 
 async def test_google_taken_by_other_account(client: AsyncClient, fake_google) -> None:
     await google_roundtrip(client)  # tài khoản A có Google
     client.cookies.clear()
-    r = await client.post("/auth/register", json={"email": "b@example.com", "password": PASSWORD})
-    b = r.json()["accessToken"]
+    b = (await dev_login(client, "b@example.com"))["accessToken"]
     path, q = await google_roundtrip(client, b)
     assert q["code"] == ["IDENTITY_TAKEN"]
 
@@ -334,57 +223,51 @@ async def test_google_bad_state(client: AsyncClient) -> None:
     assert r.status_code == 303 and "code=OAUTH_STATE" in r.headers["location"]
 
 
-# ---------- Identity & xóa ----------
+# ---------- dev-login ----------
 
 
-async def test_set_password_and_remove_identity(client: AsyncClient, fake_google) -> None:
+async def test_dev_login_upgrades_guest_without_email(client: AsyncClient) -> None:
+    outbox().sent.clear()
+    g = await guest(client)
+    out = await dev_login(client, access=g["accessToken"])
+    assert out["user"]["id"] == g["user"]["id"]
+    assert out["user"]["isGuest"] is False and out["user"]["emailVerified"] is True
+    assert outbox().sent == []  # dev-login không gửi thư
+
+
+async def test_dev_login_blocked_in_production(client: AsyncClient, monkeypatch) -> None:
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "env", "production")
+    r = await client.post("/auth/dev-login", json={"email": EMAIL})
+    assert r.status_code == 404
+
+
+# ---------- Xóa & thiết bị ----------
+
+
+async def test_delete_me(client: AsyncClient, fake_google) -> None:
     await google_roundtrip(client)
     tok = (await client.post("/auth/refresh")).json()["accessToken"]
-    r = await client.delete("/me/identities/google", headers=bearer(tok))
-    assert r.json()["code"] == "LAST_IDENTITY"
-    r = await client.post("/me/password", json={"password": PASSWORD}, headers=bearer(tok))
-    assert r.status_code == 200
-    r = await client.post("/me/password", json={"password": PASSWORD}, headers=bearer(tok))
-    assert r.json()["code"] == "IDENTITY_EXISTS"
-    r = await client.delete("/me/identities/google", headers=bearer(tok))
-    assert r.status_code == 200
-    assert [i["provider"] for i in r.json()["identities"]] == ["password"]
-
-
-async def test_guest_cannot_set_password(client: AsyncClient) -> None:
-    g = await guest(client)
-    r = await client.post(
-        "/me/password", json={"password": PASSWORD}, headers=bearer(g["accessToken"])
-    )
-    assert r.status_code == 403 and r.json()["code"] == "GUEST_NOT_ALLOWED"
-
-
-async def test_delete_me(client: AsyncClient) -> None:
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    tok = r.json()["accessToken"]
     r = await client.delete("/me", headers=bearer(tok))
     assert r.status_code == 200
     assert (await client.get("/me", headers=bearer(tok))).status_code == 401
-    r = await client.post("/auth/login", json={"email": EMAIL, "password": PASSWORD})
-    assert r.status_code == 401
-    # Email được giải phóng để đăng ký lại.
-    r = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
-    assert r.status_code == 200
+    # Google đăng nhập lại → tài khoản MỚI (identity đã xóa), email được giải phóng.
+    client.cookies.clear()
+    await google_roundtrip(client)
+    u = (await client.post("/auth/refresh")).json()["user"]
+    assert u["email"] == EMAIL
 
 
-async def test_device_cannot_reopen_upgraded_account(client: AsyncClient) -> None:
+async def test_device_cannot_reopen_upgraded_account(client: AsyncClient, fake_google) -> None:
     """Khách nâng cấp rồi đăng xuất: device id cũ phải cho ra KHÁCH MỚI, không phải tài khoản."""
     g = await guest(client)
-    r = await client.post(
-        "/auth/register",
-        json={"email": EMAIL, "password": PASSWORD},
-        headers=bearer(g["accessToken"]),
-    )
-    assert r.json()["user"]["id"] == g["user"]["id"]
+    await google_roundtrip(client, g["accessToken"])
     await client.post("/auth/logout")
     again = await guest(client)
     assert again["user"]["id"] != g["user"]["id"]
     assert again["user"]["isGuest"] is True
-    # Tài khoản thật vẫn đăng nhập được bình thường.
-    r = await client.post("/auth/login", json={"email": EMAIL, "password": PASSWORD})
-    assert r.json()["user"]["id"] == g["user"]["id"]
+    # Tài khoản thật vẫn vào được qua Google.
+    client.cookies.clear()
+    await google_roundtrip(client)
+    assert (await client.post("/auth/refresh")).json()["user"]["id"] == g["user"]["id"]

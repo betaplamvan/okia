@@ -15,16 +15,7 @@
     "RATE_LIMITED": "Thao tác quá nhanh, thử lại sau {retryAfter} giây.",
     "INSUFFICIENT_FUNDS": "Không đủ Ruột chì.",
     "INTERNAL": "Có lỗi xảy ra, thử lại sau.",
-    "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
-    "WEAK_PASSWORD": "Mật khẩu cần ít nhất 8 ký tự và không quá dễ đoán.",
-    "TOKEN_INVALID": "Link không hợp lệ.",
-    "TOKEN_EXPIRED": "Link đã hết hạn, hãy yêu cầu link mới.",
-    "TOKEN_USED": "Link này đã được dùng rồi.",
     "IDENTITY_TAKEN": "Tài khoản Google/email này đã thuộc về một tài khoản khác.",
-    "IDENTITY_EXISTS": "Tài khoản đã có mật khẩu.",
-    "LAST_IDENTITY": "Không thể gỡ cách đăng nhập cuối cùng.",
-    "ALREADY_ACCOUNT": "Bạn đang đăng nhập bằng một tài khoản rồi.",
-    "CHECK_EMAIL": "Hãy kiểm tra hộp thư của bạn.",
     "BANNED": "Tài khoản đang bị khóa.",
     "NOT_FOUND": "Không tìm thấy.",
     "GOOGLE_DISABLED": "Đăng nhập Google chưa được bật trên máy chủ này.",
@@ -54,24 +45,11 @@
     "valedictorian": "Thủ khoa"
   },
   "emails": {
-    "footer": "Email này gửi tự động từ Ô Kìa (okia) vì có thao tác liên quan tới tài khoản của bạn. Nếu không phải bạn, cứ bỏ qua.",
-    "verify": {
-      "subject": "Xác minh email cho Ô Kìa",
-      "body": "Chào {name},\n\nBấm nút bên dưới để xác minh email và mở khóa chế độ xếp hạng. Link có hiệu lực 24 giờ.",
-      "action": "Xác minh email"
-    },
-    "reset": {
-      "subject": "Đặt lại mật khẩu Ô Kìa",
-      "body": "Chào {name},\n\nBạn (hoặc ai đó) vừa yêu cầu đặt lại mật khẩu. Link có hiệu lực 30 phút và chỉ dùng được một lần.",
-      "action": "Đặt lại mật khẩu"
-    },
-    "duplicate": {
-      "subject": "Ai đó vừa thử đăng ký Ô Kìa bằng email của bạn",
-      "body": "Email này đã có tài khoản Ô Kìa. Nếu là bạn, hãy đăng nhập hoặc dùng \"Quên mật khẩu\". Nếu không phải bạn, không cần làm gì cả."
-    },
-    "google_only": {
-      "subject": "Tài khoản Ô Kìa của bạn đăng nhập bằng Google",
-      "body": "Chào {name},\n\nBạn vừa yêu cầu đặt lại mật khẩu, nhưng tài khoản này đăng nhập bằng Google và chưa có mật khẩu. Hãy bấm \"Tiếp tục với Google\" để vào game."
+    "footer": "Thư này gửi tự động từ Ô Kìa (okia.io.vn) vì bạn vừa đăng nhập bằng Google. Nếu không phải bạn, hãy vào game, mở Hồ sơ → Tài khoản → Đăng xuất mọi thiết bị.",
+    "welcome": {
+      "subject": "Chào mừng {name} đến Ô Kìa!",
+      "body": "Chào {name},\n\nTài khoản Google của bạn đã được liên kết với Ô Kìa. Từ giờ bạn chơi được trên nhiều thiết bị, điểm danh mỗi ngày, làm nhiệm vụ và nhận Ruột chì.\n\nVào game và kẻ vài nét thôi!",
+      "action": "Vào chơi ngay"
     }
   },
   "quests": {

@@ -55,7 +55,7 @@ Responsive (mobile-first, tối thiểu 320px) và i18n: xem [11](11-responsive-
 | Migration | Alembic — autogenerate từ model SQLAlchemy (quy trình: [05](05-co-so-du-lieu.md#quản-lý-schema-bằng-alembic)) |
 | Đa ngôn ngữ | Catalog JSON + hàm `t()` tự viết ([11](11-responsive-i18n.md#backend--fastapi)) |
 | Redis | `redis.asyncio` |
-| Xác thực | Khách, email + mật khẩu (Argon2id), Google OAuth (PKCE); access JWT + refresh cookie — xem [13](13-xac-thuc.md) |
+| Xác thực | Khách (device id) và Google OAuth (PKCE), không mật khẩu (ADR-0011); access JWT + refresh cookie — xem [13](13-xac-thuc.md) |
 | Email giao dịch | Resend (SDK `resend`) — dùng cả khi dev, gói miễn phí đủ |
 | Test | pytest + pytest-asyncio |
 

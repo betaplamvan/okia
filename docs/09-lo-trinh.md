@@ -87,12 +87,12 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M1.3 Xác thực (theo [13](13-xac-thuc.md))
 - [x] **P1-05** Phiên: access JWT 1 giờ + refresh cookie xoay (`sessions`), `token_version`; đăng nhập khách (device id); `GET /me`, `PATCH /me` (tên hiển thị, `locale`); client đồng bộ ngôn ngữ đã chọn
-- [x] **P1-06** Email + mật khẩu: `register` (Argon2id, danh sách mật khẩu phổ biến), `login` (rate limit, lỗi không phân biệt), nâng cấp khách → tài khoản; test
-- [x] **P1-07** Email giao dịch (Resend qua background task, `console` khi test, mẫu vi/en): xác minh email, quên/đặt lại mật khẩu (token một lần, tăng `token_version`); chặn xếp hạng khi chưa xác minh (`verified_user`). *Còn lại:* webhook bounce của Resend (làm khi có tên miền gửi thật, M1.8)
+- [x] ~~**P1-06** Email + mật khẩu~~ — **đã gỡ** theo [ADR-0011](adr/0011-chi-khach-va-google.md) (chỉ khách + Google)
+- [x] **P1-07** Email giao dịch (Resend qua background task, `console` khi test, mẫu vi/en, bố cục sticker, gửi từ `no-reply@okia.io.vn`): thư chào mừng khi tài khoản Google vừa tạo. Mẫu xác minh/đặt lại mật khẩu đã gỡ cùng ADR-0011. *Còn lại:* webhook bounce của Resend
 - [x] **P1-08** Google OAuth (PKCE, xác minh `id_token`), tự liên kết theo email đã xác minh, gộp tài khoản khách, xử lý `IDENTITY_TAKEN`; test
-- [x] **P1-09** Giao diện: màn hình đăng nhập/đăng ký/quên mật khẩu, banner "xác minh email", trang cài đặt tài khoản tối thiểu; `DELETE /me` xóa mềm
+- [x] **P1-09** Giao diện: tab Tài khoản (khách → nút Google; tài khoản → email, đăng xuất, xóa); `DELETE /me` xóa mềm. Form email/mật khẩu và banner xác minh đã gỡ (ADR-0011)
 
-✅ *Demo: khách chơi → đăng ký email → nhận mail xác minh (Resend) → bấm link → được vào xếp hạng; đăng nhập Google trùng email tự liên kết.*
+✅ *Demo: khách chơi → Tiếp tục với Google → nhận thư chào mừng (Resend, no-reply@okia.io.vn) → điểm danh, nhiệm vụ mở ngay.*
 
 **Đã làm (M1.3):** backend `api/app/auth/` (27 test), client `web/src/stores/auth.ts` + hộp thoại hồ sơ kiểu noitu (`components/auth/`), trang `/auth/verify`, `/auth/reset`, smoke `pnpm smoke:auth`. Cần cấu hình thật: `RESEND_API_KEY` + tên miền gửi, `GOOGLE_CLIENT_ID/SECRET` (xem `api/README.md`).
 
@@ -130,7 +130,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [ ] **P1-22** Backup `pg_dump` → R2, Sentry cho web và api, trang chính sách quyền riêng tư (vi/en)
 - [ ] **P1-23** Test ảnh chụp màn hình Playwright: 3 kích thước × 2 ngôn ngữ cho trang chủ, đăng nhập, màn chơi, màn kết thúc
 
-**🏁 Tiêu chí hoàn thành giai đoạn 1:** hai điện thoại ở hai mạng khác nhau chơi hết ván qua link mời; tắt mạng 20 giây rồi bật lại vẫn chơi tiếp được; mỗi người thấy giao diện theo ngôn ngữ của mình; đăng ký email thật nhận được mail xác minh trên production.
+**🏁 Tiêu chí hoàn thành giai đoạn 1:** hai điện thoại ở hai mạng khác nhau chơi hết ván qua link mời; tắt mạng 20 giây rồi bật lại vẫn chơi tiếp được; mỗi người thấy giao diện theo ngôn ngữ của mình; đăng nhập Google trên production nhận được thư chào mừng.
 
 ---
 
@@ -201,7 +201,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 Không có thứ tự cố định; chọn theo dữ liệu thực tế.
 
-- [ ] **P3-01** Bảo mật tài khoản nâng cao: đổi mật khẩu, đổi email (xác minh địa chỉ mới), trang "Thiết bị đang đăng nhập" thu hồi từng phiên, gỡ/thêm identity Google
+- [ ] **P3-01** Bảo mật tài khoản nâng cao: trang "Thiết bị đang đăng nhập" thu hồi từng phiên; nhà cung cấp OAuth thứ hai nếu cần (không quay lại mật khẩu, ADR-0011)
 - [ ] **P3-02** Biểu cảm nhanh trong trận (`emote`)
 - [ ] **P3-03** Job kết thúc mùa: reset mềm, phát thưởng theo `peak_tier`
 - [ ] **P3-04** Trang admin tối giản: tra cứu người chơi, cấp vật phẩm, khóa tài khoản, xem xét `match_flags`, sửa nội dung `{vi, en}`

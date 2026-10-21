@@ -21,8 +21,6 @@ class Settings(BaseSettings):
     # Xác thực (docs/13)
     access_token_ttl_seconds: int = 60 * 60
     refresh_token_ttl_days: int = 30
-    verify_token_ttl_hours: int = 24
-    reset_token_ttl_minutes: int = 30
     # Cookie refresh: Secure chỉ khi https (production); dev trên http://localhost thì tắt.
     cookie_secure: bool = False
     cookie_domain: str | None = None

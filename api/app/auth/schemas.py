@@ -14,59 +14,21 @@ class CamelModel(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
 
 
-def _norm_email(v: str) -> str:
-    return v.strip().lower()
-
-
 class GuestIn(CamelModel):
     device_id: str = Field(min_length=8, max_length=64)
     locale: Locale | None = None
 
 
-class RegisterIn(CamelModel):
+class DevLoginIn(CamelModel):
+    """Chỉ ngoài production: tạo/đăng nhập tài khoản đã xác minh không qua Google (smoke test)."""
+
     email: EmailStr
-    password: str = Field(min_length=1, max_length=256)
     display_name: str | None = Field(default=None, max_length=32)
-    locale: Locale | None = None
 
     @field_validator("email")
     @classmethod
     def _email(cls, v: str) -> str:
-        return _norm_email(v)
-
-
-class LoginIn(CamelModel):
-    email: EmailStr
-    password: str = Field(min_length=1, max_length=256)
-
-    @field_validator("email")
-    @classmethod
-    def _email(cls, v: str) -> str:
-        return _norm_email(v)
-
-
-class ForgotIn(CamelModel):
-    email: EmailStr
-
-    @field_validator("email")
-    @classmethod
-    def _email(cls, v: str) -> str:
-        return _norm_email(v)
-
-
-class ResetIn(CamelModel):
-    token: str
-    password: str = Field(min_length=1, max_length=256)
-
-
-class VerifyIn(CamelModel):
-    token: str
-
-
-class SetPasswordIn(CamelModel):
-    """Tài khoản chỉ có Google đặt mật khẩu lần đầu (thêm identity `password`)."""
-
-    password: str = Field(min_length=1, max_length=256)
+        return v.strip().lower()
 
 
 class MePatch(CamelModel):
@@ -85,8 +47,7 @@ class MePatch(CamelModel):
 
 
 class IdentityOut(CamelModel):
-    provider: str
-    subject: str | None = None  # email với password; ẩn với google (sub) và guest
+    provider: str  # hiện chỉ "google"; không lộ subject
 
 
 class WalletBrief(CamelModel):

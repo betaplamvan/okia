@@ -42,12 +42,10 @@ CREATE TABLE users (
 );
 
 CREATE TABLE auth_identities (
-  provider      TEXT NOT NULL,          -- 'guest' | 'password' | 'google'
-  subject       TEXT NOT NULL,          -- guest: device id; password: email; google: sub
+  provider      TEXT NOT NULL,          -- 'guest' | 'google' (password đã bỏ, ADR-0011)
+  subject       TEXT NOT NULL,          -- guest: device id; google: sub
   user_id       UUID NOT NULL REFERENCES users ON DELETE CASCADE,
-  secret_hash   TEXT,                   -- chỉ provider 'password': Argon2id
   PRIMARY KEY (provider, subject),
-  CHECK ((provider = 'password') = (secret_hash IS NOT NULL))
 );
 CREATE INDEX ON auth_identities (user_id);
 
@@ -63,7 +61,7 @@ CREATE TABLE sessions (                 -- refresh token
 CREATE INDEX ON sessions (user_id);
 ```
 
-Một user có thể có nhiều identity (`password` và `google` cùng lúc). Khách nâng cấp → giữ `user_id`, thêm identity, đặt `email`, `is_guest = false`. Chi tiết luồng: [13](13-xac-thuc.md#gộp-tài-khoản).
+Tài khoản thật có đúng một identity `google`. Khách nâng cấp → giữ `user_id`, thêm identity, đặt `email`, `is_guest = false`. Chi tiết luồng: [13](13-xac-thuc.md#gộp-tài-khoản).
 
 ### Xếp hạng & trận đấu
 

@@ -15,9 +15,8 @@ uv run ruff check . && uv run ruff format .
 
 ## Xác thực (docs/13)
 
-Endpoint: `/auth/guest`, `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`,
-`/auth/verify`, `/auth/resend-verify`, `/auth/forgot`, `/auth/reset`, `/auth/google/start`, `/auth/google/callback`,
-`/me` (GET/PATCH/DELETE), `/me/password`, `/me/identities/{provider}`. Xem `/docs` khi server chạy.
+Endpoint: `/auth/guest`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, `/auth/google/start`,
+`/auth/google/callback`, `/auth/dev-login` (ngoài production), `/me` (GET/PATCH/DELETE). Không có mật khẩu (ADR-0011). Xem `/docs` khi server chạy.
 
 Cấu hình cần làm một lần:
 

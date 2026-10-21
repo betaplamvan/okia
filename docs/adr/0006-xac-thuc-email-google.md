@@ -1,7 +1,7 @@
 # ADR-0006 — Xác thực: khách, email + mật khẩu, Google OAuth; bỏ Zalo
 
 - **Ngày:** 2026-10-20
-- **Trạng thái:** Chấp nhận
+- **Trạng thái:** Chấp nhận; **sửa đổi bởi [ADR-0011](0011-chi-khach-va-google.md)** (2026-10-21): bỏ email + mật khẩu, chỉ còn khách + Google.
 
 ## Bối cảnh
 

@@ -14,9 +14,6 @@ type QuestId = "d_play3" | "d_win1" | "d_combo3" | "w_play15" | "w_win_online3" 
 // Nhiệm vụ ngày / tuần (ADR-0010): thanh tiến trình, nút Nhận khi đủ, đồng hồ đếm tới lúc làm mới.
 export function QuestsList({ progress }: { progress: ProgressOut }) {
   const t = useTranslations("Economy");
-  const user = useAuth((s) => s.user);
-  // Khách: mời tạo tài khoản; đã có tài khoản nhưng chưa xác minh: chỉ nhắc xác minh.
-  const needHint = user && !user.isGuest ? t("needVerify") : t("needAccount");
   const groups = (["daily", "weekly"] as const).map((scope) => ({
     scope,
     reset: scope === "daily" ? progress.dailyReset : progress.weeklyReset,
@@ -26,7 +23,7 @@ export function QuestsList({ progress }: { progress: ProgressOut }) {
     <Stack gap={3}>
       {!progress.canClaim ? (
         <Text fontSize="sm" opacity={0.8}>
-          {needHint}
+          {t("needAccount")}
         </Text>
       ) : null}
       {groups.map((g) => (

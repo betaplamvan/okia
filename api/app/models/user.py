@@ -53,20 +53,13 @@ class User(Base, CreatedAtMixin):
 
 class AuthIdentity(Base, CreatedAtMixin):
     __tablename__ = "auth_identities"
-    __table_args__ = (
-        CheckConstraint(
-            "(provider = 'password') = (secret_hash IS NOT NULL)", name="password_has_hash"
-        ),
-        Index("ix_auth_identities_user_id", "user_id"),
-    )
+    __table_args__ = (Index("ix_auth_identities_user_id", "user_id"),)
 
-    provider: Mapped[str] = mapped_column(String(16), primary_key=True)  # guest|password|google
+    provider: Mapped[str] = mapped_column(String(16), primary_key=True)  # guest|google
     subject: Mapped[str] = mapped_column(String(254), primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    secret_hash: Mapped[str | None] = mapped_column(String(256))  # chỉ provider 'password'
-
     user: Mapped[User] = relationship(back_populates="identities")
 
 

@@ -1,108 +1,107 @@
 # 13 — Xác thực & tài khoản
 
-Quyết định: [ADR-0006](adr/0006-xac-thuc-email-google.md).
+Quyết định: [ADR-0006](adr/0006-xac-thuc-email-google.md) (phiên, Google) và
+[ADR-0011](adr/0011-chi-khach-va-google.md) (bỏ email + mật khẩu).
 
-## Ba cách vào game
+## Hai cách vào game
 
 | Cách | Dành cho | Được gì |
 |---|---|---|
-| **Khách** (guest) | Chơi thử ngay, không nhập gì | Casual, bot, phòng riêng. Không xếp hạng, không Ruột chì, không shop |
-| **Tài khoản email + mật khẩu** | Người không muốn dùng Google | Mọi tính năng, sau khi **xác minh email** |
-| **Google OAuth** | Vào nhanh một chạm | Mọi tính năng ngay (email đã được Google xác minh) |
+| **Khách** (guest) | Chơi thử ngay, không nhập gì | Casual, bot, phòng riêng. Không xếp hạng, không Ruột chì, không điểm danh/nhiệm vụ |
+| **Google OAuth** | Vào một chạm, không mật khẩu | Mọi tính năng ngay (email đã được Google xác minh) |
 
-Không có đăng nhập Zalo, Facebook, Apple, hay số điện thoại. Có thể thêm sau nếu dữ liệu beta cho thấy nhu cầu.
+Không có đăng nhập email + mật khẩu (bỏ 2026-10-21), Zalo, Facebook, Apple hay số điện thoại.
 
 ## Khách
 
-> **Triển khai (M1.3):** giống noitu, client **tự tạo khách ngay lần đầu vào** (không có màn đăng nhập riêng); bấm pill tên / avatar ở header mở hộp thoại hồ sơ với tab *Tài khoản* để liên kết Google hoặc email. Khi khách nâng cấp, identity `guest` bị **gỡ** để device id không mở lại được tài khoản thật sau khi đăng xuất; `/auth/guest` gặp identity khách trỏ tới tài khoản đã nâng cấp sẽ tạo khách mới.
-
-- Client sinh `device_id` (UUID) lưu `localStorage`; `POST /auth/guest` → tạo `users(is_guest=true)` + `auth_identities(provider='guest', subject=device_id)` → phát token.
+- Giống noitu, client **tự tạo khách ngay lần đầu vào** (không có màn đăng nhập riêng); bấm pill tên
+  / avatar ở header mở hộp thoại hồ sơ với tab *Tài khoản* để đăng nhập Google.
+- Client sinh `device_id` (UUID) lưu `localStorage`; `POST /auth/guest` → tạo `users(is_guest=true)`
+  + `auth_identities(provider='guest', subject=device_id)` → phát token.
 - Mất `localStorage` là mất tài khoản khách — chấp nhận, vì khách không có tiến trình đáng giữ.
-- Khách **nâng cấp** thành tài khoản thật bằng cách đăng ký email hoặc đăng nhập Google **trong khi đang giữ token khách** (xem [Gộp tài khoản](#gộp-tài-khoản)).
-
-## Tài khoản email + mật khẩu
-
-### Đăng ký — `POST /auth/register`
-- Trường: `email`, `password`, `display_name`, `locale`.
-- Email chuẩn hóa `lower(trim())`, duy nhất. Mật khẩu **≥ 8 ký tự**, không giới hạn trên dưới 128, không bắt buộc ký tự đặc biệt; từ chối mật khẩu nằm trong danh sách phổ biến (top 10k).
-- Băm bằng **Argon2id** (`argon2-cffi`, tham số mặc định của thư viện).
-- Tạo tài khoản với `email_verified_at = NULL`, gửi email xác minh, trả token đăng nhập luôn (không bắt chờ xác minh để chơi casual).
-- Nếu email đã tồn tại: trả **cùng phản hồi** như thành công và gửi email "ai đó vừa thử đăng ký bằng địa chỉ của bạn" — không tiết lộ email đã có tài khoản.
-
-### Xác minh email — `GET /auth/verify?token=…`
-- Token là JWT ký bởi server, `purpose=verify`, hạn **24 giờ**, có `jti`; dùng xong ghi `token:used:{jti}` vào Redis (TTL bằng hạn còn lại) để **chỉ dùng một lần**.
-- Chưa xác minh thì **không được chơi xếp hạng** (và do đó không có Ruột chì). Lý do: email xác minh là rào cản tối thiểu chống tạo hàng loạt tài khoản để dàn xếp kết quả.
-- Gửi lại email xác minh: tối đa 3 lần/giờ.
-
-### Đăng nhập — `POST /auth/login`
-- `email` + `password`. Sai gì cũng trả `INVALID_CREDENTIALS`, không phân biệt "email không tồn tại" và "sai mật khẩu".
-- Giới hạn: **5 lần sai / 15 phút** theo email và theo IP (`rl:login:*` trong Redis). Vượt → `RATE_LIMITED` kèm thời gian chờ.
-- Thành công → phát token, ghi `sessions`.
-
-### Quên mật khẩu — `POST /auth/forgot`, `POST /auth/reset`
-- `forgot` luôn trả thành công; nếu email có tài khoản mật khẩu thì gửi link đặt lại (JWT `purpose=reset`, hạn **30 phút**, một lần).
-- `reset` đặt mật khẩu mới, **tăng `users.token_version`** → mọi phiên cũ bị vô hiệu, rồi phát token mới.
-- Tài khoản chỉ có Google mà gửi `forgot` → email nhắc "tài khoản này đăng nhập bằng Google".
-
-### Đổi mật khẩu, đổi email
-- Đổi mật khẩu cần mật khẩu hiện tại; đổi email gửi xác minh tới địa chỉ mới, chỉ đổi khi xác minh xong. Cả hai nằm ở giai đoạn 3 (`PATCH /me/security`).
+- Khi khách nâng cấp, identity `guest` bị **gỡ** để device id không mở lại được tài khoản thật sau khi
+  đăng xuất; `/auth/guest` gặp identity khách trỏ tới tài khoản đã nâng cấp sẽ tạo khách mới.
 
 ## Google OAuth
 
-- **Authorization Code + PKCE**, xử lý ở backend: `POST /auth/google/start` (kèm Bearer nếu đang có phiên, để biết khách cần nâng cấp hay tài khoản cần liên kết; trả `{url}`) → client chuyển hướng tới Google → `GET /auth/google/callback` nhận `code`, đổi lấy `id_token` (httpx), xác minh chữ ký/`aud`/`iss` bằng JWKS của Google qua PyJWT. `state` + `code_verifier` lưu Redis 10 phút. Callback chuyển hướng về `APP_BASE_URL{return_to}?auth=google|error&code=…`.
+- **Authorization Code + PKCE**, xử lý ở backend: `POST /auth/google/start` (kèm Bearer nếu đang có
+  phiên, để biết khách cần nâng cấp; trả `{url}`) → client chuyển hướng tới Google →
+  `GET /auth/google/callback` nhận `code`, đổi lấy `id_token` (httpx), xác minh chữ ký/`aud`/`iss`
+  bằng JWKS của Google qua PyJWT. `state` + `code_verifier` lưu Redis 10 phút. Callback chuyển hướng
+  về `APP_BASE_URL{return_to}?auth=google|error&code=…`.
 - Lấy `sub`, `email`, `email_verified`, `name`, `picture`. Chỉ nhận khi `email_verified = true`.
 - Tìm `auth_identities(provider='google', subject=sub)`:
   - Có → đăng nhập.
-  - Không có, nhưng `users.email` trùng với email Google và tài khoản đó đã xác minh → **tự động liên kết** Google vào tài khoản đó (an toàn vì cả hai phía đều đã xác minh cùng email). Trùng email nhưng tài khoản kia **chưa** xác minh → `IDENTITY_TAKEN` (không gộp).
-  - Không có gì → tạo tài khoản mới, `email_verified_at = now()`, avatar từ `picture`.
-- `state` chống CSRF lưu trong cookie ngắn hạn. Callback kết thúc bằng chuyển hướng về client với refresh cookie đã đặt; không đưa token lên URL.
+  - Không có, nhưng `users.email` trùng email Google và tài khoản đó đã xác minh (tài khoản tạo
+    trước ADR-0011) → **tự liên kết** Google vào. Trùng email nhưng chưa xác minh → `IDENTITY_TAKEN`.
+  - Không có gì → tạo tài khoản mới, `email_verified_at = now()`, avatar từ `picture`, gửi **thư
+    chào mừng**.
+- Callback kết thúc bằng chuyển hướng về client với refresh cookie đã đặt; không đưa token lên URL.
+- Cấu hình: Google Cloud → Google Auth Platform (app *Ô Kìa*, Audience *External*, đã Publish),
+  client Web với redirect URI `{API_BASE_URL}/auth/google/callback`; `GOOGLE_CLIENT_ID/SECRET`.
 
 ## Gộp tài khoản
 
-Khi người dùng đang có token **khách** và thực hiện đăng ký/đăng nhập:
+Khi người dùng đang có token **khách** và đăng nhập Google:
 
 | Tình huống | Xử lý |
 |---|---|
-| Đăng ký email mới | Nâng cấp **chính** user khách: đặt `email`, thêm identity `password`, `is_guest=false`. Giữ nguyên `user_id`, loadout, lịch sử trận |
-| Google chưa gắn với ai | Nâng cấp user khách tương tự, thêm identity `google` |
-| Email/Google **đã thuộc tài khoản khác** | Chuyển sang tài khoản đó; **bỏ** user khách (xóa mềm sau 30 ngày). Khách không có Ruột chì hay skin nên không mất gì đáng kể; thông báo rõ trước khi chuyển |
+| Google chưa gắn với ai | Nâng cấp **chính** user khách: đặt `email`, thêm identity `google`, `is_guest=false`. Giữ nguyên `user_id`, lịch sử trận |
+| Google **đã thuộc tài khoản khác** | Chuyển sang tài khoản đó (`switched=1`); **bỏ** user khách (xóa mềm). Khách không có Ruột chì hay skin nên không mất gì đáng kể; tab Tài khoản ghi rõ trước khi bấm |
+| Đang là tài khoản thật, Google thuộc tài khoản khác | `IDENTITY_TAKEN` |
 
-Một tài khoản có thể có đồng thời identity `password` và `google`. Gỡ một identity chỉ được phép khi vẫn còn ít nhất một cách đăng nhập.
+Một tài khoản chỉ có identity `google`; không có thao tác gỡ identity (gỡ là mất đường vào).
+
+## dev-login (ngoài production)
+
+`POST /auth/dev-login {email, displayName?}` tạo/đăng nhập tài khoản đã xác minh với identity
+`google` subject `dev:<email>`, đi đúng luồng gộp tài khoản ở trên, **không gửi thư**. Trả 404 khi
+`ENV=production`. Dùng cho pytest và smoke test Playwright (không tự động hóa được Google thật).
 
 ## Phiên & token
 
-- **Access token:** JWT, hạn **1 giờ**, chứa `sub` (user id), `is_guest`, `email_verified`, `token_version`. Gửi qua header `Authorization: Bearer` (REST) hoặc query `token` (WebSocket, xem [04](04-giao-thuc-ws.md)).
-- **Refresh token:** chuỗi ngẫu nhiên 256-bit, lưu **băm SHA-256** trong bảng `sessions`, hạn **30 ngày**, đặt trong cookie `httpOnly; Secure; SameSite=Lax; Path=/auth`. Mỗi lần refresh **xoay** token (token cũ bị thu hồi); dùng lại token đã xoay → thu hồi toàn bộ phiên của user (dấu hiệu bị lộ).
-- Mọi request kiểm tra `token_version` trong JWT khớp `users.token_version`; đổi mật khẩu hoặc "đăng xuất mọi thiết bị" chỉ cần tăng số này.
+- **Access token:** JWT, hạn **1 giờ**, chứa `sub` (user id), `is_guest`, `email_verified`,
+  `token_version`. Gửi qua header `Authorization: Bearer` (REST) hoặc query `token` (WebSocket, xem
+  [04](04-giao-thuc-ws.md)).
+- **Refresh token:** chuỗi ngẫu nhiên 256-bit, lưu **băm SHA-256** trong bảng `sessions`, hạn **30
+  ngày**, cookie `httpOnly; Secure; SameSite=Lax; Path=/auth`. Mỗi lần refresh **xoay** token; dùng lại
+  token đã xoay → thu hồi toàn bộ phiên của user (dấu hiệu bị lộ).
+- Mọi request kiểm tra `token_version` trong JWT khớp `users.token_version`; "đăng xuất mọi thiết bị"
+  chỉ cần tăng số này.
 - Trang "Thiết bị đang đăng nhập" (giai đoạn 3) liệt kê `sessions`, cho thu hồi từng phiên.
 
 ## Email giao dịch
 
-- Dịch vụ: **Resend** (SDK Python `resend`; gói miễn phí 3.000 email/tháng, 100/ngày — đủ cho giai đoạn đầu). Gửi từ tên miền riêng đã xác minh trên Resend, cấu hình SPF/DKIM/DMARC theo hướng dẫn của họ.
-- Gọi Resend **ngoài request chính** (background task) với retry 3 lần; thất bại ghi log kèm `user_id` và mục đích, không kèm nội dung.
-- Bật webhook `email.bounced` / `email.complained` của Resend → đánh dấu `users.email_bounced_at` để không gửi lại và nhắc người dùng đổi email.
-- Ba mẫu: xác minh, đặt lại mật khẩu, cảnh báo đăng ký trùng. Mỗi mẫu có **vi và en**, chọn theo `locale` của người nhận; nội dung text thuần + HTML tối giản.
-- Môi trường dev: vẫn gửi thật qua Resend (gói miễn phí đủ dùng); chỉ test tự động mới dùng `EMAIL_PROVIDER=console` để in ra log.
-- Không gửi email tiếp thị; email chỉ dùng cho bảo mật tài khoản ([10](10-phap-ly.md#dữ-liệu-cá-nhân)).
+- Dịch vụ: **Resend** (SDK Python `resend`), gửi từ `Ô Kìa <no-reply@okia.io.vn>` — tên miền
+  `okia.io.vn` đã xác minh DKIM/SPF trên Resend (region ap-northeast-1).
+- Gọi Resend **ngoài request chính** (background task) với retry 3 lần; thất bại ghi log kèm `user_id`
+  và mục đích, không kèm nội dung.
+- Mẫu thư (`api/app/auth/emails.py`): chữ lấy từ catalog i18n `emails.*` (vi/en theo `locale` người
+  nhận), bọc trong bố cục sticker của game — nền xanh bảng, logo `public/brand/logo-email.png`, thẻ
+  giấy viền mực bóng cứng, nút mint, chân thư gạch đứt. Bảng + style inline để Gmail/Outlook hiểu.
+  Mẫu hiện có: **`welcome`** (tài khoản Google vừa tạo / khách vừa nâng cấp; không gửi lại khi đăng
+  nhập lại). Thêm mẫu mới = thêm khóa `emails.<tên>` vào hai catalog và tên vào `Template`.
+- Webhook `email.bounced` / `email.complained` của Resend → `users.email_bounced_at` (chưa làm).
+- Test tự động dùng `EMAIL_PROVIDER=console` (giữ trong bộ nhớ, `outbox()`); dev gửi thật qua Resend.
+- Không gửi email tiếp thị ([10](10-phap-ly.md#dữ-liệu-cá-nhân)).
 
 ## Bảo mật — checklist
 
-- Argon2id; không bao giờ log mật khẩu, token hay nội dung email đặt lại.
-- Mọi endpoint `/auth/*` có rate limit theo IP; `register` và `forgot` thêm giới hạn theo email.
-- So sánh băm bằng hàm thời gian hằng định.
+- Không lưu mật khẩu; không log token hay nội dung thư.
+- `/auth/guest` rate limit theo IP; Google `state` một lần, 10 phút.
 - Cookie refresh `httpOnly`; access token giữ trong bộ nhớ client, không `localStorage`.
-- CORS chỉ cho origin của web; CSRF cho `/auth/refresh` dựa trên `SameSite=Lax` + kiểm tra header `Origin`.
-- Xóa tài khoản: `DELETE /me` → xóa mềm, ẩn ngay, xóa cứng sau 30 ngày; identity và session xóa ngay để không đăng nhập lại được.
+- CORS chỉ cho origin của web; CSRF cho `/auth/refresh` dựa trên `SameSite=Lax` + kiểm tra `Origin`.
+- Xóa tài khoản: `DELETE /me` → xóa mềm, ẩn ngay, xóa cứng sau 30 ngày; identity và session xóa ngay
+  để không đăng nhập lại được; email giải phóng.
 
 ## Mã lỗi
 
 | `code` | Khi nào |
 |---|---|
-| `INVALID_CREDENTIALS` | Email/mật khẩu sai (không phân biệt) |
-| `EMAIL_NOT_VERIFIED` | Vào xếp hạng khi chưa xác minh |
+| `UNAUTHORIZED` | Thiếu/sai/hết hạn token |
 | `GUEST_NOT_ALLOWED` | Khách gọi tính năng cần tài khoản |
-| `WEAK_PASSWORD` | Mật khẩu < 8 ký tự hoặc quá phổ biến |
-| `TOKEN_INVALID`, `TOKEN_EXPIRED`, `TOKEN_USED` | Link xác minh/đặt lại |
-| `IDENTITY_TAKEN` | Google/email đã thuộc tài khoản khác (kèm gợi ý chuyển tài khoản) |
-| `LAST_IDENTITY` | Gỡ cách đăng nhập cuối cùng |
+| `EMAIL_NOT_VERIFIED` | Tài khoản cũ chưa xác minh (hiếm, trước ADR-0011) |
+| `IDENTITY_TAKEN` | Google đã thuộc tài khoản khác |
+| `GOOGLE_DISABLED` | Server chưa cấu hình Google |
+| `OAUTH_STATE`, `OAUTH_FAILED`, `OAUTH_CANCELLED`, `OAUTH_EMAIL_UNVERIFIED` | Luồng Google |
 | `RATE_LIMITED` | Vượt giới hạn, kèm `retryAfter` |

@@ -20,8 +20,8 @@
 ## Dữ liệu cá nhân
 
 - **Nghị định 13/2023/NĐ-CP** về bảo vệ dữ liệu cá nhân.
-- Chỉ thu thập tối thiểu: tên hiển thị, avatar, **email** (để đăng nhập, xác minh và đặt lại mật khẩu), id từ Google. Không lưu số điện thoại.
-- Mật khẩu chỉ lưu dạng băm Argon2id; không bao giờ ghi log mật khẩu hay token.
+- Chỉ thu thập tối thiểu: tên hiển thị, avatar, **email** và id từ Google (để đăng nhập, gửi thư chào mừng/bảo mật). Không lưu số điện thoại, không có mật khẩu.
+- Không lưu mật khẩu (chỉ đăng nhập Google); không bao giờ ghi log token.
 - Email **chỉ dùng cho bảo mật tài khoản**, không gửi tiếp thị; chính sách ghi rõ đơn vị gửi email (Resend, máy chủ ở nước ngoài).
 - Có trang **chính sách quyền riêng tư** và chức năng **xóa tài khoản** từ giai đoạn 1.
 - Ghi rõ có dùng Sentry/PostHog (dịch vụ nước ngoài) trong chính sách.

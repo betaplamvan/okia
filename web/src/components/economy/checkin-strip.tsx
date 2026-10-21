@@ -12,9 +12,6 @@ import { useAuth } from "@/stores/auth";
 // Điểm danh 7 ngày (ADR-0010): ô ngày đã nhận tô mint, ngày hôm nay nổi bật, ngày 7 có Hoa điểm tốt.
 export function CheckinStrip({ progress }: { progress: ProgressOut }) {
   const t = useTranslations("Economy");
-  const user = useAuth((s) => s.user);
-  // Khách: mời tạo tài khoản; đã có tài khoản nhưng chưa xác minh: chỉ nhắc xác minh.
-  const needHint = user && !user.isGuest ? t("needVerify") : t("needAccount");
   const checkin = useAuth((s) => s.checkin);
   const rewardLabel = useRewardLabel();
   const [busy, setBusy] = useState(false);
@@ -87,7 +84,7 @@ export function CheckinStrip({ progress }: { progress: ProgressOut }) {
       </SimpleGrid>
       {!progress.canClaim ? (
         <Text fontSize="sm" opacity={0.8}>
-          {needHint}
+          {t("needAccount")}
         </Text>
       ) : (
         <Button

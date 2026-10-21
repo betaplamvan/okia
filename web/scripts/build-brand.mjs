@@ -196,6 +196,15 @@ async function main() {
   await writeFile(path.join(app, "favicon.ico"), ico);
 
   await writeFile(path.join(app, "apple-icon.png"), await png(tileSvg(180), 180));
+
+  // Logo cho email (client mail không hiện SVG): PNG trong suốt 340×164 (hiện 170px, @2x).
+  await writeFile(
+    path.join(brand, "logo-email.png"),
+    await sharp(Buffer.from(logo(font, INK)), { density: 300 })
+      .resize({ width: 340 })
+      .png()
+      .toBuffer(),
+  );
   await writeFile(path.join(brand, "icon-192.png"), await png(tileSvg(192), 192));
   await writeFile(path.join(brand, "icon-512.png"), await png(tileSvg(512), 512));
 

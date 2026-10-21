@@ -3,6 +3,7 @@
  *
  * Khởi động (boot): thử /auth/refresh; không có phiên → tự đăng nhập khách bằng device id
  * trong localStorage (giống noitu: vào là có tài khoản ngay, không cần màn đăng nhập).
+ * Chỉ có khách và Google (ADR-0011) — không có mật khẩu.
  */
 import { create } from "zustand";
 import {
@@ -37,15 +38,9 @@ type AuthState = {
   authed<T>(path: string, init?: ApiInit): Promise<T>;
   refresh(): Promise<User | null>;
   guest(): Promise<void>;
-  register(input: { email: string; password: string; displayName?: string }): Promise<TokenOut>;
-  login(input: { email: string; password: string }): Promise<TokenOut>;
   logout(): Promise<void>;
   logoutAll(): Promise<void>;
   updateMe(patch: { displayName?: string; locale?: "vi" | "en" }): Promise<User>;
-  setPassword(password: string): Promise<User>;
-  removeIdentity(provider: "password" | "google"): Promise<User>;
-  resendVerify(): Promise<void>;
-  forgot(email: string): Promise<void>;
   deleteMe(): Promise<void>;
   googleStart(returnTo: string): Promise<string>;
   applyToken(tok: TokenOut): void;
@@ -158,20 +153,6 @@ export const useAuth = create<AuthState>()((set, get) => ({
     }
   },
 
-  async register(input) {
-    const tok = await get().authed<TokenOut>("/auth/register", {
-      body: { ...input, locale: get().locale },
-    });
-    get().applyToken(tok);
-    return tok;
-  },
-
-  async login(input) {
-    const tok = await get().authed<TokenOut>("/auth/login", { body: input });
-    get().applyToken(tok);
-    return tok;
-  },
-
   async logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => undefined);
     set({ user: null, accessToken: null, expiresAt: 0 });
@@ -188,26 +169,6 @@ export const useAuth = create<AuthState>()((set, get) => ({
     const user = await get().authed<User>("/me", { method: "PATCH", body: patch });
     set({ user });
     return user;
-  },
-
-  async setPassword(password) {
-    const user = await get().authed<User>("/me/password", { body: { password } });
-    set({ user });
-    return user;
-  },
-
-  async removeIdentity(provider) {
-    const user = await get().authed<User>(`/me/identities/${provider}`, { method: "DELETE" });
-    set({ user });
-    return user;
-  },
-
-  async resendVerify() {
-    await get().authed("/auth/resend-verify", { method: "POST" });
-  },
-
-  async forgot(email) {
-    await api("/auth/forgot", { body: { email }, locale: get().locale });
   },
 
   async deleteMe() {
