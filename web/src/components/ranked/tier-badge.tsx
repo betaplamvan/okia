@@ -2,7 +2,7 @@
 
 import { HStack, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
-import { LuCrown, LuGraduationCap } from "react-icons/lu";
+import { RankEmblem } from "@/components/ranked/rank-emblem";
 import type { RankOut, Tier } from "@/lib/api";
 
 // Màu huy hiệu theo hạng (docs/07, docs/14): leo dần từ giấy → mint → sun → pink → coral.
@@ -58,8 +58,7 @@ export function TierBadge({ rank, size = "md", showPoints }: Props) {
       opacity={rank ? 1 : 0.8}
       data-testid="tier-badge"
     >
-      {rank?.tier === "valedictorian" ? <LuGraduationCap /> : null}
-      {rank?.tier === "topscholar" ? <LuCrown /> : null}
+      <RankEmblem rank={rank} size={{ sm: 16, md: 20, lg: 28 }[size]} animate={false} />
       <Text as="span">{label(rank)}</Text>
       {showPoints && rank ? (
         <Text as="span" fontWeight="600" opacity={0.8}>

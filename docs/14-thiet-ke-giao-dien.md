@@ -34,6 +34,7 @@ Phong cách: **"sticker vở ô li"** — thẻ màu kẹo và giấy kem với 
 | **Timer ring** | Vòng tròn viền mint 6px trên nền paper, số ở giữa (hand, đậm) | Màn chơi (P0-12 / P1-20) |
 | **Panel** | Sticker card nền paper chứa HUD / bàn đấu | Màn chơi |
 | **Bong bóng bot** | Tròn mint, viền sticker, góc dưới phải | Lời thoại bot (giai đoạn 3) |
+| **Huy hiệu hạng** | Khiên SVG viền mực + bóng cứng, màu theo bậc (giấy, mint, sun, pink, coral, xanh–vàng Trạng nguyên), sao bậc con dưới khiên | `<RankEmblem rank size position />` — hồ sơ 112, BXH 44, pill 16–28 (xem [07](07-xep-hang-ghep-tran.md)) |
 | **Nền** | `board.*` gradient + lưới ô li mờ 32px (`rgba(255,255,255,.06)`) | `globalCss` |
 
 Chuyển động: chỉ `transform`/`box-shadow` khi nhấn (120 ms), tôn trọng `prefers-reduced-motion`.

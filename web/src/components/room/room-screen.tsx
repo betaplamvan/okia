@@ -21,6 +21,7 @@ import { useMapName } from "@/components/play/map-picker";
 import { PlayerChip } from "@/components/play/player-chip";
 import { useGameSounds } from "@/components/play/use-game-sounds";
 import { RewardChips } from "@/components/economy/wallet-chips";
+import { RankEmblem } from "@/components/ranked/rank-emblem";
 import { TierBadge } from "@/components/ranked/tier-badge";
 import { seatSkins } from "@/game/skins/skins";
 import { toaster } from "@/components/ui/toaster";
@@ -351,6 +352,30 @@ export function RoomScreen({ code }: { code: string }) {
                           {myDelta >= 0 ? "+" : ""}
                           {numberFormat.format(myDelta)}
                         </Text>
+                        {/* Khiên mới: lên hạng bật lên + sao, rớt hạng trượt xuống mờ dần. */}
+                        <Box
+                          display="flex"
+                          css={{
+                            animation:
+                              tierShift > 0
+                                ? "okiaRankUp 0.7s cubic-bezier(.34,1.56,.64,1) both"
+                                : tierShift < 0
+                                  ? "okiaRankDown 0.6s ease-out both"
+                                  : undefined,
+                            "@keyframes okiaRankUp": {
+                              "0%": { transform: "scale(0.5) rotate(-8deg)", opacity: 0 },
+                              "60%": { transform: "scale(1.15) rotate(3deg)", opacity: 1 },
+                              "100%": { transform: "scale(1) rotate(0)", opacity: 1 },
+                            },
+                            "@keyframes okiaRankDown": {
+                              "0%": { transform: "translateY(-14px)", opacity: 0 },
+                              "100%": { transform: "translateY(0)", opacity: 1 },
+                            },
+                            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                          }}
+                        >
+                          <RankEmblem rank={myRankAfter} size={112} />
+                        </Box>
                         <HStack gap={2} flexWrap="wrap" justify="center">
                           <TierBadge rank={myRankAfter} size="md" showPoints />
                           {tierShift > 0 ? (

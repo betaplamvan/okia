@@ -2,14 +2,16 @@
 
 import { Box, HStack, Progress, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { TierBadge } from "@/components/ranked/tier-badge";
-import { DIVISION_SIZE, TIER_SIZE, TIERS, type MyRankOut } from "@/lib/api";
+import { RankEmblem } from "@/components/ranked/rank-emblem";
+import { useRankLabel } from "@/components/ranked/tier-badge";
+import { DIVISION_SIZE, TIER_SIZE, TIERS, type MyRankOut, type Tier } from "@/lib/api";
 
 // Thẻ hạng của tôi (docs/07): huy hiệu + điểm, thanh tiến tới bậc kế, thống kê mùa, vị trí BXH.
 export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean }) {
   const t = useTranslations("Ranked");
   const locale = useLocale();
   const format = useFormatter();
+  const rankLabel = useRankLabel();
   const seasonName = locale === "en" ? rank.season.name.en : rank.season.name.vi;
   const placing = rank.rank === null;
   const top = rank.rank?.tier === "valedictorian" || rank.rank?.tier === "topscholar";
@@ -20,14 +22,27 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
 
   return (
     <Stack gap={3} bg="cream" border="2px solid" borderColor="ink" borderRadius="lg" p={3}>
-      <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={2}>
-        <Stack gap={1}>
-          <TierBadge rank={rank.rank} size="lg" />
-          <Text fontSize="sm" opacity={0.75}>
-            {t("season", { name: seasonName })} ·{" "}
-            {t("endsAt", { date: format.dateTime(new Date(rank.season.endsAt), "short") })}
-          </Text>
-        </Stack>
+      <HStack justify="space-between" align="center" flexWrap="wrap" gap={2}>
+        <HStack gap={3} align="center">
+          {/* Huy hiệu hạng (thiết kế 2026-10-21): khiên 112 px, #thứ hạng dưới khiên với hai bậc đỉnh. */}
+          <RankEmblem
+            rank={rank.rank}
+            size={compact ? 88 : 112}
+            position={rank.position}
+            label={rankLabel(rank.rank)}
+          />
+          <Stack gap={0}>
+            <Text fontSize="2xl" fontWeight="700" lineHeight="1.1" data-testid="rank-name">
+              {rankLabel(rank.rank)}
+            </Text>
+            <Text fontSize="sm" opacity={0.75}>
+              {t("season", { name: seasonName })}
+            </Text>
+            <Text fontSize="sm" opacity={0.75}>
+              {t("endsAt", { date: format.dateTime(new Date(rank.season.endsAt), "short") })}
+            </Text>
+          </Stack>
+        </HStack>
         <Stack gap={0} align="flex-end">
           <Text fontSize="4xl" fontWeight="700" lineHeight="1" data-testid="rank-points">
             {format.number(rank.points)}
@@ -62,7 +77,9 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
             {rank.rank?.tier === "topscholar"
               ? t("topScholar")
               : top
-                ? t("topTier")
+                ? rank.position && rank.position > 100
+                  ? t("toTop100", { n: String(rank.position - 100) })
+                  : t("topTier")
                 : t("nextDivision", { n: String(toNext) })}
           </Text>
           <Progress.Root value={within} max={DIVISION_SIZE} size="sm">
@@ -105,27 +122,25 @@ function Stat({ label, highlight }: { label: string; highlight?: boolean }) {
   );
 }
 
-// Thang hạng: 5 ô, ô hiện tại nổi bật — nhìn là biết còn bao xa tới Thủ khoa.
-function TierLadder({ tier }: { tier: MyRankOut["rank"] extends infer R ? string : never }) {
+// Thang hạng: 6 khiên nhỏ, khiên hiện tại to và đậm, các khiên khác mờ — nhìn là biết còn bao xa.
+function TierLadder({ tier }: { tier: Tier }) {
   const t = useTranslations("Ranked");
-  const idx = TIERS.indexOf(tier as (typeof TIERS)[number]);
+  const idx = TIERS.indexOf(tier);
   return (
-    <HStack gap={1} mt={1} flexWrap="wrap">
+    <HStack justify="space-between" mt={1} px={1} align="center">
       {TIERS.map((k, i) => (
-        <Text
+        <Box
           key={k}
-          as="span"
-          fontSize="xs"
-          px={1.5}
-          borderRadius="full"
-          border="2px solid"
-          borderColor={i === idx ? "ink" : "transparent"}
-          bg={i === idx ? "sun" : "transparent"}
-          opacity={i <= idx ? 1 : 0.5}
-          title={`${i * TIER_SIZE}+`}
+          opacity={i === idx ? 1 : 0.45}
+          title={`${t(`tier.${k}`)}${k === "topscholar" ? "" : ` · ${i * TIER_SIZE}+`}`}
+          display="flex"
         >
-          {t(`tier.${k}`)}
-        </Text>
+          <RankEmblem
+            rank={{ tier: k, division: null, points: 0 }}
+            size={i === idx ? 36 : 28}
+            animate={false}
+          />
+        </Box>
       ))}
     </HStack>
   );

@@ -4,7 +4,8 @@ import { Avatar, Box, Button, Container, Heading, HStack, Stack, Text } from "@c
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { LuRefreshCw, LuSwords } from "react-icons/lu";
-import { TierBadge } from "@/components/ranked/tier-badge";
+import { RankEmblem } from "@/components/ranked/rank-emblem";
+import { useRankLabel } from "@/components/ranked/tier-badge";
 import { Link } from "@/i18n/navigation";
 import type { LeaderboardEntry, LeaderboardOut } from "@/lib/api";
 import { useAuth } from "@/stores/auth";
@@ -129,11 +130,14 @@ export function Leaderboard() {
 function Row({ e, me }: { e: LeaderboardEntry; me?: boolean }) {
   const t = useTranslations("Leaderboard");
   const format = useFormatter();
+  const rankLabel = useRankLabel();
   const medal = e.position <= 3 ? MEDAL[e.position - 1] : null;
+  const top = e.rank.tier === "topscholar";
   return (
     <HStack
       gap={{ base: 2, md: 3 }}
-      bg={me ? "mint" : (medal ?? "paper")}
+      bg={me ? "mint" : top && e.position === 1 ? "ink" : (medal ?? "paper")}
+      color={!me && top && e.position === 1 ? "cream" : "ink"}
       border="2px solid"
       borderColor="ink"
       borderRadius="md"
@@ -145,6 +149,7 @@ function Row({ e, me }: { e: LeaderboardEntry; me?: boolean }) {
       <Text fontWeight="700" fontSize="lg" minW="8" textAlign="center">
         {e.position}
       </Text>
+      <RankEmblem rank={e.rank} size={44} label={rankLabel(e.rank)} />
       <Avatar.Root size="sm" bg="sun" color="ink" border="2px solid" borderColor="ink">
         <Avatar.Fallback name={e.name} fontWeight="700" />
         {e.avatarUrl ? <Avatar.Image src={e.avatarUrl} /> : null}
@@ -160,12 +165,16 @@ function Row({ e, me }: { e: LeaderboardEntry; me?: boolean }) {
             </Text>
           ) : null}
         </HStack>
-        <HStack gap={2} fontSize="xs" opacity={0.8} flexWrap="wrap">
-          <Box display={{ base: "none", sm: "block" }}>
-            <TierBadge rank={e.rank} size="sm" />
-          </Box>
+        <HStack gap={2} fontSize="xs" opacity={0.85} flexWrap="wrap">
+          <Text
+            as="span"
+            fontWeight="700"
+            color={top && !me && e.position === 1 ? "sun" : undefined}
+          >
+            {rankLabel(e.rank)}
+          </Text>
           <Text as="span">
-            {t("games", { n: String(e.games) })} · {t("wins", { n: String(e.wins) })}
+            · {t("games", { n: String(e.games) })} · {t("wins", { n: String(e.wins) })}
           </Text>
         </HStack>
       </Stack>

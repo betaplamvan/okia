@@ -78,6 +78,8 @@ Khi `game_over` của phòng xếp hạng, **một transaction Postgres**: khóa
 
 Giao diện: `/ranked` (thẻ hạng + tìm trận, trạng thái chờ), `/leaderboard`, tab **Hạng** trong hồ sơ, huy hiệu hạng trên chip người chơi và hộp kết quả (± điểm, lên/rớt hạng, +Ruột chì). Smoke: `pnpm smoke:ranked`.
 
+**Huy hiệu hạng** (`web/src/components/ranked/rank-emblem.tsx`, thiết kế duyệt 2026-10-21): một dáng khiên vở học trò viền mực, bóng cứng; mỗi bậc thêm một lớp — giấy xám nếp gấp (Giấy nháp), trang vở mint lề đỏ (Vở ô li), hai bút chéo + nơ (Học sinh khá), dấu 10 điểm + băng GIỎI + lá (Học sinh giỏi), mũ tốt nghiệp + nguyệt quế vàng + sao (Thủ khoa), mũ cánh chuồn + khiên xanh viền vàng + hào quang thở nhịp (Trạng nguyên). Bậc con = số sao dưới khiên (III → I); hai bậc đỉnh ghi `#thứ hạng`. Đang phân hạng = khiên giấy viền đứt, dấu hỏi. SVG inline tự rút gọn chi tiết: ≥ 64 px đủ đồ (thẻ hạng 112 px, hộp kết quả), 44 px trên BXH, 16–28 px trong pill `TierBadge` (chip trận). Lên hạng: khiên bật lên xoay nhẹ; rớt hạng: trượt xuống; hào quang tắt khi `prefers-reduced-motion`.
+
 ### Chống gian lận
 - Server kiểm tra mọi nước đi (xem [03](03-luat-choi.md)).
 - Rate limit `move` (tối đa 5 tin/giây).

@@ -332,7 +332,8 @@
     "how3": "Your first 5 games each season are placement games with no rank shown. Each tier has 3 divisions (III → I). Valedictorian is the top tier; its 100 highest scorers hold the Top Scholar title.",
     "how4": "A season lasts 8 weeks; a new season partly resets ranks so everyone gets a fresh shot.",
     "loadError": "Could not load ranked data.",
-    "topScholar": "Top Scholar — top 100 of the whole school!"
+    "topScholar": "Top Scholar — top 100 of the whole school!",
+    "toTop100": "{n} places from the top 100 → Top Scholar"
   },
   "Leaderboard": {
     "title": "Leaderboard",
