@@ -45,4 +45,7 @@ messages/*.d.json.ts
 
 # anh chup man hinh tu scripts/shots.mjs
 .shots/
+
+# font tai ve de sinh logo (scripts/build-brand.mjs)
+scripts/.cache/
 !.env.example

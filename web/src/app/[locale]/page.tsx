@@ -1,4 +1,4 @@
-import { Box, Circle, Container, Heading, SimpleGrid, Stack, Text } from "@chakra-ui/react";
+import { Box, Circle, Container, Heading, Image, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import { LuBot, LuSwords, LuTrophy, LuUsers } from "react-icons/lu";
 import { GuideArticle } from "@/components/guide-article";
@@ -41,15 +41,15 @@ export default function Home() {
             bottom={3}
             right={3}
           />
-          <Heading
-            as="h1"
-            size={{ base: "5xl", md: "7xl" }}
-            fontWeight="700"
-            lineHeight="1"
-            textShadow="stickerText"
-            letterSpacing="1px"
-          >
-            Ô Kìa
+          {/* Logo thay chữ; vẫn là h1 với alt "Ô Kìa" cho SEO/đọc màn hình. */}
+          <Heading as="h1" lineHeight="1" display="flex" justifyContent="center">
+            <Image
+              src="/brand/logo-dark.svg"
+              alt="Ô Kìa"
+              h={{ base: "84px", md: "120px" }}
+              w="auto"
+              filter="drop-shadow(0 4px 0 rgba(26, 40, 38, 0.4))"
+            />
           </Heading>
           <Text mt={3} fontSize={{ base: "lg", md: "xl" }} opacity={0.9}>
             {t("tagline")}

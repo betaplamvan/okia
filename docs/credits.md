@@ -17,7 +17,8 @@ Các gói Kenney khác đã tải để chọn (UI Audio, Music Jingles, Impact 
 |---|---|---|
 | Patrick Hand | Google Fonts (Patrick Wagesreiter) | OFL 1.1 |
 | Be Vietnam Pro | Google Fonts (Lâm Bảo) | OFL 1.1 |
+| Baloo 2 (chỉ dùng để vẽ chữ trong logo, đã chuyển thành path — không tải lúc chạy) | Google Fonts (Ek Type) | OFL 1.1 |
 
 ## Hình ảnh
 
-Chưa có asset hình ngoài; mọi hình trong game hiện vẽ bằng code (PixiJS) hoặc icon [Lucide](https://lucide.dev) (ISC) qua `react-icons`.
+Logo, favicon, icon PWA và ảnh OG là của dự án, sinh bởi `web/scripts/build-brand.mjs` (xem [14](14-thiet-ke-giao-dien.md#nhận-diện-logo-favicon)). Ngoài ra mọi hình trong game vẽ bằng code (PixiJS) hoặc icon [Lucide](https://lucide.dev) (ISC) qua `react-icons`.

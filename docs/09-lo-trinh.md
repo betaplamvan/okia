@@ -116,7 +116,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ### M1.7 Client online
 - [x] **P1-17** WS client có tự kết nối lại (backoff) và tự refresh access token, store trạng thái kết nối
 - [x] **P1-18** `NetworkController` (cùng interface `GameController`): animate lạc quan, hoàn tác khi lỗi; hiển thị lỗi theo `code` đã dịch
-- [x] **P1-19** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger. *Còn lại:* ảnh OG (hiện mới có tiêu đề + mô tả theo ngôn ngữ)
+- [x] **P1-19** Màn hình tạo phòng, trang mời `/r/[id]`, nút chia sẻ (Web Share API), ảnh OG theo ngôn ngữ khi dán link vào Zalo/Messenger. Ảnh OG dùng chung bộ nhận diện (`opengraph-image.png`, không có chữ theo ngôn ngữ — tiêu đề + mô tả đã theo ngôn ngữ)
 - [x] **P1-20** Thanh đếm giờ lượt, báo đối thủ rớt mạng, màn hình kết thúc online
 
 ### M1.7b Bể map ([ADR-0009](adr/0009-be-map-hinh-thu.md))

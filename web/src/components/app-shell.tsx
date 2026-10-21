@@ -1,4 +1,4 @@
-import { Box, Container, Flex, Heading, HStack } from "@chakra-ui/react";
+import { Box, Container, Flex, HStack, Image } from "@chakra-ui/react";
 import { Suspense } from "react";
 import { AudioProvider } from "@/components/audio-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
@@ -26,16 +26,17 @@ export function AppShell({ children }: AppShellProps) {
       <Box as="header">
         <Container maxW="4xl" px={4} py={3}>
           <HStack justify="space-between">
-            <Heading
-              asChild
-              size={{ base: "2xl", md: "3xl" }}
-              color="cream"
-              textShadow="stickerText"
-              lineHeight="1"
-              letterSpacing="0.5px"
-            >
-              <Link href="/">Ô Kìa</Link>
-            </Heading>
+            {/* Logo ngang (mark thay chữ Ô + "Kìa"), bản nét giấy cho nền xanh — public/brand. */}
+            <Link href="/" aria-label="Ô Kìa">
+              <Image
+                src="/brand/logo-dark.svg"
+                alt="Ô Kìa"
+                h={{ base: "36px", md: "44px" }}
+                w="auto"
+                display="block"
+                filter="drop-shadow(0 3px 0 rgba(26, 40, 38, 0.4))"
+              />
+            </Link>
             <HStack gap={2}>
               <SoundSettings />
               <Suspense fallback={null}>
