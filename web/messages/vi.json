@@ -169,7 +169,16 @@
       "GOOGLE_DISABLED": "Đăng nhập Google chưa được bật trên máy chủ này."
     },
     "switchedWarn": "Nếu Google này đã có tài khoản Ô Kìa, bạn sẽ chuyển sang tài khoản đó và tài khoản khách hiện tại bị bỏ.",
-    "overviewSoon": "Cấp độ và thành tựu sẽ xuất hiện ở đây."
+    "overviewSoon": "Thành tựu sẽ xuất hiện ở đây.",
+    "positionSeason": "#{n} mùa này",
+    "showcase": "Tủ trưng bày",
+    "showcasePen": "Bút",
+    "showcaseBox": "Dấu ăn",
+    "stats": "Thống kê",
+    "statGames": "Ván xếp hạng mùa này",
+    "statWins": "Thắng",
+    "statStreak": "Chuỗi điểm danh",
+    "statBest": "Kỷ lục chuỗi"
   },
   "Room": {
     "title": "Phòng riêng",

@@ -169,7 +169,16 @@
       "GOOGLE_DISABLED": "Google sign-in is not enabled on this server."
     },
     "switchedWarn": "If this Google account already has an Ô Kìa account, you will switch to it and the current guest account is dropped.",
-    "overviewSoon": "Level and achievements will show up here."
+    "overviewSoon": "Achievements will show up here.",
+    "positionSeason": "#{n} this season",
+    "showcase": "Showcase",
+    "showcasePen": "Pen",
+    "showcaseBox": "Box mark",
+    "stats": "Stats",
+    "statGames": "Ranked games this season",
+    "statWins": "Wins",
+    "statStreak": "Check-in streak",
+    "statBest": "Best streak"
   },
   "Room": {
     "title": "Private room",

@@ -16,6 +16,7 @@ Không có đăng nhập email + mật khẩu (bỏ 2026-10-21), Zalo, Facebook,
 
 - Giống noitu, client **tự tạo khách ngay lần đầu vào** (không có màn đăng nhập riêng); bấm pill tên
   / avatar ở header mở hộp thoại hồ sơ với tab *Tài khoản* để đăng nhập Google.
+- Hộp hồ sơ (bố cục học noitu, 2026-10-21): dải xanh bảng + avatar to chồng lên, tên giữa, hàng huy hiệu (hạng, `#n mùa này`, ngày tham gia, Khách / Tài khoản Google), nút *Chỉnh sửa hồ sơ* + nút ví (→ cửa hàng), **Tủ trưng bày** (bút + dấu ăn đang trang bị → cửa hàng, huy hiệu hạng → tab Hạng), tab pill *Tổng quan* (thống kê: ván xếp hạng mùa này, thắng, chuỗi điểm danh, kỷ lục) / *Hạng* / *Tài khoản*. Điểm danh và nhiệm vụ ở hộp "Quà mỗi ngày" riêng ([06](06-kinh-te.md)).
 - Client sinh `device_id` (UUID) lưu `localStorage`; `POST /auth/guest` → tạo `users(is_guest=true)`
   + `auth_identities(provider='guest', subject=device_id)` → phát token.
 - Mất `localStorage` là mất tài khoản khách — chấp nhận, vì khách không có tiến trình đáng giữ.
