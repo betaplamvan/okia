@@ -14,7 +14,18 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét lông đậm nhạt, thanh đậm như viết thư pháp.",
       en: "Calligraphy brush with tapered thick-and-thin strokes.",
     },
+    forms: {
+      mine: {
+        color: "#152a66",
+        color2: "#4a6bd1",
+      },
+      opponent: {
+        color: "#8f0f1e",
+        color2: "#e05a5a",
+      },
+    },
     pen: {
+      style: "brush",
       width: 1.5,
       alpha: 0.92,
       jitter: 1.2,
@@ -35,14 +46,26 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
     type: "pen",
     rarity: "rare",
     name: {
-      vi: "Phấn trắng",
-      en: "White Chalk",
+      vi: "Phấn màu",
+      en: "Colored Chalk",
     },
     description: {
-      vi: "Nét phấn đứt quãng, bụi phấn bay khi ăn ô.",
-      en: "Dusty broken chalk stroke with chalk puffs on capture.",
+      vi: "Nét phấn màu đứt quãng, bụi phấn bay khi ăn ô.",
+      en: "Dusty broken colored-chalk stroke with chalk puffs on capture.",
+    },
+    forms: {
+      mine: {
+        color: "#3b82c4",
+        color2: "#a9cdf2",
+      },
+      opponent: {
+        color: "#d1467a",
+        color2: "#f4b6cc",
+      },
     },
     pen: {
+      style: "gradient",
+      halo: true,
       width: 1.3,
       alpha: 0.9,
       jitter: 1.4,
@@ -70,7 +93,19 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét sáp to, sần, đúng chất lớp mẫu giáo.",
       en: "Chunky waxy stroke straight from kindergarten.",
     },
+    forms: {
+      mine: {
+        color: "#2e9e5b",
+        accent: "#1f7a45",
+      },
+      opponent: {
+        color: "#d9532b",
+        accent: "#a33a1c",
+      },
+    },
     pen: {
+      style: "flat",
+      grain: "wax",
       width: 1.6,
       alpha: 0.7,
       jitter: 2.6,
@@ -98,7 +133,16 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét bút bi quen thuộc, có sẵn cho mọi người.",
       en: "The familiar ballpoint stroke, free for everyone.",
     },
+    forms: {
+      mine: {
+        color: "#1e4fd8",
+      },
+      opponent: {
+        color: "#d8341e",
+      },
+    },
     pen: {
+      style: "flat",
       width: 1,
       alpha: 1,
       jitter: 1,
@@ -115,6 +159,44 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
     default: true,
   },
   {
+    id: "pen_fire",
+    type: "pen",
+    rarity: "legendary",
+    name: {
+      vi: "Bút lửa",
+      en: "Fire Pen",
+    },
+    description: {
+      vi: "Nét lửa cháy, tàn lửa bay lên; ăn ô là ô bùng cháy.",
+      en: "A burning stroke with rising embers; captured boxes burst into flame.",
+    },
+    forms: {
+      mine: {
+        color: "#1e90ff",
+        color2: "#9ff3ff",
+      },
+      opponent: {
+        color: "#e8401c",
+        color2: "#ffd166",
+      },
+    },
+    pen: {
+      style: "fire",
+      width: 1.2,
+      alpha: 1,
+      jitter: 0.9,
+    },
+    combo: {
+      style: "fire",
+      particles: "spark",
+      shakeFrom: 2,
+    },
+    sfx: {
+      capture: "capture_fire",
+      combo: "combo_fire",
+    },
+  },
+  {
     id: "pen_gold",
     type: "pen",
     rarity: "legendary",
@@ -126,11 +208,23 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét viền vàng, sao lấp lánh và tiếng chuông khi ăn ô.",
       en: "Gold-rimmed stroke, twinkling stars and a bell on capture.",
     },
+    forms: {
+      mine: {
+        color: "#d4a017",
+        colors: ["#b8860b", "#ffe680", "#fff6c2", "#d4a017"],
+        glow: "#ffd93d",
+      },
+      opponent: {
+        color: "#c8653a",
+        colors: ["#8c3b1e", "#ffb27a", "#ffd9bf", "#c8653a"],
+        glow: "#ffb27a",
+      },
+    },
     pen: {
+      style: "metal",
       width: 1.1,
       alpha: 1,
       jitter: 0.6,
-      glow: "#ffd93d",
     },
     combo: {
       style: "sparkle",
@@ -154,7 +248,18 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Mực tím học trò; ăn ô là mực bắn tung tóe.",
       en: "Schoolkid purple ink that splashes on every capture.",
     },
+    forms: {
+      mine: {
+        color: "#4a2d9c",
+        color2: "#8f6ad6",
+      },
+      opponent: {
+        color: "#9c1f6e",
+        color2: "#e26bb4",
+      },
+    },
     pen: {
+      style: "gradient",
       width: 1.1,
       alpha: 0.95,
       jitter: 0.8,
@@ -182,9 +287,20 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét dày, đầu vuông, mực loang nhẹ ở mép.",
       en: "Thick square-tipped stroke with a soft bleed.",
     },
+    forms: {
+      mine: {
+        color: "#2563eb",
+        color2: "#1b47b8",
+      },
+      opponent: {
+        color: "#f97316",
+        color2: "#c2410c",
+      },
+    },
     pen: {
+      style: "twotone",
       width: 1.7,
-      alpha: 0.78,
+      alpha: 0.8,
       jitter: 0.6,
       cap: "square",
     },
@@ -210,11 +326,23 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét phát sáng, tia điện bắn ra khi ăn chuỗi.",
       en: "Glowing stroke with electric sparks on combos.",
     },
+    forms: {
+      mine: {
+        color: "#00bcd4",
+        glow: "#7cf5c5",
+        core: "#e9ffff",
+      },
+      opponent: {
+        color: "#ff2bd6",
+        glow: "#ffa6ec",
+        core: "#fff0fb",
+      },
+    },
     pen: {
+      style: "neon",
       width: 0.9,
       alpha: 1,
       jitter: 0.4,
-      glow: "#7cf5c5",
     },
     combo: {
       style: "neon",
@@ -238,7 +366,19 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Nét chì hơi run, mờ nhẹ như vẽ vội dưới ngăn bàn.",
       en: "A slightly shaky, soft graphite stroke.",
     },
+    forms: {
+      mine: {
+        color: "#3b4a6b",
+        color2: "#8a93a8",
+      },
+      opponent: {
+        color: "#7a3b2e",
+        color2: "#b08a80",
+      },
+    },
     pen: {
+      style: "flat",
+      grain: "graphite",
       width: 0.9,
       alpha: 0.82,
       jitter: 2.2,
@@ -265,11 +405,21 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       vi: "Mỗi nét một màu cầu vồng; combo nổ ra như pháo hoa.",
       en: "Every stroke a different rainbow hue; combos burst like fireworks.",
     },
+    forms: {
+      mine: {
+        color: "#2d9cdb",
+        colors: ["#2ecc71", "#2d9cdb", "#7b4fe0"],
+      },
+      opponent: {
+        color: "#ff8c1a",
+        colors: ["#e0313b", "#ff8c1a", "#ffd93d"],
+      },
+    },
     pen: {
+      style: "rainbow",
       width: 1.1,
       alpha: 1,
       jitter: 0.8,
-      hue: "rainbow",
     },
     combo: {
       style: "sparkle",

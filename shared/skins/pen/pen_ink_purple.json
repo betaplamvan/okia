@@ -10,7 +10,18 @@
     "vi": "Mực tím học trò; ăn ô là mực bắn tung tóe.",
     "en": "Schoolkid purple ink that splashes on every capture."
   },
+  "forms": {
+    "mine": {
+      "color": "#4a2d9c",
+      "color2": "#8f6ad6"
+    },
+    "opponent": {
+      "color": "#9c1f6e",
+      "color2": "#e26bb4"
+    }
+  },
   "pen": {
+    "style": "gradient",
     "width": 1.1,
     "alpha": 0.95,
     "jitter": 0.8,

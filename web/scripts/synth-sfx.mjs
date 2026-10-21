@@ -1,5 +1,5 @@
 // Tổng hợp các tiếng không có sẵn trong gói CC0: tiếng bút chì vẽ, "ting" ăn ô (cao dần theo combo),
-// tiếng đổi lượt. Xuất WAV 48 kHz mono vào shared/audio/core/ (nguồn), sau đó pipeline ghép sprite.
+// tiếng đổi lượt, bộ tiếng theo skin bút (kể cả whoosh / bùng lửa của Bút lửa). Xuất WAV 48 kHz mono vào shared/audio/core/ (nguồn), sau đó pipeline ghép sprite.
 //
 //   node scripts/synth-sfx.mjs
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -284,8 +284,90 @@ function chalkDust(seed) {
   return sequence(parts, 55);
 }
 
+/**
+ * Nhiễu lọc thông dải 2 cực, tâm trượt f0 → f1 theo thời gian (whoosh / lửa). `env(t)` biên độ
+ * theo tiến độ 0–1.
+ */
+function sweepNoise(seed, durMs, f0, f1, q, env) {
+  const r = rng(seed);
+  const n = Math.floor((SR * durMs) / 1000);
+  const out = new Array(n);
+  let y1 = 0,
+    y2 = 0,
+    x1 = 0,
+    x2 = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const f = (f0 * Math.pow(f1 / f0, t)) / SR;
+    const w = 2 * Math.PI * f;
+    const alpha = Math.sin(w) / (2 * q);
+    const a0 = 1 + alpha;
+    const x = (r() * 2 - 1) * env(t);
+    const y = (alpha * x - alpha * x2 - -2 * Math.cos(w) * y1 - (1 - alpha) * y2) / a0;
+    x2 = x1;
+    x1 = x;
+    y2 = y1;
+    y1 = y;
+    out[i] = y * 3;
+  }
+  return out;
+}
+
+/** Whoosh lửa ăn ô: bụm nhiễu ngắn, tâm lọc vút lên rồi tắt nhanh. */
+function fireWhoosh(seed) {
+  const base = sweepNoise(
+    seed,
+    230,
+    350,
+    2600,
+    1.4,
+    (t) => Math.min(1, t * 9) * Math.pow(1 - t, 1.6),
+  );
+  // Thêm một "phụt" trầm ở đầu cho có lực.
+  return normalize(
+    base.map((v, i) => {
+      const t = i / SR;
+      return v + Math.sin(2 * Math.PI * (160 - 90 * t * 6) * t) * 0.35 * Math.exp(-t * 28);
+    }),
+    0.78,
+  );
+}
+
+/** Bùng lửa combo: nhiễu dâng lên rồi hạ (swell) + rumble trầm + tiếng lách tách. */
+function fireFlare(seed) {
+  const r = rng(seed + 1);
+  const durMs = 620;
+  const swell = sweepNoise(seed, durMs, 500, 1800, 1.1, (t) =>
+    Math.pow(Math.sin(Math.PI * Math.min(1, t * 1.15)), 1.3),
+  );
+  const n = swell.length;
+  const out = new Array(n);
+  let crackleGate = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const p = i / n;
+    // Rumble: sin trầm 70 → 48 Hz, hơi méo.
+    const rum =
+      Math.tanh(Math.sin(2 * Math.PI * (70 - 22 * p) * t) * 1.6) *
+      0.45 *
+      Math.sin(Math.PI * Math.min(1, p * 1.2));
+    // Lách tách: click ngẫu nhiên thưa, dày hơn ở đỉnh.
+    if (crackleGate <= 0 && r() < 0.0025 * (0.4 + Math.sin(Math.PI * p)))
+      crackleGate = 60 + Math.floor(r() * 80);
+    let crack = 0;
+    if (crackleGate > 0) {
+      crack = (r() * 2 - 1) * 0.5 * (crackleGate / 140);
+      crackleGate--;
+    }
+    out[i] = swell[i] * 0.8 + rum + crack;
+  }
+  return normalize(out, 0.82);
+}
+
 const files = {
   "combo.wav": sparkle(71),
+  "capture_fire.wav": fireWhoosh(41),
+  "combo_fire.wav": fireFlare(43),
   "capture_soft.wav": tingSoft(3),
   "capture_marker.wav": slide(600, 1250, 140, { decay: 18 }),
   "capture_ink.wav": blob(9),

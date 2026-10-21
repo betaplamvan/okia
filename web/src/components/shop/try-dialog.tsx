@@ -13,10 +13,11 @@ import { applyMove, type Player } from "@/game/rules";
 import { seatSkins, type SkinManifest } from "@/game/skins/skins";
 import { useAuth } from "@/stores/auth";
 
-// Kịch bản trên bàn 3×3 (24 cạnh): ghế 0 (bạn) ăn 2 ô liên tiếp ở nước 7–8 để thấy nét, ô ăn,
-// tiếng và chữ COMBO. Cạnh đánh số theo rules.ts: ngang 0–11 (hàng r, cột c → r*3+c), dọc 12–23.
-const SCRIPT: number[] = [0, 3, 12, 13, 1, 4, 14, 15, 2, 5, 16, 17, 6, 9];
-// Ghế vẽ từng nước (ghế 0 ăn ô nên được đi tiếp): tính tự động bằng applyMove, chỉ liệt kê cạnh.
+// Kịch bản trên bàn 3×3 (24 cạnh), hai ghế thay nhau đi để thấy cả hai hình thái của bút (ghế 0 =
+// mình, ghế 1 = đối thủ): ghế 0 ăn ô (0,0) ở nước 5, ghế 1 ăn ô (0,1) ở nước 7, ghế 0 ăn liên tiếp
+// ô (1,0) + (1,1) ở nước 11–12 → COMBO ×2. Cạnh đánh số theo rules.ts: ngang 0–11 (hàng r, cột c →
+// r*3+c), dọc 12–23 (12 + r*4 + c). Ghế đi từng nước tính tự động bằng applyMove (ăn ô → đi tiếp).
+const SCRIPT: number[] = [0, 12, 13, 1, 3, 14, 4, 16, 7, 17, 6, 18];
 
 function fresh(): GameSession {
   return {
@@ -36,17 +37,26 @@ function fresh(): GameSession {
 type Props = { skin: SkinManifest | null; onClose: () => void };
 
 // Hộp thử skin (docs/06 — "Thử: xem skin trên bàn mẫu, chỉ ở client, không lưu"): bàn thật
-// (BoardCanvas) với skin đang thử gắn vào ghế của bạn; bấm "Vẽ thử" đi từng nước theo kịch bản.
+// (BoardCanvas) với skin đang thử gắn vào CẢ HAI ghế (bút: ghế 0 hình thái "mình", ghế 1 "đối thủ");
+// bấm "Vẽ thử" đi từng nước theo kịch bản.
 export function TryDialog({ skin, onClose }: Props) {
   const t = useTranslations("Shop");
   const locale = useLocale();
   const loadout = useAuth((s) => s.user?.loadout);
   const [session, setSession] = useState<GameSession>(fresh);
   const [step, setStep] = useState(0);
+  // Hộp thoại giữ mount giữa các lần mở → đổi skin thử thì bắt đầu lại bàn mẫu (đặt lại state
+  // ngay trong render khi prop đổi, theo hướng dẫn React — không setState trong effect).
+  const [tried, setTried] = useState(skin);
+  if (skin && skin !== tried) {
+    setTried(skin);
+    setSession(fresh());
+    setStep(0);
+  }
 
   const skins = useMemo(() => {
     const mine = { ...loadout, ...(skin ? { [skin.type]: skin.id } : {}) };
-    return seatSkins(mine, null);
+    return seatSkins(mine, mine);
   }, [skin, loadout]);
   useGameSounds(session, skins);
 

@@ -10,11 +10,33 @@
     "vi": "Nét viền vàng, sao lấp lánh và tiếng chuông khi ăn ô.",
     "en": "Gold-rimmed stroke, twinkling stars and a bell on capture."
   },
+  "forms": {
+    "mine": {
+      "color": "#d4a017",
+      "colors": [
+        "#b8860b",
+        "#ffe680",
+        "#fff6c2",
+        "#d4a017"
+      ],
+      "glow": "#ffd93d"
+    },
+    "opponent": {
+      "color": "#c8653a",
+      "colors": [
+        "#8c3b1e",
+        "#ffb27a",
+        "#ffd9bf",
+        "#c8653a"
+      ],
+      "glow": "#ffb27a"
+    }
+  },
   "pen": {
+    "style": "metal",
     "width": 1.1,
     "alpha": 1.0,
-    "jitter": 0.6,
-    "glow": "#ffd93d"
+    "jitter": 0.6
   },
   "combo": {
     "style": "sparkle",

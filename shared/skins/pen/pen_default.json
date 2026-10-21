@@ -10,7 +10,16 @@
     "vi": "Nét bút bi quen thuộc, có sẵn cho mọi người.",
     "en": "The familiar ballpoint stroke, free for everyone."
   },
+  "forms": {
+    "mine": {
+      "color": "#1e4fd8"
+    },
+    "opponent": {
+      "color": "#d8341e"
+    }
+  },
   "pen": {
+    "style": "flat",
     "width": 1.0,
     "alpha": 1.0,
     "jitter": 1.0

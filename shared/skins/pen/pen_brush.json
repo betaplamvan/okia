@@ -10,7 +10,18 @@
     "vi": "Nét lông đậm nhạt, thanh đậm như viết thư pháp.",
     "en": "Calligraphy brush with tapered thick-and-thin strokes."
   },
+  "forms": {
+    "mine": {
+      "color": "#152a66",
+      "color2": "#4a6bd1"
+    },
+    "opponent": {
+      "color": "#8f0f1e",
+      "color2": "#e05a5a"
+    }
+  },
   "pen": {
+    "style": "brush",
     "width": 1.5,
     "alpha": 0.92,
     "jitter": 1.2,

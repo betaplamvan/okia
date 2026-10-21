@@ -10,11 +10,29 @@
     "vi": "Mỗi nét một màu cầu vồng; combo nổ ra như pháo hoa.",
     "en": "Every stroke a different rainbow hue; combos burst like fireworks."
   },
+  "forms": {
+    "mine": {
+      "color": "#2d9cdb",
+      "colors": [
+        "#2ecc71",
+        "#2d9cdb",
+        "#7b4fe0"
+      ]
+    },
+    "opponent": {
+      "color": "#ff8c1a",
+      "colors": [
+        "#e0313b",
+        "#ff8c1a",
+        "#ffd93d"
+      ]
+    }
+  },
   "pen": {
+    "style": "rainbow",
     "width": 1.1,
     "alpha": 1.0,
-    "jitter": 0.8,
-    "hue": "rainbow"
+    "jitter": 0.8
   },
   "combo": {
     "style": "sparkle",

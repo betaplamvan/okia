@@ -7,12 +7,36 @@ import { SKIN_SOURCES } from "./catalog.data";
 
 export type SkinType = "pen" | "box";
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
-export type ComboStyle = "sticker" | "ink" | "chalk" | "neon" | "sparkle";
+export type ComboStyle = "sticker" | "ink" | "chalk" | "neon" | "sparkle" | "fire";
 export type Particles = "paper" | "ink" | "chalk" | "spark" | "star";
 export type BoxEffect =
   "hatch" | "fill" | "crosshatch" | "dots" | "scribble" | "star" | "stamp" | "heart" | "seal";
 
+/** Kiểu vẽ nét (docs/08 — "pen.style"): quyết định cách engine dùng màu của hình thái. */
+export type PenStyle =
+  "flat" | "twotone" | "gradient" | "neon" | "brush" | "fire" | "rainbow" | "metal";
+
+/**
+ * Một hình thái màu của bút (docs/08 — "forms"). Mỗi bút có hai: `mine` tông lạnh (nét của mình),
+ * `opponent` tông nóng (nét đối thủ) — cả hai bên đều thấy nét mình lạnh, nét đối thủ nóng.
+ */
+export interface PenForm {
+  /** Màu chính (hex). */
+  color: string;
+  /** Màu cuối gradient (gradient, brush, fire, phấn). */
+  color2?: string;
+  /** Các mốc màu nhiều điểm (rainbow, metal). */
+  colors?: string[];
+  /** Màu quầng sáng (neon, metal). */
+  glow?: string;
+  /** Màu lõi sáng ở giữa nét (neon). */
+  core?: string;
+  /** Màu hạt sáp / vụn phụ (crayon). */
+  accent?: string;
+}
+
 export interface PenParams {
+  style: PenStyle;
   /** Hệ số bề dày so với nét mặc định. */
   width: number;
   alpha?: number;
@@ -21,12 +45,12 @@ export interface PenParams {
   cap?: "round" | "square";
   /** Nét mảnh ở hai đầu, dày ở giữa (bút lông, mực). */
   taper?: boolean;
-  /** Quầng sáng màu này quanh nét (neon, vàng). */
-  glow?: string;
   /** Nét đứt quãng: [đoạn vẽ, đoạn hở] theo tỷ lệ ô. */
   dash?: [number, number];
-  /** "rainbow": mỗi cạnh một màu theo vòng màu (vẫn giữ sắc của người chơi làm gốc). */
-  hue?: "player" | "rainbow";
+  /** Hạt dọc nét: `graphite` (vệt chì mảnh, bút chì) · `wax` (chấm sáp sẫm màu `accent`, sáp màu). */
+  grain?: "graphite" | "wax";
+  /** Quầng bụi màu `color2` rộng, mờ dưới nét (phấn). */
+  halo?: boolean;
 }
 
 export interface ComboParams {
@@ -52,6 +76,7 @@ interface SkinBase {
 
 export interface PenSkin extends SkinBase {
   type: "pen";
+  forms: { mine: PenForm; opponent: PenForm };
   pen: PenParams;
   combo: ComboParams;
   sfx: { capture: string; combo: string };
@@ -89,6 +114,11 @@ export function penOf(id: string | null | undefined): PenSkin {
 export function boxOf(id: string | null | undefined): BoxSkin {
   const s = id ? BY_ID.get(id) : undefined;
   return s?.type === "box" ? s : DEFAULT_BOX;
+}
+
+/** Hình thái của bút theo phía nhìn: nét của mình (`isMine`) tông lạnh, nét đối thủ tông nóng. */
+export function penForm(pen: PenSkin, isMine: boolean): PenForm {
+  return isMine ? pen.forms.mine : pen.forms.opponent;
 }
 
 /** Bộ skin áp vào bàn theo ghế 0/1 (mỗi bên thấy bút/ô của chính người vẽ). */

@@ -7,22 +7,91 @@
 import type { GameResult, GameSession } from "../controller";
 import { edgeCount, edgeEndpoints, horizontalEdgeCount, VOID, type Player } from "../rules";
 import {
+  penForm,
   seatSkins,
   type BoxSkin,
   type Particles,
-  type PenParams,
+  type PenForm,
   type PenSkin,
+  type PenStyle,
   type SeatSkins,
 } from "../skins/skins";
 
 type Pixi = typeof import("pixi.js");
 type Gsap = typeof import("gsap").gsap;
+type Graphics = InstanceType<Pixi["Graphics"]>;
+type Container = InstanceType<Pixi["Container"]>;
+
+/** Hình thái màu của bút đã đổi hex → số để vẽ nhanh (docs/08 — "forms"). */
+interface RForm {
+  color: number;
+  color2: number;
+  colors: number[];
+  glow: number;
+  core: number;
+  accent: number;
+  /** Màu sáng nhất trong hình thái — vệt ánh kim (metal). */
+  bright: number;
+}
+
+/** Ba lớp Graphics của một nét: dưới (quầng / halo / viền đậm), chính, trên (lõi sáng / hạt / ánh kim). */
+interface StrokeLayers {
+  c: Container;
+  under: Graphics;
+  main: Graphics;
+  over: Graphics;
+}
+
+/** Một cạnh đã vẽ cùng dữ liệu để animate theo kiểu bút. */
+interface EdgePiece extends StrokeLayers {
+  edge: number;
+  owner: Player;
+  pen: PenSkin;
+  form: RForm;
+  /** Thời điểm vẽ (performance.now, ms) — pha của quầng thở / ánh kim. */
+  born: number;
+  /** Mốc sớm nhất được vẽ lại (ms): cầu vồng trôi / ánh kim chỉ vẽ lại mỗi ~50 ms. */
+  next: number;
+  /** Tiến độ nét đang chạy (0–1) để lần vẽ lại từ ticker không "nhảy" tới nét đầy. */
+  progress: number;
+  /** Đang hiện vệt ánh kim (để xóa khi hết). */
+  shimmering: boolean;
+}
+
+/** Tham số tức thời khi vẽ nét (không có = tĩnh). */
+interface StrokeAnim {
+  /** Độ lệch gradient cầu vồng 0–1 (trôi dọc nét). */
+  flow?: number;
+  /** Hệ số bề rộng halo mực loang (bút lông: nở 1 → 2.2). */
+  haloScale?: number;
+}
+
+/** Hạt lửa / tàn lửa của bút lửa: Graphics tái dùng (pool), chỉ đổi vị trí, scale, alpha, tint mỗi khung. */
+interface Flame {
+  g: Graphics;
+  ember: boolean;
+  x: number;
+  y: number;
+  age: number;
+  life: number;
+  size: number;
+  sway: number;
+  rise: number;
+  color: number;
+  color2: number;
+}
+
+/** Kiểu bút có hiệu ứng chạy liên tục (ticker). Giảm hiệu ứng → tĩnh hết. */
+const ANIMATED_STYLES = new Set<PenStyle>(["neon", "rainbow", "metal", "fire"]);
+/** Trần số hạt lửa sống trên một bàn. */
+const FLAME_CAP = 60;
 
 export interface RendererColors {
   paper: number;
   paperShadow: number;
   grid: number;
   ink: number;
+  /** Màu ghế mặc định — chỉ còn là dự phòng; màu nét thật lấy từ hình thái bút (penFor). */
   pens: [number, number];
   /** Màu chữ COMBO / tia lấp lánh. */
   accent: number;
@@ -99,11 +168,12 @@ export class BoardRenderer {
       this.layers.fx,
     );
     app.stage.addChild(this.world);
-    this.previewG = new px.Graphics();
-    this.layers.preview.addChild(this.previewG);
+    this.preview = this.makeLayers(this.layers.preview);
     this.fontFamily = opts.fontFamily || getComputedStyle(host).fontFamily || "sans-serif";
     this.bindPointer();
     app.renderer.on("resize", () => this.layout());
+    // Hiệu ứng chạy liên tục theo kiểu bút (quầng thở, cầu vồng trôi, ánh kim, lửa) — bỏ khi giảm hiệu ứng.
+    if (!opts.reducedMotion) app.ticker.add(this.tick);
   }
 
   static async create(host: HTMLElement, opts: BoardRendererOptions): Promise<BoardRenderer> {
@@ -130,12 +200,22 @@ export class BoardRenderer {
     InstanceType<Pixi["Container"]>
   >;
   private readonly world: InstanceType<Pixi["Container"]>;
-  private readonly previewG: InstanceType<Pixi["Graphics"]>;
+  private readonly preview: StrokeLayers;
   private readonly fontFamily: string;
   private geo: Geometry | null = null;
   private session: GameSession | null = null;
-  private edgeG = new Map<number, InstanceType<Pixi["Graphics"]>>();
+  private edgeG = new Map<number, EdgePiece>();
   private boxG = new Map<number, InstanceType<Pixi["Container"]>>();
+  /** Cạnh có hiệu ứng chạy liên tục; `fires` / `golds` là tập con để sinh lửa / sao lấp lánh. */
+  private animated = new Set<EdgePiece>();
+  private fires: EdgePiece[] = [];
+  private golds: EdgePiece[] = [];
+  private flames: Flame[] = [];
+  private flamePool: Graphics[] = [];
+  private emberPool: Graphics[] = [];
+  private spawnAcc = 0;
+  private readonly formCache = new WeakMap<PenForm, RForm>();
+  private readonly tick = () => this.onTick();
   private previewEdge: number | null = null;
   /** Khóa của quầng đánh dấu đang vẽ (tránh vẽ lại khi không đổi). */
   private marksKey = "";
@@ -154,7 +234,9 @@ export class BoardRenderer {
     const sizeChanged =
       !prev || prev.state.rows !== session.state.rows || prev.state.cols !== session.state.cols;
     const restarted = prev && session.state.moveNo < prev.state.moveNo;
-    if (sizeChanged || restarted) {
+    // Đổi ghế (vào phòng với ghế khác) → hình thái mình/đối thủ đổi → vẽ lại.
+    const seatChanged = !!prev && prev.human !== session.human;
+    if (sizeChanged || restarted || seatChanged) {
       this.resetBoard();
       this.layout();
       return;
@@ -200,6 +282,7 @@ export class BoardRenderer {
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.app.ticker.remove(this.tick);
     this.gsap.globalTimeline.getChildren().forEach((t) => t.kill());
     this.app.destroy(true, { children: true });
   }
@@ -357,15 +440,21 @@ export class BoardRenderer {
     this.shakeTl?.kill();
     this.shakeTl = null;
     this.world.position.set(0, 0);
+    this.clearFlames();
     this.layers.fx.removeChildren();
     this.layers.edges.removeChildren();
     this.layers.boxes.removeChildren();
     this.layers.marks.removeChildren();
     this.marksKey = "";
     this.edgeG.clear();
+    this.animated.clear();
+    this.fires.length = 0;
+    this.golds.length = 0;
     this.boxG.clear();
     this.previewEdge = null;
-    this.previewG.clear();
+    this.preview.under.clear();
+    this.preview.main.clear();
+    this.preview.over.clear();
   }
 
   private redrawAllPieces() {
@@ -448,30 +537,79 @@ export class BoardRenderer {
     return pts;
   }
 
-  /** Màu nét của một cạnh: màu người chơi, hoặc pha cầu vồng theo id cạnh (bút cầu vồng). */
-  private strokeColor(edge: number, owner: Player, pen: PenParams): number {
-    const base = this.colors.pens[owner];
-    if (pen.hue !== "rainbow") return base;
-    const RAINBOW = [0xff5f5f, 0xffa64d, 0xffe14d, 0x6ee77a, 0x4fc3ff, 0x8a7bff, 0xff7bd6];
-    return blend(RAINBOW[edge % RAINBOW.length], base, 0.4);
+  // ---------- Bút: hình thái & nét (docs/08 — forms, pen.style) ----------
+
+  /** Hình thái màu đã đổi sang số; cache theo object form của manifest. */
+  private resolve(f: PenForm): RForm {
+    let r = this.formCache.get(f);
+    if (r) return r;
+    const color = parseHex(f.color);
+    const color2 = f.color2 ? parseHex(f.color2) : color;
+    const colors = f.colors ? f.colors.map(parseHex) : [color, color2];
+    const glow = f.glow ? parseHex(f.glow) : color;
+    const core = f.core ? parseHex(f.core) : f.color2 ? color2 : 0xffffff;
+    const all = [color, color2, glow, core, ...colors];
+    r = {
+      color,
+      color2,
+      colors,
+      glow,
+      core,
+      accent: f.accent ? parseHex(f.accent) : blend(color, this.colors.ink, 0.35),
+      bright: all.reduce((a, b) => (luma(b) > luma(a) ? b : a)),
+    };
+    this.formCache.set(f, r);
+    return r;
   }
 
   /**
-   * Vẽ một nét (toàn bộ hoặc tới `progress`) theo tham số skin bút: bề dày, mờ, run tay, đầu nét,
-   * quầng sáng (glow), nét đứt (dash), thanh đậm (taper).
+   * Bút và hình thái của một ghế theo phía nhìn: ghế của mình (`session.human`) dùng hình thái
+   * `mine` (tông lạnh), ghế kia `opponent` (tông nóng) — hai bên đều thấy nét mình lạnh, đối thủ nóng.
+   */
+  private penFor(owner: Player): { pen: PenSkin; form: RForm } {
+    const pen = this.skins.pens[owner];
+    const mine = owner === (this.session?.human ?? 0);
+    return { pen, form: this.resolve(penForm(pen, mine)) };
+  }
+
+  /** Màu chính của bút ghế `owner` (ô đã ăn, chữ đếm ô, vụn). */
+  private penColor(owner: Player): number {
+    return this.penFor(owner).form.color;
+  }
+
+  private makeLayers(parent: Container): StrokeLayers {
+    const c = new this.px.Container();
+    const under = new this.px.Graphics();
+    const main = new this.px.Graphics();
+    const over = new this.px.Graphics();
+    c.addChild(under, main, over);
+    parent.addChild(c);
+    return { c, under, main, over };
+  }
+
+  /**
+   * Vẽ một nét (toàn bộ hoặc tới `progress`) theo kiểu bút và hình thái màu:
+   * - lớp dưới: quầng neon / kim loại, halo mực loang (brush), bụi phấn, viền đậm (twotone);
+   * - lớp chính: nét phẳng, nét đứt, thanh đậm, hoặc gradient dọc nét (PixiJS không có gradient
+   *   cho stroke → vẽ từng đoạn con, mỗi đoạn một màu nội suy; cầu vồng / kim loại nhiều mốc);
+   * - lớp trên: lõi sáng (neon, lửa), vệt chì / chấm sáp.
    */
   private drawStroke(
-    gfx: InstanceType<Pixi["Graphics"]>,
+    L: StrokeLayers,
     edge: number,
-    color: number,
     progress: number,
-    alpha = 1,
-    pen: PenParams = this.skins.pens[0].pen,
+    alpha: number,
+    pen: PenSkin,
+    form: RForm,
+    anim: StrokeAnim = {},
   ) {
     const g = this.geo!;
-    const n = pen.dash || pen.taper ? 24 : 6;
-    const pts = this.strokePoints(edge, pen.jitter ?? 1, n);
-    gfx.clear();
+    const p = pen.pen;
+    const style = p.style;
+    const graded =
+      style === "gradient" || style === "brush" || style === "rainbow" || style === "metal";
+    const n = graded || p.dash || p.taper ? (style === "rainbow" ? 12 : 24) : 6;
+    const pts = this.strokePoints(edge, p.jitter ?? 1, n);
     const total = pts.length - 1;
     const upto = total * Math.min(1, Math.max(0, progress));
     const full = Math.floor(upto);
@@ -483,69 +621,419 @@ export class BoardRenderer {
       const b = pts[full + 1];
       poly.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
     }
-    const width = Math.max(3, g.cell * 0.09) * pen.width;
-    const cap = pen.cap ?? "round";
-    const a = alpha * (pen.alpha ?? 1);
-    if (pen.glow && alpha >= 1) {
-      // Quầng sáng: nét rộng mờ bên dưới.
+    const width = Math.max(3, g.cell * 0.09) * p.width;
+    const cap = p.cap ?? "round";
+    const a = alpha * (p.alpha ?? 1);
+    const { under, main, over } = L;
+    under.clear();
+    main.clear();
+    over.clear();
+    under.alpha = style === "neon" ? 0.35 * alpha : 1;
+    if (poly.length < 2) return;
+    const line = (gfx: Graphics) => {
       gfx.moveTo(poly[0].x, poly[0].y);
-      for (const q of poly.slice(1)) gfx.lineTo(q.x, q.y);
-      gfx.stroke({
-        width: width * 2.6,
-        color: parseHex(pen.glow),
-        alpha: 0.35,
-        cap,
-        join: "round",
-      });
+      for (let i = 1; i < poly.length; i++) gfx.lineTo(poly[i].x, poly[i].y);
+      return gfx;
+    };
+    const join = "round" as const;
+
+    // --- Lớp dưới. Quầng neon vẽ alpha 1 rồi "thở" bằng under.alpha (không vẽ lại mỗi khung).
+    switch (style) {
+      case "neon":
+        line(under).stroke({ width: width * 2.6, color: form.glow, cap, join });
+        break;
+      case "metal":
+        line(under).stroke({ width: width * 2, color: form.glow, alpha: 0.3 * alpha, cap, join });
+        break;
+      case "fire":
+        line(under).stroke({
+          width: width * 2.2,
+          color: form.color,
+          alpha: 0.22 * alpha,
+          cap,
+          join,
+        });
+        break;
+      case "twotone":
+        line(under).stroke({
+          width: width * 1.6,
+          color: form.color2,
+          alpha: 0.55 * alpha,
+          cap,
+          join,
+        });
+        break;
+      case "brush":
+        line(under).stroke({
+          width: width * (anim.haloScale ?? 2.2),
+          color: form.color2,
+          alpha: 0.22 * alpha,
+          cap: "round",
+          join,
+        });
+        break;
+      case "gradient":
+        if (p.halo) {
+          line(under).stroke({
+            width: width * 2.4,
+            color: form.color2,
+            alpha: 0.18 * alpha,
+            cap: "round",
+            join,
+          });
+        }
+        break;
     }
-    if (pen.taper) {
-      // Thanh đậm: từng đoạn với bề dày theo sin(πt) (mảnh hai đầu, dày giữa).
-      for (let i = 1; i < poly.length; i++) {
-        const t = i / total;
-        const w = width * (0.45 + 0.75 * Math.sin(Math.PI * Math.min(1, t)));
-        gfx.moveTo(poly[i - 1].x, poly[i - 1].y).lineTo(poly[i].x, poly[i].y);
-        gfx.stroke({ width: w, color, alpha: a, cap: "round", join: "round" });
-      }
-      return;
-    }
-    if (pen.dash) {
-      // Nét đứt: lặp [vẽ, hở] theo tỷ lệ ô; vẽ các đoạn con nằm trong phần "vẽ".
-      const [on, off] = pen.dash;
+
+    // --- Lớp chính.
+    const flow = anim.flow ?? 0;
+    const colorAt = (t: number): number => {
+      if (style === "rainbow") return gradientAt(form.colors, t - flow, true);
+      if (style === "metal") return gradientAt(form.colors, t, false);
+      if (graded) return blend(form.color, form.color2, t);
+      return form.color;
+    };
+    const widthAt = (t: number): number => {
+      // Bút lông: thanh đậm mạnh 0.4× → 1.5×; thanh đậm thường 0.45× → 1.2×.
+      if (style === "brush") return width * (0.4 + 1.1 * Math.sin(Math.PI * t));
+      if (p.taper) return width * (0.45 + 0.75 * Math.sin(Math.PI * t));
+      return width;
+    };
+    if (graded || p.taper) {
+      // Từng đoạn con: màu / bề dày nội suy theo vị trí; nét đứt bỏ đoạn rơi vào phần hở.
+      const [on, off] = p.dash ?? [1, 0];
       const period = (on + off) * g.cell;
       let dist = 0;
       for (let i = 1; i < poly.length; i++) {
-        const seg = Math.hypot(poly[i].x - poly[i - 1].x, poly[i].y - poly[i - 1].y);
         const phase = (dist % period) / g.cell;
-        if (phase < on * 0.98) {
-          gfx.moveTo(poly[i - 1].x, poly[i - 1].y).lineTo(poly[i].x, poly[i].y);
-        }
-        dist += seg;
+        dist += Math.hypot(poly[i].x - poly[i - 1].x, poly[i].y - poly[i - 1].y);
+        if (p.dash && phase >= on * 0.98) continue;
+        const t = (i - 0.5) / total;
+        main.moveTo(poly[i - 1].x, poly[i - 1].y).lineTo(poly[i].x, poly[i].y);
+        main.stroke({
+          width: widthAt(t),
+          color: colorAt(t),
+          alpha: a,
+          cap: p.dash ? cap : "round",
+          join,
+        });
       }
-      gfx.stroke({ width, color, alpha: a, cap, join: "round" });
-      return;
+    } else if (p.dash) {
+      // Nét đứt: lặp [vẽ, hở] theo tỷ lệ ô; vẽ các đoạn con nằm trong phần "vẽ".
+      const [on, off] = p.dash;
+      const period = (on + off) * g.cell;
+      let dist = 0;
+      for (let i = 1; i < poly.length; i++) {
+        const phase = (dist % period) / g.cell;
+        dist += Math.hypot(poly[i].x - poly[i - 1].x, poly[i].y - poly[i - 1].y);
+        if (phase < on * 0.98)
+          main.moveTo(poly[i - 1].x, poly[i - 1].y).lineTo(poly[i].x, poly[i].y);
+      }
+      main.stroke({ width, color: form.color, alpha: a, cap, join });
+    } else {
+      line(main).stroke({ width, color: form.color, alpha: a, cap, join });
     }
-    gfx.moveTo(poly[0].x, poly[0].y);
-    for (const q of poly.slice(1)) gfx.lineTo(q.x, q.y);
-    gfx.stroke({ width, color, alpha: a, cap, join: "round" });
+
+    // --- Lớp trên.
+    if (style === "neon" || style === "fire") {
+      // Lõi sáng mảnh giữa nét.
+      line(over).stroke({
+        width: Math.max(1, width * (style === "neon" ? 0.35 : 0.4)),
+        color: form.core,
+        alpha: (style === "neon" ? 0.9 : 0.85) * alpha,
+        cap: style === "neon" ? cap : "round",
+        join,
+      });
+    }
+    if (p.grain === "graphite") {
+      // Vệt chì phụ mảnh, lệch sang một bên nét.
+      const dx = pts[total].x - pts[0].x;
+      const dy = pts[total].y - pts[0].y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ox = (-dy / len) * width * 0.28;
+      const oy = (dx / len) * width * 0.28;
+      over.moveTo(poly[0].x + ox, poly[0].y + oy);
+      for (let i = 1; i < poly.length; i++) over.lineTo(poly[i].x + ox, poly[i].y + oy);
+      over.stroke({
+        width: Math.max(1, width * 0.3),
+        color: form.color2,
+        alpha: 0.5 * alpha,
+        cap: "round",
+        join,
+      });
+    } else if (p.grain === "wax") {
+      // Chấm sáp sẫm rải tất định dọc nét (hash theo cạnh), chỉ trong phần đã vẽ.
+      const dots = 9;
+      const dx = pts[total].x - pts[0].x;
+      const dy = pts[total].y - pts[0].y;
+      const len = Math.hypot(dx, dy) || 1;
+      for (let k = 0; k < dots; k++) {
+        const t = (k + 0.5) / dots;
+        if (t > progress) break;
+        const h1 = hash01(edge * 31 + k);
+        const h2 = hash01(edge * 17 + k * 7 + 3);
+        const q = pointAt(pts, t);
+        const off = (h1 - 0.5) * width * 0.7;
+        over.circle(q.x + (-dy / len) * off, q.y + (dx / len) * off, width * (0.1 + 0.1 * h2));
+      }
+      over.fill({ color: form.accent, alpha: 0.65 * alpha });
+    }
+  }
+
+  /** Vệt ánh kim (bút vàng): đoạn sáng ngắn tại vị trí `s` (0–1) dọc nét; `null` = xóa. */
+  private drawShimmer(piece: EdgePiece, s: number | null) {
+    piece.over.clear();
+    piece.shimmering = s !== null;
+    if (s === null) return;
+    const g = this.geo!;
+    const p = piece.pen.pen;
+    const width = Math.max(3, g.cell * 0.09) * p.width;
+    const pts = this.strokePoints(piece.edge, p.jitter ?? 1, 24);
+    const total = pts.length - 1;
+    const from = Math.max(0, Math.floor((s - 0.1) * total));
+    const to = Math.min(total, Math.ceil((s + 0.1) * total));
+    if (to - from < 1) return;
+    const seg = (gfx: Graphics) => {
+      gfx.moveTo(pts[from].x, pts[from].y);
+      for (let i = from + 1; i <= to; i++) gfx.lineTo(pts[i].x, pts[i].y);
+      return gfx;
+    };
+    seg(piece.over).stroke({
+      width: width * 1.1,
+      color: piece.form.bright,
+      alpha: 0.45,
+      cap: "round",
+    });
+    seg(piece.over).stroke({ width: width * 0.55, color: 0xffffff, alpha: 0.85, cap: "round" });
   }
 
   private addEdge(edge: number, owner: Player, animate: boolean) {
-    const gfx = new this.px.Graphics();
-    this.layers.edges.addChild(gfx);
-    this.edgeG.set(edge, gfx);
-    const pen = this.skins.pens[owner].pen;
-    const color = this.strokeColor(edge, owner, pen);
+    const { pen, form } = this.penFor(owner);
+    const piece: EdgePiece = {
+      ...this.makeLayers(this.layers.edges),
+      edge,
+      owner,
+      pen,
+      form,
+      born: performance.now(),
+      next: 0,
+      progress: 1,
+      shimmering: false,
+    };
+    this.edgeG.set(edge, piece);
+    const style = pen.pen.style;
+    if (!this.opts.reducedMotion && ANIMATED_STYLES.has(style)) {
+      this.animated.add(piece);
+      if (style === "fire") this.fires.push(piece);
+      if (style === "metal") this.golds.push(piece);
+    }
     if (!animate) {
-      this.drawStroke(gfx, edge, color, 1, 1, pen);
+      this.drawStroke(piece, edge, 1, 1, pen, form);
       return;
     }
+    const brush = style === "brush";
     const tween = { p: 0 };
+    piece.progress = 0;
     this.gsap.to(tween, {
       p: 1,
       duration: 0.18,
       ease: "power2.out",
-      onUpdate: () => !this.destroyed && this.drawStroke(gfx, edge, color, tween.p, 1, pen),
+      onUpdate: () => {
+        if (this.destroyed) return;
+        piece.progress = tween.p;
+        this.drawStroke(piece, edge, tween.p, 1, pen, form, brush ? { haloScale: 1 } : {});
+      },
+      onComplete: () => {
+        if (this.destroyed || !brush || this.edgeG.get(edge) !== piece) return;
+        // Mực loang: halo nở từ ×1 ra ×2.2 trong 0.6 s sau khi nét vẽ xong.
+        const h = { s: 1 };
+        this.gsap.to(h, {
+          s: 2.2,
+          duration: 0.6,
+          ease: "power2.out",
+          onUpdate: () => {
+            if (this.destroyed || this.edgeG.get(edge) !== piece) return;
+            this.drawStroke(piece, edge, 1, 1, pen, form, { haloScale: h.s });
+          },
+        });
+      },
     });
+  }
+
+  // ---------- Hiệu ứng chạy liên tục (ticker) ----------
+
+  /**
+   * Mỗi khung: quầng neon thở (chỉ đổi alpha), cầu vồng trôi (vẽ lại mỗi ~50 ms), ánh kim quét
+   * (vẽ lại lớp trên mỗi ~50 ms trong lúc quét), lửa (hạt pool, không cấp phát mới), sao lấp lánh
+   * (hiếm). Không chạy khi giảm hiệu ứng (ticker không được gắn).
+   */
+  private onTick() {
+    if (this.destroyed || !this.geo) return;
+    if (this.animated.size === 0 && this.flames.length === 0) return;
+    const now = performance.now();
+    const dt = Math.min(0.05, this.app.ticker.deltaMS / 1000);
+    for (const piece of this.animated) {
+      switch (piece.pen.pen.style) {
+        case "neon":
+          // Quầng thở 0.25–0.45, chu kỳ 1.2 s.
+          piece.under.alpha = 0.35 + 0.1 * Math.sin(((now - piece.born) / 1200) * Math.PI * 2);
+          break;
+        case "rainbow":
+          if (now >= piece.next) {
+            piece.next = now + 50;
+            this.drawStroke(piece, piece.edge, piece.progress, 1, piece.pen, piece.form, {
+              flow: (now / 2000) % 1,
+            });
+          }
+          break;
+        case "metal": {
+          // Vệt sáng chạy dọc nét trong 0.5 s, mỗi 3 s; lệch pha theo cạnh để không đồng loạt.
+          const phase = ((now - piece.born + hash01(piece.edge) * 3000) % 3000) / 3000;
+          if (phase < 0.17) {
+            if (now >= piece.next) {
+              piece.next = now + 50;
+              this.drawShimmer(piece, phase / 0.17);
+            }
+          } else if (piece.shimmering) this.drawShimmer(piece, null);
+          break;
+        }
+      }
+    }
+    if (this.fires.length > 0) this.spawnFlames(dt);
+    if (this.golds.length > 0 && Math.random() < dt * Math.min(1.5, this.golds.length * 0.25)) {
+      this.twinkle();
+    }
+    this.updateFlames(dt);
+  }
+
+  /** Sinh lửa dọc các nét lửa: tốc độ tỷ lệ số cạnh nhưng chặn trần để bàn đầy không vượt FLAME_CAP. */
+  private spawnFlames(dt: number) {
+    const g = this.geo!;
+    this.spawnAcc += Math.min(75, 12 * this.fires.length) * dt;
+    while (this.spawnAcc >= 1) {
+      this.spawnAcc -= 1;
+      if (this.flames.length >= FLAME_CAP) {
+        this.spawnAcc = 0;
+        return;
+      }
+      const piece = this.fires[Math.floor(Math.random() * this.fires.length)];
+      const [a, b] = edgeEndpoints(g.rows, g.cols, piece.edge);
+      const p0 = this.dot(a.r, a.c);
+      const p1 = this.dot(b.r, b.c);
+      const t = 0.08 + Math.random() * 0.84 * piece.progress;
+      this.pushFlame(
+        p0.x + (p1.x - p0.x) * t + (Math.random() - 0.5) * g.cell * 0.05,
+        p0.y + (p1.y - p0.y) * t,
+        piece.form,
+        Math.random() < 0.3,
+        1,
+      );
+    }
+  }
+
+  /** Thêm một hạt lửa (`ember` = tàn lửa tròn nhỏ) tại (x, y); `boost` phóng to / bay cao hơn (bùng ô). */
+  private pushFlame(x: number, y: number, form: RForm, ember: boolean, boost: number) {
+    const g = this.geo!;
+    const gfx = this.takeFlame(ember);
+    gfx.position.set(x, y);
+    gfx.alpha = 0;
+    gfx.visible = true;
+    this.flames.push({
+      g: gfx,
+      ember,
+      x,
+      y,
+      age: 0,
+      life: ember ? 0.7 + Math.random() * 0.5 : 0.45 + Math.random() * 0.35,
+      size: g.cell * (ember ? 0.02 + Math.random() * 0.025 : 0.06 + Math.random() * 0.07) * boost,
+      sway: (Math.random() - 0.5) * g.cell * 0.15 * boost,
+      rise: g.cell * (ember ? 0.5 : 0.35) * (0.8 + Math.random() * 0.5) * boost,
+      color: form.color,
+      color2: form.color2,
+    });
+  }
+
+  /** Lấy Graphics hạt lửa từ pool (vẽ hình trắng một lần, sau đó chỉ tint). */
+  private takeFlame(ember: boolean): Graphics {
+    const pool = ember ? this.emberPool : this.flamePool;
+    const reused = pool.pop();
+    if (reused) return reused;
+    const gfx = new this.px.Graphics();
+    if (ember) gfx.circle(0, 0, 1).fill(0xffffff);
+    else {
+      gfx
+        .moveTo(0, -1)
+        .bezierCurveTo(0.6, -0.3, 0.6, 0.35, 0, 0.55)
+        .bezierCurveTo(-0.6, 0.35, -0.6, -0.3, 0, -1)
+        .fill(0xffffff);
+    }
+    this.layers.fx.addChild(gfx);
+    return gfx;
+  }
+
+  private updateFlames(dt: number) {
+    for (let i = this.flames.length - 1; i >= 0; i--) {
+      const f = this.flames[i];
+      f.age += dt;
+      const t = f.age / f.life;
+      if (t >= 1) {
+        f.g.visible = false;
+        (f.ember ? this.emberPool : this.flamePool).push(f.g);
+        this.flames[i] = this.flames[this.flames.length - 1];
+        this.flames.pop();
+        continue;
+      }
+      f.g.x = f.x + f.sway * Math.sin(t * Math.PI * 2 + f.x);
+      f.g.y = f.y - f.rise * t;
+      const s = f.size * (1 - 0.55 * t);
+      f.g.scale.set(s, f.ember ? s : s * 1.4);
+      f.g.alpha = f.ember ? 0.9 * (1 - t) : 0.85 * (t < 0.15 ? t / 0.15 : 1 - (t - 0.15) / 0.85);
+      // Lõi sáng (color2) nguội dần về màu chính.
+      f.g.tint = blend(f.color2, f.color, f.ember ? 0.2 : t * 0.9);
+    }
+  }
+
+  /** Ô bùng cháy (bút lửa ăn ô) / combo lửa: chùm lửa to hơn bay lên từ (x, y). */
+  private flameBurst(x: number, y: number, form: RForm, n: number) {
+    if (this.opts.reducedMotion) return;
+    const g = this.geo!;
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const r = Math.random() * g.cell * 0.3;
+      this.pushFlame(x + Math.cos(ang) * r, y + Math.sin(ang) * r, form, i % 3 === 2, 1.6);
+    }
+  }
+
+  private clearFlames() {
+    for (const f of this.flames) f.g.destroy();
+    for (const gfx of this.flamePool) gfx.destroy();
+    for (const gfx of this.emberPool) gfx.destroy();
+    this.flames = [];
+    this.flamePool = [];
+    this.emberPool = [];
+    this.spawnAcc = 0;
+  }
+
+  /** Sao nhỏ lóe lên tại một điểm ngẫu nhiên trên một nét vàng (hiếm). */
+  private twinkle() {
+    const g = this.geo!;
+    const piece = this.golds[Math.floor(Math.random() * this.golds.length)];
+    const [a, b] = edgeEndpoints(g.rows, g.cols, piece.edge);
+    const p0 = this.dot(a.r, a.c);
+    const p1 = this.dot(b.r, b.c);
+    const t = 0.1 + Math.random() * 0.8;
+    const star = new this.px.Graphics();
+    const r = g.cell * 0.09;
+    star.star(0, 0, 4, r, r * 0.35).fill(0xffffff);
+    star.tint = piece.form.bright;
+    star.position.set(p0.x + (p1.x - p0.x) * t, p0.y + (p1.y - p0.y) * t);
+    star.scale.set(0);
+    this.layers.fx.addChild(star);
+    this.gsap
+      .timeline({ onComplete: () => !this.destroyed && star.destroy() })
+      .to(star.scale, { x: 1, y: 1, duration: 0.22, ease: "power2.out" })
+      .to(star, { rotation: 0.8, duration: 0.5 }, 0)
+      .to(star.scale, { x: 0, y: 0, duration: 0.28, ease: "power2.in" });
   }
 
   private addBox(box: number, owner: Player, animate: boolean) {
@@ -553,7 +1041,8 @@ export class BoardRenderer {
     const r = Math.floor(box / g.cols);
     const c = box % g.cols;
     const p = this.dot(r, c);
-    const color = this.colors.pens[owner];
+    const { pen, form } = this.penFor(owner);
+    const color = form.color;
     const inset = g.cell * 0.12;
     const size = g.cell - inset * 2;
     const container = new this.px.Container();
@@ -574,6 +1063,8 @@ export class BoardRenderer {
         ease: from > 1 ? "power3.in" : "back.out(2)",
       });
       this.burst(container.x, container.y, color, skin.box.particles);
+      // Bút lửa: ô bùng cháy.
+      if (pen.pen.style === "fire") this.flameBurst(container.x, container.y, form, 9);
     }
   }
 
@@ -807,9 +1298,9 @@ export class BoardRenderer {
     const cx = centers.reduce((a, c) => a + c.x, 0) / centers.length;
     const cy = centers.reduce((a, c) => a + c.y, 0) / centers.length;
     const fontSize = Math.max(20, Math.min(46, g.cell * 0.5 + combo * 2));
-    const skin: PenSkin = this.skins.pens[by];
-    const penColor = this.colors.pens[by];
-    const text = this.comboText(label, skin, penColor, fontSize);
+    const { pen: skin, form } = this.penFor(by);
+    const penColor = form.color;
+    const text = this.comboText(label, skin, form, fontSize);
     // Giữ chữ trong khung canvas.
     const halfW = text.width / 2 + 4;
     const x = Math.min(g.width - halfW, Math.max(halfW, cx));
@@ -820,6 +1311,10 @@ export class BoardRenderer {
     this.layers.fx.addChild(text);
     this.burst(x, y, penColor, skin.combo.particles, 6 + combo * 2, 1.4);
     if (skin.combo.style === "sparkle") this.burst(x, y, penColor, "star", 8, 1.8);
+    if (skin.combo.style === "fire") {
+      this.burst(x, y, form.color2, "spark", 6, 1.6);
+      this.flameBurst(x, y, form, 6 + combo * 2);
+    }
     const tl = this.gsap.timeline({
       onComplete: () => {
         if (!this.destroyed) text.destroy();
@@ -831,22 +1326,26 @@ export class BoardRenderer {
       .to(text, { y: y - g.cell * 0.6, alpha: 0, duration: 0.45, ease: "power1.in" }, "+=0.35");
   }
 
-  /** Chữ COMBO theo kiểu của skin bút (docs/08): sticker, mực, phấn, neon, lấp lánh. */
-  private comboText(label: string, skin: PenSkin, penColor: number, fontSize: number) {
+  /**
+   * Chữ COMBO theo kiểu của skin bút (docs/08): sticker, mực, phấn, neon, lấp lánh, lửa — màu lấy
+   * từ hình thái (mình / đối thủ) của bút.
+   */
+  private comboText(label: string, skin: PenSkin, form: RForm, fontSize: number) {
     switch (skin.combo.style) {
       case "ink":
-        return this.makeText(label, penColor, fontSize, true, this.colors.paper);
+        return this.makeText(label, form.color, fontSize, true, this.colors.paper);
       case "chalk": {
-        const t = this.makeText(label, 0xffffff, fontSize, false);
+        const t = this.makeText(label, form.color, fontSize, false);
         t.alpha = 0.92;
         return t;
       }
-      case "neon": {
-        const glow = skin.pen.glow ? parseHex(skin.pen.glow) : this.colors.accent;
-        return this.makeText(label, glow, fontSize * 1.1, true, penColor);
-      }
+      case "neon":
+        return this.makeText(label, form.glow, fontSize * 1.1, true, form.color);
       case "sparkle":
-        return this.makeText(label, this.colors.accent, fontSize * 1.1, true, this.colors.ink);
+        // Cầu vồng: màu giữa dải (glow mặc định = màu chính); bút vàng: màu quầng.
+        return this.makeText(label, form.glow, fontSize * 1.1, true, this.colors.ink);
+      case "fire":
+        return this.makeText(label, form.color2, fontSize * 1.1, true, form.color);
       case "sticker":
       default:
         return this.makeText(label, this.colors.accent, fontSize);
@@ -891,7 +1390,7 @@ export class BoardRenderer {
     const order: Player[] = [s.human, s.bot];
     const total = owners.filter((o) => o >= 0).length;
     const step = Math.max(0.024, Math.min(0.08, 1.3 / Math.max(1, total)));
-    const counter = this.makeText("", this.colors.pens[s.human], Math.max(28, g.cell * 1.1));
+    const counter = this.makeText("", this.penColor(s.human), Math.max(28, g.cell * 1.1));
     counter.position.set(g.width / 2, g.height / 2);
     counter.alpha = 0;
     this.layers.fx.addChild(counter);
@@ -914,7 +1413,7 @@ export class BoardRenderer {
         tl.call(() => {
           if (this.destroyed) return;
           counter.text = String(count);
-          counter.style.fill = this.colors.pens[owner];
+          counter.style.fill = this.penColor(owner);
           counter.alpha = 1;
           counter.scale.set(1.25);
           this.gsap.to(counter.scale, { x: 1, y: 1, duration: 0.18, ease: "power2.out" });
@@ -1009,19 +1508,54 @@ export class BoardRenderer {
   private setPreview(edge: number | null) {
     if (this.previewEdge === edge) return;
     this.previewEdge = edge;
-    this.previewG.clear();
+    this.preview.under.clear();
+    this.preview.main.clear();
+    this.preview.over.clear();
     if (edge === null || !this.session) return;
-    const seat = this.session.human;
-    const pen = this.skins.pens[seat].pen;
-    this.drawStroke(this.previewG, edge, this.strokeColor(edge, seat, pen), 1, 0.35, pen);
+    // Xem trước bằng hình thái "mình" của bút ghế mình.
+    const { pen, form } = this.penFor(this.session.human);
+    this.drawStroke(this.preview, edge, 1, 0.35, pen, form);
     this.host.style.cursor = "pointer";
   }
 }
 
-// ---------- Màu ----------
+// ---------- Màu & toán phụ ----------
 
 function parseHex(hex: string): number {
   return parseInt(hex.replace("#", ""), 16);
+}
+
+/** Độ sáng cảm nhận 0–255 (chọn màu sáng nhất của hình thái cho vệt ánh kim). */
+function luma(c: number): number {
+  return 0.299 * ((c >> 16) & 0xff) + 0.587 * ((c >> 8) & 0xff) + 0.114 * (c & 0xff);
+}
+
+/** Hash tất định 0–1 theo số nguyên (vị trí chấm sáp, lệch pha ánh kim). */
+function hash01(seed: number): number {
+  const h = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return h - Math.floor(h);
+}
+
+/** Điểm tại tham số t (0–1) trên polyline đều. */
+function pointAt(pts: { x: number; y: number }[], t: number): { x: number; y: number } {
+  const total = pts.length - 1;
+  const x = Math.min(total, Math.max(0, t * total));
+  const i = Math.min(total - 1, Math.floor(x));
+  const u = x - i;
+  return {
+    x: pts[i].x + (pts[i + 1].x - pts[i].x) * u,
+    y: pts[i].y + (pts[i + 1].y - pts[i].y) * u,
+  };
+}
+
+/** Màu tại vị trí t trên dải nhiều mốc; `cyclic` nối mốc cuối về mốc đầu (cầu vồng trôi). */
+function gradientAt(stops: number[], t: number, cyclic: boolean): number {
+  const n = cyclic ? stops.length : stops.length - 1;
+  if (n <= 0) return stops[0];
+  const u = cyclic ? ((t % 1) + 1) % 1 : Math.min(1, Math.max(0, t));
+  const x = u * n;
+  const i = Math.min(n - 1, Math.floor(x));
+  return blend(stops[i], stops[(i + 1) % stops.length], x - i);
 }
 
 /** Pha hai màu: `t` = 0 → a, 1 → b. */

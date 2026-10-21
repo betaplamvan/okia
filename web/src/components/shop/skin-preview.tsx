@@ -1,16 +1,16 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
-import type { BoxSkin, PenSkin, SkinManifest } from "@/game/skins/skins";
+import { useLocale } from "next-intl";
+import type { BoxSkin, PenForm, PenSkin, SkinManifest } from "@/game/skins/skins";
 
-// Xem trước tĩnh bằng SVG cho thẻ shop (nhẹ, không cần PixiJS): nét bút theo tham số skin,
-// ô đã ăn theo hiệu ứng. Bản "thật" chạy trong TryDialog (BoardCanvas).
+// Xem trước tĩnh bằng SVG cho thẻ shop (nhẹ, không cần PixiJS): bút hiện cả hai hình thái
+// (mình / đối thủ) theo kiểu nét, ô đã ăn theo hiệu ứng. Bản "thật" chạy trong TryDialog (BoardCanvas).
 const INK = "#1a2826";
 const PAPER = "#fffcf2";
 const BLUE = "#1e4fd8";
 const RED = "#d8341e";
 const SUN = "#ffd93d";
-const RAINBOW = ["#ff5f5f", "#ffa64d", "#ffe14d", "#6ee77a", "#4fc3ff", "#8a7bff", "#ff7bd6"];
 
 export function SkinPreview({ skin, size = 120 }: { skin: SkinManifest; size?: number }) {
   return (
@@ -36,73 +36,235 @@ export function SkinPreview({ skin, size = 120 }: { skin: SkinManifest; size?: n
   );
 }
 
+/** Hash tất định 0–1 chỉ bằng số nguyên — `Math.sin` số lớn lệch ulp giữa Node (SSR) và trình duyệt. */
+function hash01(seed: number): number {
+  let h = (seed * 374761393 + 668265263) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
 function wobble(x0: number, y0: number, x1: number, y1: number, jitter: number, seed: number) {
   const pts: string[] = [];
   const n = 8;
   for (let i = 0; i <= n; i++) {
     const t = i / n;
-    const h = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
-    const j = (h - Math.floor(h) - 0.5) * 2 * jitter * 3 * Math.sin(Math.PI * t);
+    const j = (hash01(seed * 131 + i) - 0.5) * 2 * jitter * 3 * Math.sin(Math.PI * t);
     const nx = -(y1 - y0);
     const ny = x1 - x0;
     const len = Math.hypot(nx, ny) || 1;
-    pts.push(`${x0 + (x1 - x0) * t + (nx / len) * j},${y0 + (y1 - y0) * t + (ny / len) * j}`);
+    // Làm tròn 2 chữ số để chuỗi `points` SSR và client khớp nhau tuyệt đối (hydration).
+    const px = (x0 + (x1 - x0) * t + (nx / len) * j).toFixed(2);
+    const py = (y0 + (y1 - y0) * t + (ny / len) * j).toFixed(2);
+    pts.push(`${px},${py}`);
   }
   return pts.join(" ");
 }
 
+/**
+ * Mẫu bút: hai hình thái cạnh nhau trong một ô xem trước — nửa trái "Mình" (tông lạnh), nửa phải
+ * "Đối thủ" (tông nóng). Mỗi kiểu bút (pen.style) được xấp xỉ bằng SVG: gradient (linearGradient),
+ * quầng neon (blur), lửa (path ngọn lửa nhỏ), cầu vồng / kim loại (gradient nhiều mốc).
+ */
 function PenSample({ pen, size }: { pen: PenSkin; size: number }) {
+  const locale = useLocale();
+  const labels = locale === "en" ? ["You", "Rival"] : ["Mình", "Đối thủ"];
+  const half = size / 2;
+  return (
+    <>
+      <line
+        x1={half}
+        y1={10}
+        x2={half}
+        y2={size - 10}
+        stroke={INK}
+        strokeWidth="1.5"
+        strokeDasharray="3 4"
+        opacity={0.35}
+      />
+      {(["mine", "opponent"] as const).map((side, k) => (
+        <g key={side} transform={`translate(${k * half} 0)`}>
+          <FormSample pen={pen} form={pen.forms[side]} half={half} uid={`${pen.id}-${side}`} />
+          <text
+            x={half / 2}
+            y={size - 9}
+            textAnchor="middle"
+            fontFamily="inherit"
+            fontWeight="700"
+            fontSize="11"
+            fill={INK}
+            opacity={0.75}
+          >
+            {labels[k]}
+          </text>
+        </g>
+      ))}
+    </>
+  );
+}
+
+/** Một hình thái trong nửa ô (rộng `half`): ba nét hình chữ C + hiệu ứng theo kiểu bút. */
+function FormSample({
+  pen,
+  form,
+  half,
+  uid,
+}: {
+  pen: PenSkin;
+  form: PenForm;
+  half: number;
+  uid: string;
+}) {
   const p = pen.pen;
-  const w = 5 * p.width;
-  const lines: [number, number, number, number, string][] = [
-    [18, 30, 102, 30, BLUE],
-    [18, 30, 18, 90, BLUE],
-    [60, 30, 60, 90, RED],
-    [18, 90, 102, 90, RED],
-    [102, 30, 102, 90, BLUE],
+  const style = p.style;
+  const w = 4.2 * p.width;
+  const x0 = half * 0.22;
+  const x1 = half * 0.82;
+  const y0 = 30;
+  const y1 = 78;
+  const lines: [number, number, number, number][] = [
+    [x0, y0, x1, y0],
+    [x0, y0, x0, y1],
+    [x0, y1, x1, y1],
   ];
   const cap = p.cap ?? "round";
-  const dash = p.dash ? `${p.dash[0] * 42} ${p.dash[1] * 42}` : undefined;
+  const dash = p.dash ? `${p.dash[0] * 36} ${p.dash[1] * 36}` : undefined;
+  const color2 = form.color2 ?? form.color;
+  const core = form.core ?? color2;
+  const glow = form.glow ?? form.color;
+  const graded =
+    style === "gradient" || style === "brush" || style === "rainbow" || style === "metal";
+  const stops =
+    style === "rainbow" || style === "metal"
+      ? (form.colors ?? [form.color, color2])
+      : [form.color, color2];
+  const gradId = `g-${uid}`;
+  const glowId = `b-${uid}`;
+  const mainStroke = graded ? `url(#${gradId})` : form.color;
   return (
-    <g fill="none" strokeLinecap={cap} strokeLinejoin="round" opacity={p.alpha ?? 1}>
-      {lines.map(([x0, y0, x1, y1, c], i) => {
-        const color = p.hue === "rainbow" ? RAINBOW[i % RAINBOW.length] : c;
-        const pts = wobble(x0, y0, x1, y1, p.jitter ?? 1, i + 1);
+    <g fill="none" strokeLinecap={cap} strokeLinejoin="round">
+      <defs>
+        {graded ? (
+          <linearGradient
+            id={gradId}
+            gradientUnits="userSpaceOnUse"
+            x1={x0}
+            y1={y0}
+            x2={x1}
+            y2={y1}
+          >
+            {stops.map((c, i) => (
+              <stop
+                key={i}
+                offset={`${(i / Math.max(1, stops.length - 1)) * 100}%`}
+                stopColor={c}
+              />
+            ))}
+          </linearGradient>
+        ) : null}
+        {style === "neon" ? (
+          <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.2" />
+          </filter>
+        ) : null}
+      </defs>
+      {lines.map(([ax, ay, bx, by], i) => {
+        const pts = wobble(ax, ay, bx, by, p.jitter ?? 1, i + 1);
         return (
           <g key={i}>
-            {p.glow ? (
-              <polyline points={pts} stroke={p.glow} strokeWidth={w * 2.6} opacity={0.35} />
+            {/* Lớp dưới: quầng / halo / viền đậm */}
+            {style === "neon" ? (
+              <polyline
+                points={pts}
+                stroke={glow}
+                strokeWidth={w * 2.6}
+                opacity={0.4}
+                filter={`url(#${glowId})`}
+              />
             ) : null}
-            <polyline points={pts} stroke={color} strokeWidth={w} strokeDasharray={dash} />
-            {p.taper ? (
-              <polyline points={pts} stroke={color} strokeWidth={w * 0.45} opacity={0.6} />
+            {style === "metal" ? (
+              <polyline points={pts} stroke={glow} strokeWidth={w * 2} opacity={0.3} />
             ) : null}
+            {style === "fire" ? (
+              <polyline points={pts} stroke={form.color} strokeWidth={w * 2.2} opacity={0.22} />
+            ) : null}
+            {style === "twotone" ? (
+              <polyline points={pts} stroke={color2} strokeWidth={w * 1.6} opacity={0.55} />
+            ) : null}
+            {style === "brush" ? (
+              <polyline points={pts} stroke={color2} strokeWidth={w * 2.2} opacity={0.22} />
+            ) : null}
+            {style === "gradient" && p.halo ? (
+              <polyline points={pts} stroke={color2} strokeWidth={w * 2.4} opacity={0.18} />
+            ) : null}
+            {/* Lớp chính */}
+            <polyline
+              points={pts}
+              stroke={mainStroke}
+              strokeWidth={w}
+              strokeDasharray={dash}
+              opacity={p.alpha ?? 1}
+            />
+            {p.taper || style === "brush" ? (
+              <polyline
+                points={pts}
+                stroke={mainStroke}
+                strokeWidth={w * (style === "brush" ? 0.5 : 0.45)}
+                opacity={0.6}
+              />
+            ) : null}
+            {/* Lớp trên: lõi sáng, hạt chì, chấm sáp, ánh kim */}
+            {style === "neon" || style === "fire" ? (
+              <polyline points={pts} stroke={core} strokeWidth={w * 0.38} opacity={0.9} />
+            ) : null}
+            {p.grain === "graphite" ? (
+              <polyline
+                points={wobble(ax + 1.2, ay + 1.2, bx + 1.2, by + 1.2, p.jitter ?? 1, i + 1)}
+                stroke={color2}
+                strokeWidth={w * 0.3}
+                opacity={0.5}
+              />
+            ) : null}
+            {p.grain === "wax"
+              ? [0.2, 0.45, 0.7, 0.9].map((t, k) => (
+                  <circle
+                    key={k}
+                    cx={ax + (bx - ax) * t + (k % 2 ? 1.5 : -1.5)}
+                    cy={ay + (by - ay) * t + (k % 2 ? -1.5 : 1.5)}
+                    r={w * 0.17}
+                    fill={form.accent ?? color2}
+                    opacity={0.65}
+                  />
+                ))
+              : null}
           </g>
         );
       })}
-      {/* Chữ COMBO nhỏ gợi kiểu hiệu ứng */}
-      <text
-        x={size / 2}
-        y={size - 12}
-        textAnchor="middle"
-        fontFamily="inherit"
-        fontWeight="700"
-        fontSize="16"
-        fill={
-          pen.combo.style === "ink"
-            ? BLUE
-            : pen.combo.style === "chalk"
-              ? "#ffffff"
-              : pen.combo.style === "neon"
-                ? (p.glow ?? SUN)
-                : SUN
-        }
-        stroke={pen.combo.style === "ink" ? PAPER : INK}
-        strokeWidth="1.5"
-        paintOrder="stroke"
-      >
-        COMBO ×3
-      </text>
+      {style === "metal" ? (
+        <line
+          x1={x0 + 10}
+          y1={y0}
+          x2={x0 + 24}
+          y2={y0}
+          stroke="#ffffff"
+          strokeWidth={w * 0.55}
+          opacity={0.85}
+        />
+      ) : null}
+      {style === "fire"
+        ? [0.3, 0.55, 0.8].map((t, k) => {
+            const fx = x0 + (x1 - x0) * t;
+            const fy = y0 - 2;
+            const h = 9 + (k % 2) * 4;
+            return (
+              <path
+                key={k}
+                d={`M${fx},${fy} C${fx + 4},${fy - h * 0.4} ${fx + 2},${fy - h * 0.8} ${fx},${fy - h} C${fx - 2},${fy - h * 0.8} ${fx - 4},${fy - h * 0.4} ${fx},${fy}`}
+                fill={k === 1 ? form.color : color2}
+                opacity={0.85}
+              />
+            );
+          })
+        : null}
     </g>
   );
 }

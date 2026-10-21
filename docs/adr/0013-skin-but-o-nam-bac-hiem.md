@@ -21,3 +21,7 @@ docs/08 bản đầu vẽ bốn loại skin (bút, nét, ô, bàn) với asset r
 - (+) Bỏ bảng `items`/seed/upload R2 → ít việc vận hành; đổi giá chỉ sửa một bảng trong code.
 - (−) Không còn skin `stroke`/`board` tách riêng; rương/bộ sưu tập (ADR-0007) vẫn chưa làm — khi làm, rương sẽ phát skin từ cùng catalog này.
 - (−) Skin cầu kỳ (texture, sprite) cần mở rộng engine; chấp nhận cho tới khi có họa sĩ.
+
+## Bổ sung 2026-10-21: hai hình thái
+
+Bản đầu giữ màu ghế (xanh/đỏ) làm màu nét, skin chỉ đổi *cách* vẽ — bút trông nghèo và hai người cùng bút vẫn phải nhờ màu ghế. Quyết định: **mỗi bút có hai hình thái màu** trong manifest (`forms.mine` tông lạnh, `forms.opponent` tông nóng) và một **kiểu nét** `pen.style` (`flat`, `twotone`, `gradient`, `neon`, `brush`, `fire`, `rainbow`, `metal`). Engine chọn hình thái theo *phía nhìn* (ghế = `session.human` → `mine`), nên hai bên đều thấy nét mình lạnh, nét đối thủ nóng; màu ô đã ăn, chữ COMBO, vụn lấy từ hình thái bút của người ăn (skin ô chỉ giữ hình tô). Hiệu ứng chạy liên tục (quầng neon thở, lửa, cầu vồng trôi, ánh kim) đi qua ticker của renderer, tĩnh hoàn toàn khi giảm hiệu ứng, có trần hạt và vẽ lại tối đa mỗi ~50 ms. Thêm bút vàng thứ ba **Bút lửa** (tiếng `capture_fire`/`combo_fire` tổng hợp); Phấn trắng đổi tên thành **Phấn màu** (id giữ nguyên). `gen:skins` bắt buộc hai hình thái có màu chính hex khác nhau. Catalog: 20 skin.
