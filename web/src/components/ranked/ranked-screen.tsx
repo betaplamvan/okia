@@ -14,6 +14,7 @@ import {
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { LuSwords, LuTrophy, LuX } from "react-icons/lu";
+import { AcceptDialog } from "@/components/ranked/accept-dialog";
 import { RankCard } from "@/components/ranked/rank-card";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
@@ -25,7 +26,17 @@ import { useAuth } from "@/stores/auth";
 type Search =
   | { phase: "idle" }
   | { phase: "requesting" }
-  | { phase: "searching"; since: number; waiting: number; online: number; widened: boolean };
+  | { phase: "searching"; since: number; waiting: number; online: number; widened: boolean }
+  /** Đã ghép, chờ cả hai chấp nhận (docs/07 — Chấp nhận trận). */
+  | {
+      phase: "found";
+      matchId: string;
+      expiresAt: number;
+      acceptSeconds: number;
+      since: number;
+      accepted: boolean;
+      others: number;
+    };
 
 // Màn xếp hạng /ranked (P2-07): thẻ hạng của tôi → "Tìm trận" → chờ (thời gian, số người chờ/online,
 // báo khi mở rộng phạm vi) → `matched` → vào phòng /r/<id> (cùng màn chơi với phòng riêng).
@@ -59,7 +70,8 @@ export function RankedScreen() {
 
   // Lắng nghe server trong lúc tìm; rời trang / hủy → queue_cancel. Effect chỉ phụ thuộc vào
   // "đang tìm hay không" (không phải từng phase) để requesting → searching không gửi queue_cancel.
-  const active = search.phase === "searching" || search.phase === "requesting";
+  const active =
+    search.phase === "searching" || search.phase === "requesting" || search.phase === "found";
   useEffect(() => {
     if (!active) return;
     const off = wsClient.subscribe((m: ServerMsg) => {
@@ -76,6 +88,32 @@ export function RankedScreen() {
               online: m.online,
               widened: m.widened ?? false,
             });
+          return;
+        case "match_found":
+          audio.play("notify", { volume: 0.9 });
+          setSearch({
+            phase: "found",
+            matchId: m.matchId,
+            expiresAt: m.expiresAt,
+            acceptSeconds: m.acceptSeconds,
+            since: cur.phase === "searching" ? cur.since : serverNow(),
+            accepted: false,
+            others: 0,
+          });
+          return;
+        case "match_update":
+          if (cur.phase === "found" && cur.matchId === m.matchId)
+            setSearch({ ...cur, others: m.accepted - (cur.accepted ? 1 : 0) });
+          return;
+        case "match_cancelled":
+          // Người kia từ chối / hết giờ → server đã trả ta về hàng chờ và gửi `queued` ngay sau.
+          if (m.requeued) {
+            toaster.create({ title: m.byMe ? t("cancelTimeout") : t("cancelOther") });
+          } else {
+            audio.playUi("back");
+            setSearch({ phase: "idle" });
+            if (m.reason === "timeout") toaster.create({ title: t("cancelTimeout") });
+          }
           return;
         case "matched":
           // Về idle ngay (trang này vẫn sống trong <Activity> khi sang phòng; quay lại là tìm tiếp được).
@@ -104,7 +142,8 @@ export function RankedScreen() {
     });
     return () => {
       off();
-      // Đã được ghép thì server đã bỏ ta khỏi hàng chờ; gửi hủy lúc này vô hại.
+      // Đã được ghép thì server đã bỏ ta khỏi hàng chờ; gửi hủy lúc này vô hại. Đang có trận chờ
+      // chấp nhận thì hủy tìm = từ chối.
       wsClient.send({ t: "queue_cancel" });
     };
   }, [active, router, openProfile, t]);
@@ -121,6 +160,20 @@ export function RankedScreen() {
 
   function cancel() {
     audio.playUi("back");
+    setSearch({ phase: "idle" });
+  }
+
+  function acceptMatch() {
+    if (search.phase !== "found") return;
+    audio.playUi("confirm");
+    wsClient.send({ t: "match_accept", matchId: search.matchId });
+    setSearch({ ...search, accepted: true });
+  }
+
+  function declineMatch() {
+    if (search.phase !== "found") return;
+    audio.playUi("back");
+    wsClient.send({ t: "match_decline", matchId: search.matchId });
     setSearch({ phase: "idle" });
   }
 
@@ -171,6 +224,17 @@ export function RankedScreen() {
               >
                 <LuSwords /> {t("find")}
               </Button>
+            ) : search.phase === "found" ? (
+              <SearchingBox
+                search={{
+                  phase: "searching",
+                  since: search.since,
+                  waiting: 1,
+                  online: 1,
+                  widened: false,
+                }}
+                onCancel={declineMatch}
+              />
             ) : (
               <SearchingBox search={search} onCancel={cancel} />
             )}
@@ -200,6 +264,20 @@ export function RankedScreen() {
           </Stack>
         </Grid>
       </Stack>
+
+      {/* Chỉ mount khi đang có trận chờ: gỡ hẳn khỏi DOM (kể cả Portal) trước khi sang phòng, vì trang
+          này bị <Activity> ẩn khi điều hướng và animation đóng sẽ không bao giờ chạy xong. */}
+      {search.phase === "found" ? (
+        <AcceptDialog
+          open
+          expiresAt={search.expiresAt}
+          acceptSeconds={search.acceptSeconds}
+          accepted={search.accepted}
+          others={search.others}
+          onAccept={acceptMatch}
+          onDecline={declineMatch}
+        />
+      ) : null}
     </Container>
   );
 }

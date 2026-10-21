@@ -70,6 +70,15 @@ await A.getByText(/Đã chờ \d+ giây/).waitFor();
 await A.screenshot({ path: ".shots/ranked-searching-390.png" });
 console.log("A đang tìm: ok");
 await B.getByTestId("find-match").click();
+// Ghép xong → hộp chấp nhận với vòng đếm ngược ở cả hai; A nhận trước, B thấy "đã sẵn sàng" rồi nhận.
+await A.getByTestId("accept-dialog").waitFor({ timeout: 20000 });
+await B.getByTestId("accept-dialog").waitFor({ timeout: 20000 });
+await A.screenshot({ path: ".shots/ranked-accept-390.png" });
+await A.getByTestId("accept-match").click();
+await A.getByText("Đang chờ người chơi khác").waitFor();
+await B.getByText(/Đối thủ đã sẵn sàng/).waitFor();
+await B.getByTestId("accept-match").click();
+console.log("chấp nhận trận: ok (A nhận trước, B nhận sau)");
 await Promise.all([
   A.waitForURL(/\/r\/[A-Z2-9]{6}$/, { timeout: 20000 }),
   B.waitForURL(/\/r\/[A-Z2-9]{6}$/, { timeout: 20000 }),

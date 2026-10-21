@@ -14,6 +14,7 @@ from app.errors import AppError
 from app.game import room as rooms
 from app.i18n import Locale, resolve_locale, t
 from app.matchmaking import queue as mmq
+from app.matchmaking import worker as mmw
 from app.ws import messages as m
 from app.ws.hub import Connection, Hub
 
@@ -96,6 +97,7 @@ async def _on_disconnect(hub: Hub, user_id: str, watched: list[str]) -> None:
         # Tab cuối của người này đóng → rời hàng chờ (client sẽ tự vào lại khi nối lại) và offline.
         if user_id not in hub.by_user:
             await mmq.dequeue(hub.redis, user_id)
+            await mmw.decline(hub.redis, hub, user_id, "left")
             await mmq.leave_online(hub.redis, user_id)
     except Exception:  # noqa: BLE001
         log.exception("dọn dẹp kết nối %s", user_id)
@@ -189,6 +191,16 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
 
         case m.QueueCancel():
             await mmq.dequeue(redis, uid)
+            # Đang trong trận chờ chấp nhận mà hủy tìm → coi như từ chối.
+            await mmw.decline(redis, hub, uid, "declined")
+
+        case m.MatchAccept():
+            if not await mmw.accept(redis, hub, uid):
+                raise AppError("MATCH_EXPIRED", 409)
+
+        case m.MatchDecline():
+            if not await mmw.decline(redis, hub, uid, "declined"):
+                raise AppError("MATCH_EXPIRED", 409)
 
 
 async def _loadout(user_id: str) -> dict[str, str]:
@@ -208,6 +220,10 @@ async def _ranked_entry(redis, user_id: str) -> mmq.Entry:
 
     if await rooms.active_room_id(redis, user_id):
         raise AppError("ALREADY_IN_GAME", 409)
+    from app.matchmaking import pending as mmp
+
+    if await mmp.of_user(redis, user_id):
+        raise AppError("MATCH_PENDING", 409)
     async with get_session_factory()() as db:
         user = await service.get_user(db, uuid.UUID(user_id))
         if user is None:

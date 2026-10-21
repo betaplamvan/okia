@@ -34,7 +34,9 @@
     "STORAGE_UNAVAILABLE": "File storage is temporarily unavailable, try again later.",
     "UNKNOWN_ITEM": "Item not found.",
     "ALREADY_OWNED": "You already own this item.",
-    "NOT_OWNED": "You don't own this item."
+    "NOT_OWNED": "You don't own this item.",
+    "MATCH_EXPIRED": "That match is no longer pending.",
+    "MATCH_PENDING": "You have a match waiting for your answer."
   },
   "currency": {
     "lead": "Lead",

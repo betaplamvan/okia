@@ -53,7 +53,11 @@ Worker nền (`api/app/matchmaking/worker.py`, một bản duy nhất nhờ `loc
 2. Cửa sổ rating ẩn: `window = 50 + 25 × ⌊chờ_giây / 5⌋`, tối đa **400** (đạt sau 70 giây); **sau 90 giây** ghép bất kỳ ai (vắng người thì vẫn có trận — điểm cược đã giảm theo bảng trên).
 3. Ghép với người gần rating nhất nằm trong cửa sổ của mình **và** cửa sổ của họ.
 4. Không ghép hai người vừa gặp nhau ở trận liền trước (`mm:last:{uid}`, 1 giờ) trừ khi đã chờ > 60 giây.
-5. Ghép xong: xóa cả hai khỏi hàng chờ, tạo `room:{id}` (`mode = ranked`, map ngẫu nhiên trong bể, 30 giây/lượt, bắt đầu ngay), gửi `matched` qua kênh `user:{id}`; người còn chờ nhận `queue_status` mỗi giây (số người chờ, số online, đã mở rộng hay chưa).
+5. Ghép xong: xóa cả hai khỏi hàng chờ, tạo **trận chờ chấp nhận** (`mm:pending:{id}`, hạn 20 giây) và gửi `match_found` qua kênh `user:{id}`; người còn chờ nhận `queue_status` mỗi giây (số người chờ, số online, đã mở rộng hay chưa).
+
+### Chấp nhận trận (2026-10-21, kiểu LoL)
+
+Client hiện hộp thoại với **vòng đếm ngược tròn** (giờ server), nút **Chơi luôn!** và **Từ chối**. Cả hai `match_accept` → tạo `room:{id}` (`mode = ranked`, map ngẫu nhiên, 30 giây/lượt, bắt đầu ngay) và gửi `matched`. Một người từ chối, hết giờ (worker quét `mm:pending` mỗi giây) hoặc rớt mạng → `match_cancelled` cho cả hai: người gây hủy rời hàng chờ; người kia được **trả về hàng chờ với thời điểm xếp hàng cũ** (không mất chỗ) và nhận `queued` mới. Người đã chấp nhận thấy "Đang chờ người chơi khác"; người chưa nhận thấy "Đối thủ đã sẵn sàng". Đang có trận chờ thì không xếp hàng lại được (`MATCH_PENDING`). Code: `api/app/matchmaking/pending.py`, `worker.accept/decline/cancel`, `web/src/components/ranked/accept-dialog.tsx`.
 
 Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự gửi `queue` lại khi nối lại. Không bao giờ dùng bot ở xếp hạng.
 

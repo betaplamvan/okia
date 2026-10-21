@@ -7,6 +7,8 @@
       "discriminator": {
         "mapping": {
           "emote": "#/definitions/Emote",
+          "match_accept": "#/definitions/MatchAccept",
+          "match_decline": "#/definitions/MatchDecline",
           "move": "#/definitions/Move",
           "ping": "#/definitions/Ping",
           "queue": "#/definitions/Queue",
@@ -24,6 +26,12 @@
         },
         {
           "$ref": "#/definitions/QueueCancel"
+        },
+        {
+          "$ref": "#/definitions/MatchAccept"
+        },
+        {
+          "$ref": "#/definitions/MatchDecline"
         },
         {
           "$ref": "#/definitions/RoomCreate"
@@ -55,7 +63,10 @@
           "emote": "#/definitions/EmoteOut",
           "error": "#/definitions/Error",
           "game_over": "#/definitions/GameOver",
+          "match_cancelled": "#/definitions/MatchCancelled",
+          "match_found": "#/definitions/MatchFound",
           "match_review": "#/definitions/MatchReview",
+          "match_update": "#/definitions/MatchUpdate",
           "matched": "#/definitions/Matched",
           "moved": "#/definitions/Moved",
           "opponent_status": "#/definitions/OpponentStatus",
@@ -76,6 +87,15 @@
         },
         {
           "$ref": "#/definitions/QueueStatus"
+        },
+        {
+          "$ref": "#/definitions/MatchFound"
+        },
+        {
+          "$ref": "#/definitions/MatchUpdate"
+        },
+        {
+          "$ref": "#/definitions/MatchCancelled"
         },
         {
           "$ref": "#/definitions/Matched"
@@ -365,6 +385,120 @@
       "title": "GameStateOut",
       "type": "object"
     },
+    "MatchAccept": {
+      "description": "Chấp nhận trận vừa ghép (trong hạn `match_found.expiresAt`).",
+      "properties": {
+        "t": {
+          "const": "match_accept",
+          "title": "T",
+          "type": "string"
+        },
+        "matchId": {
+          "title": "Matchid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "matchId"
+      ],
+      "title": "MatchAccept",
+      "type": "object"
+    },
+    "MatchCancelled": {
+      "description": "Trận chờ bị hủy: `by_me` = chính mình từ chối / hết giờ; `requeued` = đã được trả về\nhàng chờ.",
+      "properties": {
+        "t": {
+          "const": "match_cancelled",
+          "default": "match_cancelled",
+          "title": "T",
+          "type": "string"
+        },
+        "matchId": {
+          "title": "Matchid",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "declined",
+            "timeout",
+            "left"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "byMe": {
+          "title": "Byme",
+          "type": "boolean"
+        },
+        "requeued": {
+          "title": "Requeued",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "matchId",
+        "reason",
+        "byMe",
+        "requeued"
+      ],
+      "title": "MatchCancelled",
+      "type": "object"
+    },
+    "MatchDecline": {
+      "properties": {
+        "t": {
+          "const": "match_decline",
+          "title": "T",
+          "type": "string"
+        },
+        "matchId": {
+          "title": "Matchid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "matchId"
+      ],
+      "title": "MatchDecline",
+      "type": "object"
+    },
+    "MatchFound": {
+      "description": "Đã ghép được đối thủ, chờ cả hai chấp nhận trước hạn (docs/07 — Chấp nhận trận).",
+      "properties": {
+        "t": {
+          "const": "match_found",
+          "default": "match_found",
+          "title": "T",
+          "type": "string"
+        },
+        "matchId": {
+          "title": "Matchid",
+          "type": "string"
+        },
+        "mode": {
+          "default": "ranked",
+          "title": "Mode",
+          "type": "string"
+        },
+        "expiresAt": {
+          "title": "Expiresat",
+          "type": "integer"
+        },
+        "acceptSeconds": {
+          "title": "Acceptseconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "matchId",
+        "expiresAt",
+        "acceptSeconds"
+      ],
+      "title": "MatchFound",
+      "type": "object"
+    },
     "MatchReview": {
       "properties": {
         "t": {
@@ -399,6 +533,31 @@
         "text"
       ],
       "title": "MatchReview",
+      "type": "object"
+    },
+    "MatchUpdate": {
+      "description": "Số người đã chấp nhận thay đổi (để hiện \"chờ người chơi khác\").",
+      "properties": {
+        "t": {
+          "const": "match_update",
+          "default": "match_update",
+          "title": "T",
+          "type": "string"
+        },
+        "matchId": {
+          "title": "Matchid",
+          "type": "string"
+        },
+        "accepted": {
+          "title": "Accepted",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "matchId",
+        "accepted"
+      ],
+      "title": "MatchUpdate",
       "type": "object"
     },
     "Matched": {

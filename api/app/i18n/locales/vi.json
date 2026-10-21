@@ -34,7 +34,9 @@
     "STORAGE_UNAVAILABLE": "Kho lưu ảnh tạm thời không sẵn sàng, thử lại sau.",
     "UNKNOWN_ITEM": "Vật phẩm không tồn tại.",
     "ALREADY_OWNED": "Bạn đã có vật phẩm này rồi.",
-    "NOT_OWNED": "Bạn chưa sở hữu vật phẩm này."
+    "NOT_OWNED": "Bạn chưa sở hữu vật phẩm này.",
+    "MATCH_EXPIRED": "Trận chờ không còn nữa.",
+    "MATCH_PENDING": "Bạn đang có trận chờ chấp nhận."
   },
   "currency": {
     "lead": "Ruột chì",

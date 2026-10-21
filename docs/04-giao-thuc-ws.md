@@ -7,7 +7,9 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `t` | Trường | Ý nghĩa |
 |---|---|---|
 | `queue` | `mode: "casual"\|"ranked"`, `board?: <id map>\|"random"` | Vào hàng chờ ghép trận (gửi lại = idempotent, giữ thời điểm vào). Xếp hạng luôn bốc map ngẫu nhiên (bỏ qua `board`); `casual` còn trả `UNSUPPORTED` (P2-06) |
-| `queue_cancel` | — | Rời hàng chờ |
+| `queue_cancel` | — | Rời hàng chờ (đang có trận chờ chấp nhận thì = từ chối) |
+| `match_accept` | `matchId` | Chấp nhận trận vừa ghép (trong hạn `match_found.expiresAt`) |
+| `match_decline` | `matchId` | Từ chối trận vừa ghép → rời hàng chờ |
 | `room_create` | `board: <id map>\|"random"`, `turnSeconds: 15\|30\|60\|null`, `showLastMove: bool` (mặc định `true`) | Tạo phòng riêng, nhận mã phòng. Server chốt map (`random` → bốc trong bể); id lạ → `INVALID_BOARD` |
 | `room_join` | `roomId` | Vào phòng (từ link mời hoặc kết nối lại). Mã phòng 6 ký tự (A–Z, 2–9, bỏ I/O/0/1), không phân biệt hoa thường |
 | `room_leave` | `roomId` | Rời phòng đang chờ (xóa phòng) hoặc phòng đã kết thúc |
@@ -23,7 +25,10 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `welcome` | `userId`, `activeRoomId?` | Sau khi kết nối; có `activeRoomId` nếu đang dở trận → client gửi `room_join` |
 | `queued` | `mode`, `board`, `since` | Đã vào hàng chờ |
 | `queue_status` | `mode`, `waiting`, `online`, `since`, `widened` | Worker gửi mỗi giây cho người đang chờ: số người chờ, số online, đã mở hết cửa sổ (trận lệch chỉ ±1) |
-| `matched` | `roomId`, `mode` | Tìm được đối thủ (gửi qua kênh `user:{id}`) → client vào `/r/{roomId}` và gửi `room_join`. Phòng xếp hạng ở trạng thái `playing` ngay |
+| `match_found` | `matchId`, `mode`, `expiresAt`, `acceptSeconds` | Đã ghép được đối thủ, cả hai có 20 giây để `match_accept` (client hiện vòng đếm ngược) |
+| `match_update` | `matchId`, `accepted` | Số người đã chấp nhận thay đổi ("đối thủ đã sẵn sàng") |
+| `match_cancelled` | `matchId`, `reason: declined\|timeout\|left`, `byMe`, `requeued` | Trận chờ bị hủy; `requeued = true` → server đã trả về hàng chờ với thời điểm xếp hàng cũ và gửi `queued` ngay sau |
+| `matched` | `roomId`, `mode` | Cả hai đã chấp nhận → phòng mở (gửi qua kênh `user:{id}`) → client vào `/r/{roomId}` và gửi `room_join`. Phòng xếp hạng ở trạng thái `playing` ngay |
 | `room_state` | `roomId`, `mode`, `board` (id map đã chốt), `turnSeconds`, `showLastMove`, `status: waiting\|playing\|over`, `hostId`, `players[]`, `state`, `deadline`, `result?`, `loadouts` | Ảnh chụp đầy đủ trạng thái (khi vào phòng / kết nối lại; khi người thứ hai vào, cả hai cùng nhận) |
 | `moved` | `roomId`, `by`, `edge`, `captured[]`, `scores`, `turn`, `moveNo`, `deadline`, `reason: "player"\|"timeout"` | Một nước đi đã được chấp nhận |
 | `game_over` | `roomId`, `winner: 0\|1\|null`, `scores`, `reason: "complete"\|"resign"\|"afk"`, `ranked?` | Kết thúc ván. Trận xếp hạng: `ranked = { points[], pointsDelta[], ranks[], rewards[], placementLeft[] }` theo ghế (null nếu server không chốt được) |
@@ -51,6 +56,8 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `UNAUTHORIZED` | Token sai/hết hạn (client refresh rồi kết nối lại) |
 | `GUEST_NOT_ALLOWED`, `EMAIL_NOT_VERIFIED` | Khách hoặc tài khoản chưa xác minh gửi `queue` với `mode: "ranked"` |
 | `ALREADY_IN_GAME` (ref `queue`) | Đang dở trận mà gửi `queue` — client về phòng cũ |
+| `MATCH_PENDING` | Đang có trận chờ chấp nhận mà gửi `queue` |
+| `MATCH_EXPIRED` | `match_accept` / `match_decline` khi trận chờ không còn (đã hủy hoặc đã mở phòng) |
 | `NOT_YOUR_TURN`, `INVALID_EDGE`, `EDGE_TAKEN`, `GAME_OVER` | Từ luật chơi |
 | `STALE_SEQ` | `seq` không khớp — client cần đồng bộ lại |
 | `ROOM_NOT_FOUND`, `ROOM_FULL` | Phòng không tồn tại / đã đủ người |

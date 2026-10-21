@@ -333,7 +333,16 @@
     "how4": "A season lasts 8 weeks; a new season partly resets ranks so everyone gets a fresh shot.",
     "loadError": "Could not load ranked data.",
     "topScholar": "Top Scholar — top 100 of the whole school!",
-    "toTop100": "{n} places from the top 100 → Top Scholar"
+    "toTop100": "{n} places from the top 100 → Top Scholar",
+    "foundTitle": "Match found!",
+    "acceptWithin": "Accept within {s}s",
+    "otherAccepted": "Opponent is ready · {s}s left",
+    "waitingOther": "Waiting for the other player…",
+    "acceptNow": "Play now!",
+    "accepted": "Accepted",
+    "decline": "Decline",
+    "cancelOther": "Your opponent didn't accept. You're still in the queue.",
+    "cancelTimeout": "Accept time ran out. Press Find a match to queue again."
   },
   "Leaderboard": {
     "title": "Leaderboard",

@@ -204,7 +204,18 @@ def test_ghep_tran_va_chot_ket_qua(client: TestClient) -> None:
     send(b, t="queue", mode="ranked")
     recv(b, "queued")
 
-    # Worker nền ghép trong ~1 giây → cả hai nhận matched cùng roomId.
+    # Worker nền ghép trong ~1 giây → cả hai nhận match_found; chấp nhận trong hạn → matched.
+    fa = recv(a, "match_found")
+    fb = recv(b, "match_found")
+    assert fa["matchId"] == fb["matchId"] and fa["acceptSeconds"] == 20
+    assert fa["expiresAt"] > fa["acceptSeconds"] * 1000
+    send(a, t="match_accept", matchId=fa["matchId"])
+    assert recv(a, "match_update")["accepted"] == 1
+    assert recv(b, "match_update")["accepted"] == 1
+    # Chưa đủ hai người thì chưa có phòng; đang có trận chờ thì không xếp hàng lại được.
+    send(b, t="queue", mode="ranked")
+    assert recv(b, "error")["code"] == "MATCH_PENDING"
+    send(b, t="match_accept", matchId=fa["matchId"])
     ma = recv(a, "matched")
     mb = recv(b, "matched")
     assert ma["roomId"] == mb["roomId"] and ma["mode"] == "ranked"
@@ -308,6 +319,75 @@ def test_khach_va_casual_bi_tu_choi_cancel_va_rot_mang_roi_hang_cho(client: Test
             break
         asyncio.run(asyncio.sleep(0.05))
     assert not asyncio.run(in_queue(ua))
+
+
+def test_tu_choi_va_het_gio_tran_cho(client: TestClient) -> None:
+    """Từ chối: người từ chối rời hàng chờ, người kia về hàng chờ với since cũ. Hết giờ: ai chưa
+    chấp nhận bị coi là từ chối; người đã chấp nhận được trả về hàng chờ."""
+    from app.matchmaking import pending as pd
+    from app.matchmaking import worker as mmw
+    from app.ws.hub import Hub
+
+    ta, ua = account(client, "an@example.com")
+    tb, ub = account(client, "binh@example.com")
+    a = open_ws(client, ta)
+    b = open_ws(client, tb)
+    send(a, t="queue", mode="ranked")
+    since_a = recv(a, "queued")["since"]
+    send(b, t="queue", mode="ranked")
+    recv(b, "queued")
+    f = recv(a, "match_found")
+    recv(b, "match_found")
+    send(a, t="match_accept", matchId=f["matchId"])
+    recv(a, "match_update")
+    recv(b, "match_update")
+    send(b, t="match_decline", matchId=f["matchId"])
+    ca = recv(a, "match_cancelled")
+    cb = recv(b, "match_cancelled")
+    assert ca["reason"] == "declined" and ca["byMe"] is False and ca["requeued"] is True
+    assert cb["byMe"] is True and cb["requeued"] is False
+    assert recv(a, "queued")["since"] == since_a  # giữ thời điểm xếp hàng cũ
+    # b đã rời hàng chờ; a còn chờ một mình.
+    assert recv(a, "queue_status")["waiting"] == 1
+    # Chấp nhận trận không còn → MATCH_EXPIRED.
+    send(b, t="match_accept", matchId=f["matchId"])
+    assert recv(b, "error")["code"] == "MATCH_EXPIRED"
+
+    # Hết giờ: b xếp hàng lại → ghép lại (chờ > 60 giây mới được gặp lại, nên đặt lại last).
+    async def reset_last() -> None:
+        r = aioredis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+        try:
+            await r.delete(f"mm:last:{ua}", f"mm:last:{ub}")
+        finally:
+            await r.aclose()
+
+    asyncio.run(reset_last())
+    send(b, t="queue", mode="ranked")
+    recv(b, "queued")
+    f2 = recv(a, "match_found")
+    recv(b, "match_found")
+    send(a, t="match_accept", matchId=f2["matchId"])
+    recv(a, "match_update")
+    recv(b, "match_update")
+
+    async def force_timeout() -> None:
+        r = aioredis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+        try:
+            p = await pd.load(r, f2["matchId"])
+            assert p is not None
+            p.expires = q.now_ms() - 1
+            await pd.save(r, p)
+            await r.zadd(pd.PENDING_ZSET, {p.id: p.expires})
+            await mmw.tick(r, Hub(r))
+        finally:
+            await r.aclose()
+
+    asyncio.run(force_timeout())
+    ca = recv(a, "match_cancelled")
+    cb = recv(b, "match_cancelled")
+    assert ca["reason"] == "timeout" and ca["byMe"] is False and ca["requeued"] is True
+    assert cb["reason"] == "timeout" and cb["byMe"] is True and cb["requeued"] is False
+    assert recv(a, "queued")["since"] == since_a
 
 
 # ---------- Service: chốt trận lệch, mùa mới, BXH ----------

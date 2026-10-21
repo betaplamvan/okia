@@ -2,11 +2,25 @@
 // Sinh tự động từ shared/ws-schema.json — KHÔNG sửa tay. Chạy `pnpm gen:ws`.
 
 export interface OkiaWs {
-  client: Queue | QueueCancel | RoomCreate | RoomJoin | RoomLeave | Move | Resign | Emote | Ping;
+  client:
+    | Queue
+    | QueueCancel
+    | MatchAccept
+    | MatchDecline
+    | RoomCreate
+    | RoomJoin
+    | RoomLeave
+    | Move
+    | Resign
+    | Emote
+    | Ping;
   server:
     | Welcome
     | Queued
     | QueueStatus
+    | MatchFound
+    | MatchUpdate
+    | MatchCancelled
     | Matched
     | RoomState
     | Moved
@@ -25,6 +39,17 @@ export interface Queue {
 }
 export interface QueueCancel {
   t: "queue_cancel";
+}
+/**
+ * Chấp nhận trận vừa ghép (trong hạn `match_found.expiresAt`).
+ */
+export interface MatchAccept {
+  t: "match_accept";
+  matchId: string;
+}
+export interface MatchDecline {
+  t: "match_decline";
+  matchId: string;
 }
 export interface RoomCreate {
   t: "room_create";
@@ -83,6 +108,35 @@ export interface QueueStatus {
   online: number;
   since: number;
   widened?: boolean;
+}
+/**
+ * Đã ghép được đối thủ, chờ cả hai chấp nhận trước hạn (docs/07 — Chấp nhận trận).
+ */
+export interface MatchFound {
+  t: "match_found";
+  matchId: string;
+  mode?: string;
+  expiresAt: number;
+  acceptSeconds: number;
+}
+/**
+ * Số người đã chấp nhận thay đổi (để hiện "chờ người chơi khác").
+ */
+export interface MatchUpdate {
+  t: "match_update";
+  matchId: string;
+  accepted: number;
+}
+/**
+ * Trận chờ bị hủy: `by_me` = chính mình từ chối / hết giờ; `requeued` = đã được trả về
+ * hàng chờ.
+ */
+export interface MatchCancelled {
+  t: "match_cancelled";
+  matchId: string;
+  reason: "declined" | "timeout" | "left";
+  byMe: boolean;
+  requeued: boolean;
 }
 export interface Matched {
   t: "matched";

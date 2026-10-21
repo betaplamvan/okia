@@ -32,6 +32,18 @@ class QueueCancel(Msg):
     t: Literal["queue_cancel"]
 
 
+class MatchAccept(Msg):
+    """Chấp nhận trận vừa ghép (trong hạn `match_found.expiresAt`)."""
+
+    t: Literal["match_accept"]
+    match_id: str
+
+
+class MatchDecline(Msg):
+    t: Literal["match_decline"]
+    match_id: str
+
+
 class RoomCreate(Msg):
     t: Literal["room_create"]
     board: Board = "5x5"
@@ -75,7 +87,17 @@ class Ping(Msg):
 
 
 ClientMsg = Annotated[
-    Queue | QueueCancel | RoomCreate | RoomJoin | RoomLeave | Move | Resign | Emote | Ping,
+    Queue
+    | QueueCancel
+    | MatchAccept
+    | MatchDecline
+    | RoomCreate
+    | RoomJoin
+    | RoomLeave
+    | Move
+    | Resign
+    | Emote
+    | Ping,
     Field(discriminator="t"),
 ]
 client_adapter: TypeAdapter[ClientMsg] = TypeAdapter(ClientMsg)
@@ -139,6 +161,35 @@ class QueueStatus(Msg):
     since: int
     # Cửa sổ ghép đã mở hết (sau UNLIMITED_AFTER giây) → điểm cược có thể chỉ ±1.
     widened: bool = False
+
+
+class MatchFound(Msg):
+    """Đã ghép được đối thủ, chờ cả hai chấp nhận trước hạn (docs/07 — Chấp nhận trận)."""
+
+    t: Literal["match_found"] = "match_found"
+    match_id: str
+    mode: str = "ranked"
+    expires_at: int  # epoch ms (giờ server)
+    accept_seconds: int
+
+
+class MatchUpdate(Msg):
+    """Số người đã chấp nhận thay đổi (để hiện "chờ người chơi khác")."""
+
+    t: Literal["match_update"] = "match_update"
+    match_id: str
+    accepted: int
+
+
+class MatchCancelled(Msg):
+    """Trận chờ bị hủy: `by_me` = chính mình từ chối / hết giờ; `requeued` = đã được trả về
+    hàng chờ."""
+
+    t: Literal["match_cancelled"] = "match_cancelled"
+    match_id: str
+    reason: Literal["declined", "timeout", "left"]
+    by_me: bool
+    requeued: bool
 
 
 class Matched(Msg):
@@ -238,6 +289,9 @@ ServerMsg = Annotated[
     Welcome
     | Queued
     | QueueStatus
+    | MatchFound
+    | MatchUpdate
+    | MatchCancelled
     | Matched
     | RoomState
     | Moved

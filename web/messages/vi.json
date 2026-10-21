@@ -333,7 +333,16 @@
     "how4": "Mùa kéo dài 8 tuần; sang mùa mới hạng được đặt lại một phần để ai cũng có cơ hội.",
     "loadError": "Không tải được dữ liệu xếp hạng.",
     "topScholar": "Trạng nguyên — top 100 toàn trường!",
-    "toTop100": "Còn {n} bậc nữa vào top 100 → Trạng nguyên"
+    "toTop100": "Còn {n} bậc nữa vào top 100 → Trạng nguyên",
+    "foundTitle": "Đã tìm thấy trận!",
+    "acceptWithin": "Chấp nhận trong {s} giây",
+    "otherAccepted": "Đối thủ đã sẵn sàng · còn {s} giây",
+    "waitingOther": "Đang chờ người chơi khác…",
+    "acceptNow": "Chơi luôn!",
+    "accepted": "Đã nhận",
+    "decline": "Từ chối",
+    "cancelOther": "Đối thủ không nhận trận. Bạn vẫn ở hàng chờ.",
+    "cancelTimeout": "Hết giờ chấp nhận. Bấm Tìm trận để xếp hàng lại."
   },
   "Leaderboard": {
     "title": "Bảng xếp hạng",
