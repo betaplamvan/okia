@@ -239,6 +239,7 @@
     "day": "Day {n}",
     "streak": "{n}-day streak",
     "quests": "Quests",
+    "dailyGift": "Daily gifts",
     "daily": "Daily",
     "weekly": "Weekly",
     "resetsIn": "Resets in {time}",

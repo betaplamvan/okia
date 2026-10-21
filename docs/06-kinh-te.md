@@ -47,7 +47,7 @@ Tiền phụ, hiếm, không mua được. Nguồn: ngày 7 của chu kỳ đi�
 
 - Tiến trình: phòng online do server ghi khi `game_over` (bỏ `afk` và đầu hàng trước nước 10); ván với máy do client báo `POST /me/events` (≤ 30/giờ, ván ≥ 24 nước) cho tới khi bot chạy ở server (P2-06).
 - `GET /me/progress` trả ví + điểm danh + nhiệm vụ + mốc reset; nhận thưởng qua `POST /me/checkin`, `POST /me/quests/{id}/claim` — chỉ tài khoản **đã xác minh email**; khách và chưa xác minh vẫn thấy tiến trình.
-- Giao diện: hộp thoại hồ sơ, tab *Tổng quan* (dải 7 ngày) và *Nhiệm vụ* (thanh tiến trình, nút Nhận, đếm giờ tới lúc làm mới); ví hai chip trên pill người chơi.
+- Giao diện: hộp thoại hồ sơ, tab *Nhiệm vụ* = "quà mỗi ngày" (dải điểm danh 7 ngày ở trên, rồi thanh tiến trình nhiệm vụ, nút Nhận, đếm giờ tới lúc làm mới); trang chủ có nút ví (Ruột chì ‖ Hoa điểm tốt → cửa hàng) và nút hộp quà mở thẳng tab này, chấm đỏ khi còn thưởng chưa nhận (xem [14](14-thiet-ke-giao-dien.md)).
 
 ### Thành tựu (bộ khởi điểm, mỗi thành tựu 5 cấp)
 

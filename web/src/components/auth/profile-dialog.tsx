@@ -149,29 +149,20 @@ export function ProfileDialog() {
                       ))}
                     </Tabs.List>
                     <Tabs.Content value="overview" pt={4}>
-                      <Stack gap={3}>
-                        {progress ? (
-                          <CheckinStrip progress={progress} />
-                        ) : (
-                          <Text fontSize="sm">{t("loading")}</Text>
-                        )}
-                        <Box
-                          bg="cream"
-                          border="2px dashed"
-                          borderColor="ink"
-                          borderRadius="lg"
-                          p={3}
-                        >
-                          <Text fontSize="sm">{t("overviewSoon")}</Text>
-                        </Box>
-                      </Stack>
+                      <Box bg="cream" border="2px dashed" borderColor="ink" borderRadius="lg" p={3}>
+                        <Text fontSize="sm">{t("overviewSoon")}</Text>
+                      </Box>
                     </Tabs.Content>
                     <Tabs.Content value="rank" pt={4}>
                       <RankTab />
                     </Tabs.Content>
+                    {/* "Quà mỗi ngày": điểm danh + nhiệm vụ chung một tab (nút hộp quà trang chủ mở thẳng). */}
                     <Tabs.Content value="quests" pt={4}>
                       {progress ? (
-                        <QuestsList progress={progress} />
+                        <Stack gap={4}>
+                          <CheckinStrip progress={progress} />
+                          <QuestsList progress={progress} />
+                        </Stack>
                       ) : (
                         <Text fontSize="sm">{t("loading")}</Text>
                       )}

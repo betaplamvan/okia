@@ -31,6 +31,7 @@ Phong cách: **"sticker vở ô li"** — thẻ màu kẹo và giấy kem với 
 | **Sticker card** | Nền màu (paper/mint/coral/pink/sun), viền `sticker`, bo `sticker`, bóng `sticker`; chấm tròn nhỏ màu đối lập ở góc trên phải làm trang trí | `<Box layerStyle="sticker" bg="mint">` |
 | **Pill button** | Nền paper, viền sticker, bo tròn hoàn toàn, chữ hand 600; nhấn → dịch `(3px, 3px)` và bóng thu về `stickerSm` | `<Button variant="sticker">`; màu: `bg="mint"` |
 | **Round icon button** | Như pill, hình tròn 44px+ | `<IconButton variant="sticker" rounded="full">` |
+| **Hàng nút người chơi** (trang chủ, dưới bảng hiệu — học noitu.fun, 2026-10-21) | Ba sticker rời: *hồ sơ* (avatar + tên, nền paper → hộp hồ sơ), *ví* (một nút `sun`: Ruột chì ‖ Hoa điểm tốt → `/shop`), *quà mỗi ngày* (nút tròn `pink` hộp quà → tab Nhiệm vụ; chấm `coral` góc trên khi còn điểm danh/nhiệm vụ chưa nhận, khách không có chấm) | `<PlayerPill />` (`web/src/components/player-pill.tsx`) |
 | **Timer ring** | Vòng tròn viền mint 6px trên nền paper, số ở giữa (hand, đậm) | Màn chơi (P0-12 / P1-20) |
 | **Panel** | Sticker card nền paper chứa HUD / bàn đấu | Màn chơi |
 | **Bong bóng bot** | Tròn mint, viền sticker, góc dưới phải | Lời thoại bot (giai đoạn 3) |

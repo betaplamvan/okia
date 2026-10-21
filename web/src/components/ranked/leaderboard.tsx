@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, Box, Button, Container, Heading, HStack, Stack, Text } from "@chakra-ui/react";
+import { Avatar, Button, Container, Heading, HStack, Stack, Text } from "@chakra-ui/react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { LuRefreshCw, LuSwords } from "react-icons/lu";

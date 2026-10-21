@@ -23,17 +23,21 @@ await page.goto(base + "/", { waitUntil: "networkidle" });
 await page.waitForFunction(() => /Bạn [0-9a-f]{6}/.test(document.body.innerText), null, {
   timeout: 15000,
 });
-// Ví hai chip trên pill.
-const chips = await pill.locator("[title]").allInnerTexts();
-console.log("ví trên pill:", chips.map((s) => s.trim()).join(" | "));
+// Ví trên nút tiền (một nút vàng: Ruột chì | Hoa điểm tốt) dẫn tới cửa hàng.
+const walletPill = page.getByTestId("wallet-pill");
+const chips = await walletPill.locator("[title]").allInnerTexts();
+console.log("ví trên nút tiền:", chips.map((s) => s.trim()).join(" | "));
+if (!(await walletPill.getAttribute("href"))?.endsWith("/shop"))
+  throw new Error("nút tiền không dẫn tới /shop");
 
-// Khách mở hồ sơ: điểm danh + nhiệm vụ hiện, nút nhận bị thay bằng gợi ý tạo tài khoản.
-await pill.click();
+// Khách bấm hộp quà → hồ sơ mở thẳng tab Nhiệm vụ: điểm danh + nhiệm vụ hiện, nút nhận bị thay
+// bằng gợi ý tạo tài khoản. Khách không có chấm đỏ.
+if (await page.getByTestId("gift-dot").isVisible()) throw new Error("khách lại có chấm quà");
+await page.getByTestId("gift-pill").click();
 await dialog.waitFor();
 await dialog.getByText("Điểm danh mỗi ngày").waitFor();
 await dialog.getByText("Ngày 7").waitFor();
 await dialog.getByText("Đăng nhập Google để nhận thưởng").first().waitFor();
-await dialog.getByRole("tab", { name: "Nhiệm vụ" }).click();
 await dialog.getByText("Khởi động").waitFor();
 await dialog.getByText("Chăm chỉ").waitFor();
 await page.screenshot({ path: ".shots/econ-quests-guest-390.png" });
@@ -58,6 +62,9 @@ await page.reload({ waitUntil: "networkidle" });
 await page.waitForFunction(() => /Bạn [0-9a-f]{6}/.test(document.body.innerText), null, {
   timeout: 15000,
 });
+// Tài khoản thật chưa điểm danh hôm nay → chấm đỏ trên nút hộp quà.
+await page.getByTestId("gift-dot").waitFor({ timeout: 10000 });
+console.log("chấm quà: hiện khi còn thưởng chưa nhận");
 await pill.click();
 await dialog.waitFor();
 
