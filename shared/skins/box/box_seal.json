@@ -3,12 +3,12 @@
   "type": "box",
   "rarity": "legendary",
   "name": {
-    "vi": "Con dấu vàng",
-    "en": "Golden Seal"
+    "vi": "Dấu sáp vàng",
+    "en": "Golden Wax Seal"
   },
   "description": {
-    "vi": "Con dấu vàng kim, sao bắn tung tóe khi đóng.",
-    "en": "A golden wax seal with a burst of stars."
+    "vi": "Giọt sáp vàng rơi xuống, đóng dấu sao màu bút; mặt sáp lấp lánh mãi.",
+    "en": "A drop of golden wax stamped with a star in your pen color; it keeps glinting."
   },
   "box": {
     "effect": "seal",

@@ -7,12 +7,12 @@
     "en": "Heart"
   },
   "description": {
-    "vi": "Trái tim tô kín, ăn ô nào thương ô đó.",
-    "en": "A filled heart for every box you love."
+    "vi": "Trái tim đập hai nhịp khi hiện, tim nhỏ bay lên; ăn ô nào thương ô đó.",
+    "en": "A heart that beats twice as it lands, with tiny hearts floating up."
   },
   "box": {
     "effect": "heart",
     "alpha": 0.35,
-    "particles": "star"
+    "particles": "heart"
   }
 }

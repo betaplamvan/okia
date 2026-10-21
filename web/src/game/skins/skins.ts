@@ -8,9 +8,20 @@ import { SKIN_SOURCES } from "./catalog.data";
 export type SkinType = "pen" | "box";
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 export type ComboStyle = "sticker" | "ink" | "chalk" | "neon" | "sparkle" | "fire";
-export type Particles = "paper" | "ink" | "chalk" | "spark" | "star";
+export type Particles = "paper" | "ink" | "chalk" | "spark" | "star" | "heart";
+/** Hình ô đã ăn (docs/08): mỗi hiệu ứng có hình, animation hiện và (một số) hiệu ứng sống. */
 export type BoxEffect =
-  "hatch" | "fill" | "crosshatch" | "dots" | "scribble" | "star" | "stamp" | "heart" | "seal";
+  | "hatch"
+  | "fill"
+  | "crosshatch"
+  | "dots"
+  | "scribble"
+  | "star"
+  | "stamp"
+  | "heart"
+  | "seal"
+  | "flower"
+  | "flame";
 
 /** Kiểu vẽ nét (docs/08 — "pen.style"): quyết định cách engine dùng màu của hình thái. */
 export type PenStyle =

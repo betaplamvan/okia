@@ -1,0 +1,18 @@
+{
+  "id": "box_flame",
+  "type": "box",
+  "rarity": "legendary",
+  "name": {
+    "vi": "Ô cháy",
+    "en": "Burning Box"
+  },
+  "description": {
+    "vi": "Ô bùng lửa rồi cháy xém, than hồng le lói mãi — hợp bộ với Bút lửa.",
+    "en": "The box bursts into flame and chars; embers keep glowing — pairs with the Fire Pen."
+  },
+  "box": {
+    "effect": "flame",
+    "alpha": 0.28,
+    "particles": "spark"
+  }
+}

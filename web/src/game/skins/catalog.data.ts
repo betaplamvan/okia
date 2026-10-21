@@ -505,6 +505,42 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
     },
   },
   {
+    id: "box_flame",
+    type: "box",
+    rarity: "legendary",
+    name: {
+      vi: "Ô cháy",
+      en: "Burning Box",
+    },
+    description: {
+      vi: "Ô bùng lửa rồi cháy xém, than hồng le lói mãi — hợp bộ với Bút lửa.",
+      en: "The box bursts into flame and chars; embers keep glowing — pairs with the Fire Pen.",
+    },
+    box: {
+      effect: "flame",
+      alpha: 0.28,
+      particles: "spark",
+    },
+  },
+  {
+    id: "box_flower",
+    type: "box",
+    rarity: "legendary",
+    name: {
+      vi: "Hoa điểm tốt",
+      en: "Good-Mark Flower",
+    },
+    description: {
+      vi: "Bông hoa năm cánh màu bút, nhụy vàng; từng cánh nở và lay theo gió.",
+      en: "A five-petal flower in your pen color with a golden heart; petals bloom one by one and sway.",
+    },
+    box: {
+      effect: "flower",
+      alpha: 0.7,
+      particles: "star",
+    },
+  },
+  {
     id: "box_heart",
     type: "box",
     rarity: "epic",
@@ -513,13 +549,13 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
       en: "Heart",
     },
     description: {
-      vi: "Trái tim tô kín, ăn ô nào thương ô đó.",
-      en: "A filled heart for every box you love.",
+      vi: "Trái tim đập hai nhịp khi hiện, tim nhỏ bay lên; ăn ô nào thương ô đó.",
+      en: "A heart that beats twice as it lands, with tiny hearts floating up.",
     },
     box: {
       effect: "heart",
       alpha: 0.35,
-      particles: "star",
+      particles: "heart",
     },
   },
   {
@@ -536,7 +572,7 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
     },
     box: {
       effect: "scribble",
-      alpha: 0.25,
+      alpha: 0.6,
       particles: "ink",
     },
   },
@@ -545,12 +581,12 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
     type: "box",
     rarity: "legendary",
     name: {
-      vi: "Con dấu vàng",
-      en: "Golden Seal",
+      vi: "Dấu sáp vàng",
+      en: "Golden Wax Seal",
     },
     description: {
-      vi: "Con dấu vàng kim, sao bắn tung tóe khi đóng.",
-      en: "A golden wax seal with a burst of stars.",
+      vi: "Giọt sáp vàng rơi xuống, đóng dấu sao màu bút; mặt sáp lấp lánh mãi.",
+      en: "A drop of golden wax stamped with a star in your pen color; it keeps glinting.",
     },
     box: {
       effect: "seal",
@@ -590,7 +626,7 @@ export const SKIN_SOURCES: readonly SkinManifest[] = [
     },
     box: {
       effect: "star",
-      alpha: 0.3,
+      alpha: 0.6,
       particles: "star",
     },
   },

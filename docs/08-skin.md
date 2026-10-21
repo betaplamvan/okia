@@ -1,13 +1,13 @@
 # 08 — Hệ thống skin
 
-Quyết định: [ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md) (2026-10-21; bổ sung cùng ngày: bút hai hình thái). **Đã làm:** catalog 20 skin, engine, shop `/shop`, mua/trang bị, loadout trong trận. Code: `shared/skins/` (manifest), `web/src/game/skins/`, `web/src/game/renderer/board-renderer.ts` (hiệu ứng), `api/app/skins/` (catalog, kho, shop).
+Quyết định: [ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md) (2026-10-21; bổ sung cùng ngày: bút hai hình thái). **Đã làm:** catalog 22 skin, engine, shop `/shop`, mua/trang bị, loadout trong trận. Code: `shared/skins/` (manifest), `web/src/game/skins/`, `web/src/game/renderer/board-renderer.ts` (hiệu ứng), `api/app/skins/` (catalog, kho, shop).
 
 ## Hai loại skin
 
 | Loại | Ảnh hưởng | Skin hiện có |
 |---|---|---|
 | `pen` — Bút | **Một gói trọn:** nét vẽ (kiểu nét `style` + hai hình thái màu, bề dày, mờ, run tay, đầu nét, nét đứt, thanh đậm, hạt), **bộ tiếng ăn ô / combo riêng**, **kiểu chữ COMBO**, **loại vụn** bắn ra, mốc combo bắt đầu rung bàn | Bút bi (default), Bút chì 2B, Bút dạ, Sáp màu, Bút mực tím, Phấn màu, Bút neon, Bút lông, Bút lửa, Bút cầu vồng, Bút vàng |
-| `box` — Ô đã ăn | Hình tô vào ô khi chiếm + loại vụn | Gạch chéo (default), Tô kín, Gạch ca-rô, Chấm bi, Nguệch ngoạc, Ngôi sao, Dấu 10 điểm, Trái tim, Con dấu vàng |
+| `box` — Ô đã ăn | Hình tô vào ô khi chiếm (màu = hình thái bút của người ăn) + animation hiện + hiệu ứng sống + loại vụn | Gạch chéo (default), Tô kín, Gạch ca-rô, Chấm bi, Nguệch ngoạc, Ngôi sao, Dấu 10 điểm, Trái tim, Dấu sáp vàng, Hoa điểm tốt, Ô cháy |
 
 Mỗi người chơi trang bị một skin mỗi loại (`loadouts`). Trong trận, **mỗi bên thấy bút/ô của chính người vẽ** (gửi trong `room_state.loadouts`, key = user id); chơi với máy thì máy dùng skin mặc định.
 
@@ -21,7 +21,7 @@ Mỗi người chơi trang bị một skin mỗi loại (`loadouts`). Trong tr�
 | `uncommon` | **Xanh lá** `#7cf5c5` | 250 Ruột chì | Bút dạ, Sáp màu, Gạch ca-rô, Chấm bi |
 | `rare` | **Xanh lam** `#8ec5ff` | 600 Ruột chì | Bút mực tím, Phấn màu, Nguệch ngoạc, Ngôi sao |
 | `epic` | **Tím** `#c9a7ff` | 1 500 Ruột chì | Bút neon, Bút lông, Dấu 10 điểm, Trái tim |
-| `legendary` | **Vàng** `#ffd93d` | **5 Hoa điểm tốt** | Bút lửa, Bút cầu vồng, Bút vàng, Con dấu vàng |
+| `legendary` | **Vàng** `#ffd93d` | **5 Hoa điểm tốt** | Bút lửa, Bút cầu vồng, Bút vàng, Dấu sáp vàng, Hoa điểm tốt, Ô cháy |
 
 Giá cố định trong `api/app/skins/catalog.py` (`RARITY_PRICE`) và `web/src/game/skins/skins.ts`; manifest không ghi giá. Thẻ trong shop viền và bóng theo màu bậc.
 
@@ -83,7 +83,7 @@ Hiệu ứng chạy liên tục (thở, lửa, trôi, ánh kim) đi qua `app.tic
 | Bút cầu vồng | vàng | `rainbow` | `[#2ecc71, #2d9cdb, #7b4fe0]` → `[#e0313b, #ff8c1a, #ffd93d]` |
 | Bút vàng | vàng | `metal` | `[#b8860b, #ffe680, #fff6c2, #d4a017]` → `[#8c3b1e, #ffb27a, #ffd9bf, #c8653a]` |
 
-`combo.style` ∈ `sticker` (vàng viền đen, mặc định) · `ink` (màu bút, viền giấy, xoay mạnh) · `chalk` (màu bút, không viền) · `neon` (màu `glow`, viền màu bút) · `sparkle` (màu `glow` — cầu vồng: màu giữa dải — + thêm chùm sao) · `fire` (màu `color2`, viền màu bút, thêm chùm lửa). `combo.particles` và `box.particles` ∈ `paper` (vụn giấy, có trọng lực) · `ink` (giọt mực) · `chalk` (bụi trắng, rơi chậm) · `spark` (tia, không rơi) · `star` (sao vàng). `sfx.capture`/`sfx.combo` là tên trong audio sprite; tên lạ → engine dùng `capture`/`combo` mặc định.
+`combo.style` ∈ `sticker` (vàng viền đen, mặc định) · `ink` (màu bút, viền giấy, xoay mạnh) · `chalk` (màu bút, không viền) · `neon` (màu `glow`, viền màu bút) · `sparkle` (màu `glow` — cầu vồng: màu giữa dải — + thêm chùm sao) · `fire` (màu `color2`, viền màu bút, thêm chùm lửa). `combo.particles` và `box.particles` ∈ `paper` (vụn giấy, có trọng lực) · `ink` (giọt mực) · `chalk` (bụi trắng, rơi chậm) · `spark` (tia, không rơi) · `star` (sao vàng) · `heart` (tim nhỏ). `sfx.capture`/`sfx.combo` là tên trong audio sprite; tên lạ → engine dùng `capture`/`combo` mặc định.
 
 ```json
 {
@@ -96,7 +96,23 @@ Hiệu ứng chạy liên tục (thở, lửa, trôi, ánh kim) đi qua `app.tic
 }
 ```
 
-`box.effect` ∈ `hatch` · `fill` · `crosshatch` · `dots` · `scribble` · `star` · `stamp` (vòng tròn + chữ "10", đóng từ trên xuống) · `heart` · `seal` (dấu tròn vàng + sao màu bút). Danh sách cố định trong engine (`drawBoxEffect`); thêm skin mới chỉ cần chọn hiệu ứng và tham số.
+Skin ô chỉ định **hình** và **animation hiện** (+ hiệu ứng sống, + loại vụn); màu luôn là màu hình thái bút của người ăn. Hình ≤ ~80 % ô để đếm ô cuối ván vẫn đọc được. Danh sách cố định trong engine (`buildBox` → mỗi hiệu ứng một builder trả về `{ animate, live? }`); thêm skin mới chỉ cần chọn hiệu ứng và tham số. Bật "Giảm hiệu ứng" → hình hiện ngay, không có hiệu ứng sống.
+
+| `box.effect` | Hình | Animation hiện | Hiệu ứng sống (ticker) |
+|---|---|---|---|
+| `hatch` — Gạch chéo | nền tô nhạt + 3 nét gạch chéo | nền hiện trước, 3 nét vẽ lần lượt (0,25 s) | — |
+| `fill` — Tô kín | tứ giác hơi lệch (không phải hình chữ nhật hoàn hảo) alpha 0,4 + 2–3 vệt tô lòi ra mép | màu quét từ góc trên trái sang như nhát bút rộng (0,3 s, mask) | — |
+| `crosshatch` — Gạch ca-rô | nền + gạch xuôi + gạch ngược | gạch xuôi vẽ trước, gạch ngược sau (0,35 s), nền đậm dần theo | — |
+| `dots` — Chấm bi | 3×3 chấm, chấm giữa to; ô < 44 px → 2×2 chấm to | chấm nảy lên lần lượt theo xoắn ốc từ giữa ra (40 ms/chấm) | — |
+| `scribble` — Nguệch ngoạc | zigzag tất định theo id ô, nét dày, alpha 0,6 | nét vẽ dần theo đường (0,4 s) có chấm "đầu bút" đi trước; xong thì ô rung 2 px | — |
+| `star` — Ngôi sao | sao ~80 % ô, tô alpha 0,6 + viền | rơi từ trên xuống (y −0,6 ô, scale 0,5→1,1→1, 0,35 s); chạm đất lóe 4 tia vàng ở 4 góc | — |
+| `stamp` — Dấu 10 điểm | vòng ngoài đứt quãng (tất định) + vòng trong + chữ "10", nghiêng ±8° theo id ô | đập từ to xuống (1,6×→1×, 0,22 s, power3.in); mực lan quanh viền (đĩa mờ alpha 0→0,12, 1→1,15, 0,3 s); rung bàn nhẹ | — |
+| `heart` — Trái tim | tim tô + viền, vệt sáng giấy ở góc trên trái | đập hai nhịp (1→1,2→1→1,15→1, 0,45 s), 3 tim nhỏ bay lên tan dần; vụn `heart` | — |
+| `seal` — Dấu sáp vàng | đĩa sáp vàng méo (tất định) viền mực + sao màu bút | giọt sáp rơi rồi lan thành đĩa (0,25 s), con dấu đập xuống in sao (0,2 s), chùm sao | vệt lấp lánh chạy qua mặt sáp mỗi ~3 s (lệch pha theo ô), 0 hạt |
+| `flower` — Hoa điểm tốt | 5 cánh (ellipse) màu bút alpha 0,7 + viền, nhụy vàng viền mực | từng cánh nở quanh nhụy (80 ms/cánh, 0,4 s), phấn hoa vàng bay lên | cả hoa khẽ lay (±3°, 2 s/chu kỳ) |
+| `flame` — Ô cháy | nền cháy xém alpha 0,28 mép lượn sóng + viền mực alpha 0,5 | bùng ~8 ngọn lửa màu bút/`color2` (dùng chung hạt lửa của Bút lửa, 0,3 s) rồi nền hiện | 2 đốm than hồng nhấp nháy + 1 làn khói mỏng bay lên, liên tục; tối đa 3 vật thể/ô, trần 150 cả bàn (bàn 7×7 đầy vẫn đủ) |
+
+Vụn (`box.particles`) bắn ra lúc ăn ô dùng màu hình thái bút của người ăn.
 
 ## Animation trong trận
 
@@ -104,12 +120,12 @@ Hiệu ứng chạy liên tục (thở, lửa, trôi, ánh kim) đi qua `app.tic
 |---|---|
 | Hover/chạm gần cạnh | Cạnh hiện mờ bằng chính bút của mình (hình thái `mine`) |
 | Vẽ cạnh | Nét chạy từ chấm đầu đến chấm cuối (180 ms) theo tham số bút |
-| Ăn ô | `box.effect` + vụn theo `box.particles`; `stamp`/`seal` đóng từ to xuống, còn lại nảy từ nhỏ lên |
+| Ăn ô | hình `box.effect` với animation hiện riêng (bảng trên) + vụn theo `box.particles`; Bút lửa ăn ô → thêm chùm lửa |
 | Ăn chuỗi | Chữ "COMBO ×n" theo `combo.style` của **bút người vừa đi**, vụn theo `combo.particles`, rung bàn từ `combo.shakeFrom` |
 | Lượt chuyển | Thanh timer đổi bên |
 | Kết thúc | Đếm ô từng người (ô nảy lần lượt + số to giữa bàn, tiếng "pop" cao dần), xong mới hiện kết quả |
 
-Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt particle, rung, chữ nổ, bỏ qua đếm ô và mọi hiệu ứng chạy liên tục của bút (quầng thở, lửa, cầu vồng trôi, ánh kim).
+Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt particle, rung, chữ nổ, bỏ qua đếm ô, animation hiện của ô (hình hiện ngay) và mọi hiệu ứng chạy liên tục của bút / ô (quầng thở, lửa, cầu vồng trôi, ánh kim, sáp lấp lánh, hoa lay, than hồng).
 
 ## Âm thanh
 

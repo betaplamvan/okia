@@ -4,8 +4,8 @@ import { Box } from "@chakra-ui/react";
 import { useLocale } from "next-intl";
 import type { BoxSkin, PenForm, PenSkin, SkinManifest } from "@/game/skins/skins";
 
-// Xem trước tĩnh bằng SVG cho thẻ shop (nhẹ, không cần PixiJS): bút hiện cả hai hình thái
-// (mình / đối thủ) theo kiểu nét, ô đã ăn theo hiệu ứng. Bản "thật" chạy trong TryDialog (BoardCanvas).
+// Xem trước tĩnh bằng SVG cho thẻ shop (nhẹ, không cần PixiJS): bút và ô đều hiện cả hai hình thái
+// (mình / đối thủ) — bút theo kiểu nét, ô theo hiệu ứng với màu hình thái của bút mặc định. Bản "thật" chạy trong TryDialog (BoardCanvas).
 const INK = "#1a2826";
 const PAPER = "#fffcf2";
 const BLUE = "#1e4fd8";
@@ -269,33 +269,115 @@ function FormSample({
   );
 }
 
+/** Mẫu ô đã ăn: hai hình thái cạnh nhau (màu hình thái của bút mặc định: mình xanh, đối thủ đỏ). */
 function BoxSample({ box, size }: { box: BoxSkin; size: number }) {
-  const s = size * 0.56;
+  const locale = useLocale();
+  const labels = locale === "en" ? ["You", "Rival"] : ["Mình", "Đối thủ"];
+  const half = size / 2;
+  return (
+    <>
+      <line
+        x1={half}
+        y1={10}
+        x2={half}
+        y2={size - 10}
+        stroke={INK}
+        strokeWidth="1.5"
+        strokeDasharray="3 4"
+        opacity={0.35}
+      />
+      {[BLUE, RED].map((color, k) => (
+        <g key={k} transform={`translate(${k * half + half / 2} ${size * 0.44})`}>
+          <BoxShape
+            box={box}
+            color={color}
+            s={half * 0.6}
+            uid={`${box.id}-${k}`}
+            tilt={k ? 6 : -6}
+          />
+          <text
+            y={size * 0.56 - 9}
+            textAnchor="middle"
+            fontFamily="inherit"
+            fontWeight="700"
+            fontSize="11"
+            fill={INK}
+            opacity={0.75}
+          >
+            {labels[k]}
+          </text>
+        </g>
+      ))}
+    </>
+  );
+}
+
+/** Đa giác tròn méo (SVG) quanh gốc: `base(θ)` bán kính, méo tất định theo chỉ số điểm. */
+function wobblyPoints(n: number, base: (a: number) => number, amp: number, seed: number): string {
+  const pts: string[] = [];
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2;
+    const r = base(a) * (1 + (hash01(seed * 5 + k) - 0.5) * amp);
+    pts.push(`${(Math.cos(a) * r).toFixed(2)},${(Math.sin(a) * r).toFixed(2)}`);
+  }
+  return pts.join(" ");
+}
+
+function heartD(w: number): string {
+  return `M0,${w * 0.75} C${-w * 1.35},${-w * 0.1} ${-w * 0.6},${-w * 1.05} 0,${-w * 0.4} C${w * 0.6},${-w * 1.05} ${w * 1.35},${-w * 0.1} 0,${w * 0.75} Z`;
+}
+
+/** Hình ô (cạnh `s`, gốc = tâm ô) theo hiệu ứng, kèm khung 4 cạnh + chấm góc để giống bàn thật. */
+function BoxShape({
+  box,
+  color,
+  s,
+  uid,
+  tilt,
+}: {
+  box: BoxSkin;
+  color: string;
+  s: number;
+  uid: string;
+  tilt: number;
+}) {
   const h = s / 2;
-  const cx = size / 2;
-  const cy = size / 2;
   const { effect, alpha } = box.box;
-  const color = BLUE;
-  const thin = 2.2;
-  const hatch = (dir: 1 | -1) => {
-    const out: React.ReactNode[] = [];
-    const step = s / 4;
-    for (let i = -s; i < s; i += step) {
-      const x0 = Math.max(-h, i);
-      const x1 = Math.min(h, i + s);
-      const y0 = dir === 1 ? Math.max(-h, -i - s) : -Math.max(-h, -i - s);
-      const y1 = dir === 1 ? Math.min(h, -i) : -Math.min(h, -i);
-      out.push(<line key={`${dir}${i}`} x1={x0} y1={y0} x2={x1} y2={y1} />);
-    }
-    return out;
-  };
+  const thin = 1.8;
+  // Ba nét gạch chéo offset −h/2, 0, +h/2 (dir 1 xuôi, −1 ngược) — khớp engine.
+  const hatch = (dir: 1 | -1) =>
+    [-h / 2, 0, h / 2].map((o, k) => {
+      const c = o * 2;
+      const a = c >= 0 ? { x: c - h, y: h } : { x: -h, y: c + h };
+      const b = c >= 0 ? { x: h, y: c - h } : { x: c + h, y: -h };
+      return <line key={`${dir}${k}`} x1={a.x * dir} y1={a.y} x2={b.x * dir} y2={b.y} />;
+    });
   let inner: React.ReactNode;
   switch (effect) {
-    case "fill":
+    case "fill": {
+      const j = (k: number) => (hash01(uid.length * 13 + k) - 0.5) * s * 0.08;
       inner = (
-        <rect x={-h} y={-h} width={s} height={s} rx={s * 0.12} fill={color} opacity={alpha} />
+        <>
+          <polygon
+            points={`${-h + j(1)},${-h + j(2)} ${h + j(3)},${-h + j(4)} ${h + j(5)},${h + j(6)} ${-h + j(7)},${h + j(8)}`}
+            fill={color}
+            opacity={alpha}
+          />
+          {[0, 1, 2].map((k) => (
+            <rect
+              key={k}
+              x={k % 2 === 0 ? h - s * 0.14 : -h - s * 0.1}
+              y={-h + s * (0.18 + 0.3 * k)}
+              width={s * 0.24}
+              height={s * 0.1}
+              fill={color}
+              opacity={alpha * 0.7}
+            />
+          ))}
+        </>
       );
       break;
+    }
     case "crosshatch":
       inner = (
         <>
@@ -325,7 +407,7 @@ function BoxSample({ box, size }: { box: BoxSkin; size: number }) {
                 key={`${i}${j}`}
                 cx={-h + s * (0.2 + i * 0.3)}
                 cy={-h + s * (0.2 + j * 0.3)}
-                r={s * 0.09}
+                r={s * 0.09 * (i === 1 && j === 1 ? 1.35 : 1)}
                 fill={color}
                 opacity={0.7}
               />
@@ -338,68 +420,182 @@ function BoxSample({ box, size }: { box: BoxSkin; size: number }) {
       let seed = 97;
       const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
       const pts = [`${-h * 0.8},${-h * 0.7}`];
-      for (let i = 0; i < 9; i++)
-        pts.push(`${(rnd() * 2 - 1) * h * 0.85},${(rnd() * 2 - 1) * h * 0.85}`);
+      let last = { x: 0, y: 0 };
+      for (let i = 0; i < 9; i++) {
+        last = { x: (rnd() * 2 - 1) * h * 0.85, y: (rnd() * 2 - 1) * h * 0.85 };
+        pts.push(`${last.x.toFixed(2)},${last.y.toFixed(2)}`);
+      }
       inner = (
-        <polyline
-          points={pts.join(" ")}
-          fill="none"
-          stroke={color}
-          strokeWidth={thin * 1.6}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity={0.6}
-        />
+        <>
+          <polyline
+            points={pts.join(" ")}
+            fill="none"
+            stroke={color}
+            strokeWidth={thin * 2.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={alpha}
+          />
+          <circle cx={last.x} cy={last.y} r={thin * 1.2} fill={color} opacity={0.9} />
+        </>
       );
       break;
     }
     case "star":
       inner = (
-        <polygon
-          points={starPoints(h * 0.9, h * 0.42)}
-          fill={color}
-          opacity={alpha + 0.3}
-          stroke={color}
-          strokeWidth={thin}
-        />
+        <>
+          <polygon
+            points={starPoints(h * 1.05, h * 0.47)}
+            fill={color}
+            opacity={alpha}
+            stroke={color}
+            strokeWidth={thin}
+          />
+          <g stroke={SUN} strokeWidth={thin * 1.3} strokeLinecap="round">
+            {[-1, 1].flatMap((sx) =>
+              [-1, 1].map((sy) => (
+                <line
+                  key={`${sx}${sy}`}
+                  x1={sx * h * 0.75}
+                  y1={sy * h * 0.75}
+                  x2={sx * h * 1.1}
+                  y2={sy * h * 1.1}
+                />
+              )),
+            )}
+          </g>
+        </>
       );
       break;
     case "stamp":
       inner = (
-        <g transform="rotate(-8)">
-          <circle r={h * 0.78} fill="none" stroke={RED} strokeWidth={thin * 2} opacity={0.85} />
-          <circle r={h * 0.62} fill="none" stroke={RED} strokeWidth={thin} opacity={0.6} />
-          <text
-            y={s * 0.18}
-            textAnchor="middle"
-            fontWeight="700"
-            fontSize={s * 0.5}
-            fill={RED}
-            opacity={0.9}
-          >
-            10
-          </text>
-        </g>
+        <>
+          <circle r={h * 0.86} fill={color} opacity={0.12} />
+          <g transform={`rotate(${tilt})`}>
+            <circle
+              r={h * 0.78}
+              fill="none"
+              stroke={color}
+              strokeWidth={thin * 2}
+              strokeDasharray={`${h * 0.9} ${h * 0.25} ${h * 1.6} ${h * 0.2}`}
+              strokeLinecap="round"
+              opacity={0.85}
+            />
+            <circle r={h * 0.62} fill="none" stroke={color} strokeWidth={thin} opacity={0.6} />
+            <text
+              y={s * 0.18}
+              textAnchor="middle"
+              fontWeight="700"
+              fontSize={s * 0.5}
+              fill={color}
+              opacity={0.9}
+            >
+              10
+            </text>
+          </g>
+        </>
       );
       break;
     case "heart": {
       const w = h * 0.95;
       inner = (
-        <path
-          d={`M0,${w * 0.75} C${-w * 1.35},${-w * 0.1} ${-w * 0.6},${-w * 1.05} 0,${-w * 0.4} C${w * 0.6},${-w * 1.05} ${w * 1.35},${-w * 0.1} 0,${w * 0.75} Z`}
-          fill={RED}
-          opacity={alpha + 0.25}
-          stroke={RED}
-          strokeWidth={thin}
-        />
+        <>
+          <path
+            d={heartD(w)}
+            fill={color}
+            opacity={alpha + 0.25}
+            stroke={color}
+            strokeWidth={thin}
+          />
+          <ellipse
+            cx={-w * 0.5}
+            cy={-w * 0.5}
+            rx={w * 0.2}
+            ry={w * 0.1}
+            transform={`rotate(-40 ${-w * 0.5} ${-w * 0.5})`}
+            fill={PAPER}
+            opacity={0.75}
+          />
+          {[-0.5, 0.3].map((dx, k) => (
+            <path
+              key={k}
+              d={heartD(h * 0.2)}
+              transform={`translate(${dx * h} ${-h * 1.05 - k * h * 0.25})`}
+              fill={color}
+              opacity={0.6 - k * 0.2}
+            />
+          ))}
+        </>
       );
       break;
     }
     case "seal":
       inner = (
         <>
-          <circle r={h * 0.86} fill={SUN} stroke={INK} strokeWidth={thin * 1.4} />
+          <polygon
+            points={wobblyPoints(14, () => h * 0.86, 0.14, uid.length)}
+            fill={SUN}
+            stroke={INK}
+            strokeWidth={thin * 1.4}
+            strokeLinejoin="round"
+          />
           <polygon points={starPoints(h * 0.55, h * 0.26)} fill={color} />
+          <ellipse
+            rx={h * 0.14}
+            ry={h * 0.75}
+            transform={`translate(${-h * 0.35} 0) rotate(25)`}
+            fill="#ffffff"
+            opacity={0.5}
+          />
+        </>
+      );
+      break;
+    case "flower":
+      inner = (
+        <>
+          {[0, 1, 2, 3, 4].map((k) => (
+            <ellipse
+              key={k}
+              cy={-h * 0.5}
+              rx={h * 0.24}
+              ry={h * 0.4}
+              transform={`rotate(${k * 72})`}
+              fill={color}
+              opacity={alpha}
+              stroke={INK}
+              strokeWidth={thin * 0.7}
+              strokeOpacity={0.5}
+            />
+          ))}
+          <circle r={h * 0.28} fill={SUN} stroke={INK} strokeWidth={thin} />
+        </>
+      );
+      break;
+    case "flame":
+      inner = (
+        <>
+          <polygon
+            points={wobblyPoints(
+              20,
+              (a) => h / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))),
+              0.1,
+              uid.length,
+            )}
+            fill={color}
+            opacity={alpha}
+            stroke={INK}
+            strokeWidth={thin}
+            strokeOpacity={0.5}
+            strokeLinejoin="round"
+          />
+          <circle cx={-h * 0.4} cy={h * 0.3} r={h * 0.09} fill="#ffd166" />
+          <circle cx={h * 0.35} cy={-h * 0.2} r={h * 0.08} fill="#ffd166" opacity={0.8} />
+          <path
+            d={`M${h * 0.05},${-h * 0.2} C${h * 0.45},${-h * 0.55} ${h * 0.25},${-h * 0.95} ${h * 0.05},${-h * 1.15} C${-h * 0.15},${-h * 0.95} ${-h * 0.35},${-h * 0.55} ${h * 0.05},${-h * 0.2}`}
+            fill="#ffd166"
+            opacity={0.9}
+          />
+          <circle cx={h * 0.1} cy={-h * 1.3} r={h * 0.12} fill="#8a8a8a" opacity={0.25} />
         </>
       );
       break;
@@ -415,12 +611,19 @@ function BoxSample({ box, size }: { box: BoxSkin; size: number }) {
       );
   }
   // Bốn cạnh khép ô + chấm góc để giống bàn thật.
-  const o = s / 2 + 6;
+  const o = s / 2 + 5;
   return (
-    <g transform={`translate(${cx} ${cy})`}>
-      <g stroke={INK} strokeWidth="2" fill="none" opacity={0.25}>
-        <rect x={-o} y={-o} width={o * 2} height={o * 2} />
-      </g>
+    <g>
+      <rect
+        x={-o}
+        y={-o}
+        width={o * 2}
+        height={o * 2}
+        stroke={INK}
+        strokeWidth="2"
+        fill="none"
+        opacity={0.25}
+      />
       {[-o, o].flatMap((x) =>
         [-o, o].map((y) => <circle key={`${x}${y}`} cx={x} cy={y} r="3" fill={INK} />),
       )}

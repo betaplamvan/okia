@@ -81,6 +81,43 @@ interface Flame {
   color2: number;
 }
 
+/** Ngữ cảnh dựng hình ô đã ăn (tọa độ cục bộ trong `inner`: gốc = tâm ô). */
+interface BoxCtx {
+  box: number;
+  inner: Container;
+  form: RForm;
+  /** Màu chính của hình thái bút người ăn. */
+  color: number;
+  /** Cạnh hình (≈ 76 % ô) và nửa cạnh. */
+  size: number;
+  h: number;
+  cell: number;
+  /** `box.alpha` của manifest. */
+  alpha: number;
+  thin: number;
+  /** Tâm ô trong tọa độ bàn (cho hạt lửa). */
+  x: number;
+  y: number;
+}
+
+/** Kết quả builder ô: animation hiện (bỏ qua khi giảm hiệu ứng) + hook sống chạy trên ticker. */
+interface BoxBuilt {
+  animate: () => void;
+  live?: (now: number, dt: number) => void;
+}
+
+/** Một ô đã ăn: `c` giữ vị trí (đếm ô scale `c`), `inner` chứa hình (animation / lay / rung riêng). */
+interface BoxPiece {
+  box: number;
+  c: Container;
+  inner: Container;
+  born: number;
+  live?: (now: number, dt: number) => void;
+}
+
+/** Trần vật thể sống của ô (than hồng + khói, 3 / ô): bàn 7×7 đầy = 147. */
+const BOX_LIVE_CAP = 150;
+
 /** Kiểu bút có hiệu ứng chạy liên tục (ticker). Giảm hiệu ứng → tĩnh hết. */
 const ANIMATED_STYLES = new Set<PenStyle>(["neon", "rainbow", "metal", "fire"]);
 /** Trần số hạt lửa sống trên một bàn. */
@@ -205,7 +242,10 @@ export class BoardRenderer {
   private geo: Geometry | null = null;
   private session: GameSession | null = null;
   private edgeG = new Map<number, EdgePiece>();
-  private boxG = new Map<number, InstanceType<Pixi["Container"]>>();
+  private boxG = new Map<number, BoxPiece>();
+  /** Ô có hiệu ứng sống (sáp lấp lánh, hoa lay, than hồng) và số vật thể sống của ô đang có. */
+  private liveBoxes: BoxPiece[] = [];
+  private boxLive = 0;
   /** Cạnh có hiệu ứng chạy liên tục; `fires` / `golds` là tập con để sinh lửa / sao lấp lánh. */
   private animated = new Set<EdgePiece>();
   private fires: EdgePiece[] = [];
@@ -451,6 +491,8 @@ export class BoardRenderer {
     this.fires.length = 0;
     this.golds.length = 0;
     this.boxG.clear();
+    this.liveBoxes.length = 0;
+    this.boxLive = 0;
     this.previewEdge = null;
     this.preview.under.clear();
     this.preview.main.clear();
@@ -863,15 +905,17 @@ export class BoardRenderer {
   // ---------- Hiệu ứng chạy liên tục (ticker) ----------
 
   /**
-   * Mỗi khung: quầng neon thở (chỉ đổi alpha), cầu vồng trôi (vẽ lại mỗi ~50 ms), ánh kim quét
-   * (vẽ lại lớp trên mỗi ~50 ms trong lúc quét), lửa (hạt pool, không cấp phát mới), sao lấp lánh
-   * (hiếm). Không chạy khi giảm hiệu ứng (ticker không được gắn).
+   * Mỗi khung: hiệu ứng sống của ô (sáp lấp lánh, hoa lay, than hồng / khói — chỉ đổi thuộc tính),
+   * quầng neon thở (chỉ đổi alpha), cầu vồng trôi (vẽ lại mỗi ~50 ms), ánh kim quét (vẽ lại lớp
+   * trên mỗi ~50 ms trong lúc quét), lửa (hạt pool, không cấp phát mới), sao lấp lánh (hiếm).
+   * Không chạy khi giảm hiệu ứng (ticker không được gắn).
    */
   private onTick() {
     if (this.destroyed || !this.geo) return;
-    if (this.animated.size === 0 && this.flames.length === 0) return;
+    if (this.animated.size === 0 && this.flames.length === 0 && this.liveBoxes.length === 0) return;
     const now = performance.now();
     const dt = Math.min(0.05, this.app.ticker.deltaMS / 1000);
+    for (const b of this.liveBoxes) b.live!(now, dt);
     for (const piece of this.animated) {
       switch (piece.pen.pen.style) {
         case "neon":
@@ -1036,127 +1080,578 @@ export class BoardRenderer {
       .to(star.scale, { x: 0, y: 0, duration: 0.28, ease: "power2.in" });
   }
 
+  // ---------- Ô đã ăn (docs/08 — skin ô: hình + animation hiện + hiệu ứng sống) ----------
+
   private addBox(box: number, owner: Player, animate: boolean) {
     const g = this.geo!;
-    const r = Math.floor(box / g.cols);
-    const c = box % g.cols;
-    const p = this.dot(r, c);
     const { pen, form } = this.penFor(owner);
-    const color = form.color;
+    const skin = this.skins.boxes[owner];
+    const center = this.boxCenter(box);
+    // `c` giữ vị trí (đếm ô cuối ván scale `c`); `inner` chứa hình để animation / lay / rung riêng.
+    const c = new this.px.Container();
+    c.position.set(center.x, center.y);
+    const inner = new this.px.Container();
+    c.addChild(inner);
     const inset = g.cell * 0.12;
     const size = g.cell - inset * 2;
-    const container = new this.px.Container();
-    container.position.set(p.x + g.cell / 2, p.y + g.cell / 2);
-    const skin = this.skins.boxes[owner];
-    container.addChild(this.drawBoxEffect(skin, box, color, size));
-    this.layers.boxes.addChild(container);
-    this.boxG.set(box, container);
-    if (animate) {
-      container.alpha = 0;
-      const from = skin.box.effect === "stamp" || skin.box.effect === "seal" ? 1.6 : 0.6;
-      container.scale.set(from);
-      this.gsap.to(container, { alpha: 1, duration: 0.2 });
-      this.gsap.to(container.scale, {
-        x: 1,
-        y: 1,
-        duration: from > 1 ? 0.22 : 0.35,
-        ease: from > 1 ? "power3.in" : "back.out(2)",
-      });
-      this.burst(container.x, container.y, color, skin.box.particles);
-      // Bút lửa: ô bùng cháy.
-      if (pen.pen.style === "fire") this.flameBurst(container.x, container.y, form, 9);
+    const ctx: BoxCtx = {
+      box,
+      inner,
+      form,
+      color: form.color,
+      size,
+      h: size / 2,
+      cell: g.cell,
+      alpha: skin.box.alpha,
+      thin: Math.max(1.5, g.cell * 0.035),
+      x: center.x,
+      y: center.y,
+    };
+    const built = this.buildBox(skin, ctx);
+    this.layers.boxes.addChild(c);
+    const piece: BoxPiece = { box, c, inner, born: performance.now(), live: built.live };
+    this.boxG.set(box, piece);
+    if (piece.live && !this.opts.reducedMotion) this.liveBoxes.push(piece);
+    if (!animate) return;
+    built.animate();
+    this.burst(center.x, center.y, form.color, skin.box.particles);
+    // Bút lửa: ô bùng cháy.
+    if (pen.pen.style === "fire") this.flameBurst(center.x, center.y, form, 9);
+  }
+
+  /** Mỗi hiệu ứng một builder: vẽ hình cuối vào `ctx.inner`, trả về animation hiện và hook sống. */
+  private buildBox(skin: BoxSkin, ctx: BoxCtx): BoxBuilt {
+    switch (skin.box.effect) {
+      case "fill":
+        return this.boxFill(ctx);
+      case "crosshatch":
+        return this.boxHatch(ctx, true);
+      case "dots":
+        return this.boxDots(ctx);
+      case "scribble":
+        return this.boxScribble(ctx);
+      case "star":
+        return this.boxStar(ctx);
+      case "stamp":
+        return this.boxStamp(ctx);
+      case "heart":
+        return this.boxHeart(ctx);
+      case "seal":
+        return this.boxSeal(ctx);
+      case "flower":
+        return this.boxFlower(ctx);
+      case "flame":
+        return this.boxFlame(ctx);
+      case "hatch":
+      default:
+        return this.boxHatch(ctx, false);
     }
   }
 
-  /** Hình ô đã ăn theo hiệu ứng của skin (docs/08: danh sách hiệu ứng cố định trong engine). */
-  private drawBoxEffect(
-    skin: BoxSkin,
-    box: number,
-    color: number,
-    size: number,
-  ): InstanceType<Pixi["Container"]> {
-    const g = this.geo!;
-    const gfx = new this.px.Graphics();
-    const { effect, alpha } = skin.box;
-    const thin = Math.max(1.5, g.cell * 0.035);
-    const h = size / 2;
-    const hatch = (dir: 1 | -1) => {
-      const step = size / 4;
-      for (let i = -size; i < size; i += step) {
-        const x0 = Math.max(-h, i);
-        const x1 = Math.min(h, i + size);
-        if (dir === 1) gfx.moveTo(x0, Math.max(-h, -i - size)).lineTo(x1, Math.min(h, -i));
-        else gfx.moveTo(x0, -Math.max(-h, -i - size)).lineTo(x1, -Math.min(h, -i));
+  /**
+   * Ba nét gạch chéo (offset −h/2, 0, +h/2) cắt trong ô vuông cạnh 2h; `dir` 1 = xuôi (dưới-trái →
+   * trên-phải), −1 = ngược. `progress` 0–1 vẽ lần lượt từng nét (nét đang vẽ chỉ tới một phần).
+   */
+  private hatchLines(gfx: Graphics, h: number, dir: 1 | -1, progress: number) {
+    const offs = [-h / 2, 0, h / 2];
+    for (let k = 0; k < offs.length; k++) {
+      const p = Math.min(1, Math.max(0, progress * offs.length - k));
+      if (p <= 0) break;
+      const c = offs[k] * 2; // đường x + y = c
+      const a = c >= 0 ? { x: c - h, y: h } : { x: -h, y: c + h };
+      const b = c >= 0 ? { x: h, y: c - h } : { x: c + h, y: -h };
+      if (dir === -1) {
+        a.x = -a.x;
+        b.x = -b.x;
       }
-    };
-    switch (effect) {
-      case "fill":
-        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
-        break;
-      case "crosshatch":
-        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
-        hatch(1);
-        hatch(-1);
-        gfx.stroke({ width: thin, color, alpha: 0.55, cap: "round" });
-        break;
-      case "dots": {
-        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha: alpha * 0.5 });
-        const r = size * 0.09;
-        for (let i = 0; i < 3; i++)
-          for (let j = 0; j < 3; j++)
-            gfx.circle(-h + size * (0.2 + i * 0.3), -h + size * (0.2 + j * 0.3), r);
-        gfx.fill({ color, alpha: 0.7 });
-        break;
-      }
-      case "scribble": {
-        // Đường zigzag tất định theo id ô.
-        let seed = box * 7919 + 13;
-        const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
-        gfx.moveTo(-h * 0.8, -h * 0.7);
-        for (let i = 0; i < 9; i++)
-          gfx.lineTo((rnd() * 2 - 1) * h * 0.85, (rnd() * 2 - 1) * h * 0.85);
-        gfx.stroke({ width: thin * 1.6, color, alpha: 0.6, cap: "round", join: "round" });
-        break;
-      }
-      case "star":
-        gfx.star(0, 0, 5, h * 0.9, h * 0.42, -Math.PI / 2).fill({ color, alpha: alpha + 0.3 });
-        gfx.stroke({ width: thin, color, alpha: 0.9, join: "round" });
-        break;
-      case "stamp": {
-        gfx.circle(0, 0, h * 0.78).stroke({ width: thin * 2, color, alpha: 0.85 });
-        gfx.circle(0, 0, h * 0.62).stroke({ width: thin, color, alpha: 0.6 });
-        const t = this.makeText("10", color, size * 0.5, false);
-        t.alpha = 0.9;
-        const c = new this.px.Container();
-        c.addChild(gfx, t);
-        c.rotation = ((box % 5) - 2) * 0.12;
-        return c;
-      }
-      case "heart": {
-        const w = h * 0.95;
-        gfx
-          .moveTo(0, w * 0.75)
-          .bezierCurveTo(-w * 1.35, -w * 0.1, -w * 0.6, -w * 1.05, 0, -w * 0.4)
-          .bezierCurveTo(w * 0.6, -w * 1.05, w * 1.35, -w * 0.1, 0, w * 0.75)
-          .closePath()
-          .fill({ color, alpha: alpha + 0.25 })
-          .stroke({ width: thin, color, alpha: 0.9, join: "round" });
-        break;
-      }
-      case "seal":
-        gfx.circle(0, 0, h * 0.86).fill({ color: this.colors.accent, alpha: 0.95 });
-        gfx
-          .circle(0, 0, h * 0.86)
-          .stroke({ width: thin * 1.4, color: this.colors.ink, alpha: 0.9 });
-        gfx.star(0, 0, 5, h * 0.55, h * 0.26, -Math.PI / 2).fill({ color, alpha: 0.95 });
-        break;
-      case "hatch":
-      default:
-        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
-        hatch(1);
-        gfx.stroke({ width: thin, color, alpha: 0.55, cap: "round" });
+      gfx.moveTo(a.x, a.y).lineTo(a.x + (b.x - a.x) * p, a.y + (b.y - a.y) * p);
     }
-    return gfx;
+  }
+
+  /** Gạch chéo / gạch ca-rô: nền tô nhạt rồi các nét vẽ lần lượt (ca-rô: xuôi trước, ngược sau). */
+  private boxHatch(ctx: BoxCtx, cross: boolean): BoxBuilt {
+    const { inner, color, size, h, alpha, thin } = ctx;
+    const bg = new this.px.Graphics();
+    bg.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
+    const lines = new this.px.Graphics();
+    const draw = (p1: number, p2: number) => {
+      lines.clear();
+      this.hatchLines(lines, h, 1, p1);
+      if (cross) this.hatchLines(lines, h, -1, p2);
+      lines.stroke({ width: thin, color, alpha: 0.55, cap: "round" });
+    };
+    inner.addChild(bg, lines);
+    draw(1, 1);
+    return {
+      animate: () => {
+        const dur = cross ? 0.35 : 0.25;
+        bg.alpha = 0;
+        this.gsap.to(bg, { alpha: 1, duration: cross ? dur : 0.1 });
+        const tw = { p: 0 };
+        this.gsap.to(tw, {
+          p: 1,
+          duration: dur,
+          ease: "none",
+          onUpdate: () => {
+            if (this.destroyed) return;
+            if (cross) draw(Math.min(1, tw.p * 2), Math.max(0, tw.p * 2 - 1));
+            else draw(tw.p, 0);
+          },
+        });
+      },
+    };
+  }
+
+  /** Tô kín: tứ giác hơi lệch + vệt tô lòi mép; hiện bằng mask quét chéo từ góc trên trái (0,3 s). */
+  private boxFill(ctx: BoxCtx): BoxBuilt {
+    const { inner, box, color, size, h, alpha } = ctx;
+    const j = (k: number) => (hash01(box * 13 + k) - 0.5) * size * 0.08;
+    const gfx = new this.px.Graphics();
+    gfx
+      .poly([-h + j(1), -h + j(2), h + j(3), -h + j(4), h + j(5), h + j(6), -h + j(7), h + j(8)])
+      .fill({ color, alpha });
+    // Vệt tô thừa: nhát bút rộng quá tay, lòi khỏi mép phải / trái một chút.
+    for (let k = 0; k < 3; k++) {
+      const y = -h + size * (0.18 + 0.3 * k) + j(9 + k);
+      const right = k % 2 === 0;
+      gfx
+        .rect(right ? h - size * 0.14 : -h - size * 0.1, y, size * 0.24, size * 0.1)
+        .fill({ color, alpha: alpha * 0.7 });
+    }
+    inner.addChild(gfx);
+    return {
+      animate: () => {
+        const H = h * 1.4;
+        const m = new this.px.Graphics();
+        inner.addChild(m);
+        gfx.mask = m;
+        const tw = { p: 0 };
+        this.gsap.to(tw, {
+          p: 1,
+          duration: 0.3,
+          ease: "power1.inOut",
+          onUpdate: () => {
+            if (this.destroyed) return;
+            const d = tw.p * H * 4;
+            m.clear()
+              .poly([-H, -H, -H + d, -H, -H, -H + d])
+              .fill(0xffffff);
+          },
+          onComplete: () => {
+            if (this.destroyed) return;
+            gfx.mask = null;
+            m.destroy();
+          },
+        });
+      },
+    };
+  }
+
+  /** Chấm bi: 3×3 (ô nhỏ: 2×2 chấm to), chấm giữa to hơn, nảy lên lần lượt theo xoắn ốc từ giữa ra. */
+  private boxDots(ctx: BoxCtx): BoxBuilt {
+    const { inner, color, size, h, alpha, cell } = ctx;
+    const bg = new this.px.Graphics();
+    bg.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha: alpha * 0.5 });
+    inner.addChild(bg);
+    const small = cell < 44;
+    const n = small ? 2 : 3;
+    const dots: { d: Graphics; key: number }[] = [];
+    for (let i = 0; i < n; i++) {
+      for (let k = 0; k < n; k++) {
+        const x = small ? -h + size * (0.3 + i * 0.4) : -h + size * (0.2 + i * 0.3);
+        const y = small ? -h + size * (0.3 + k * 0.4) : -h + size * (0.2 + k * 0.3);
+        const center = !small && i === 1 && k === 1;
+        const r = size * (small ? 0.13 : 0.09) * (center ? 1.35 : 1);
+        const d = new this.px.Graphics();
+        d.circle(0, 0, r).fill({ color, alpha: 0.7 });
+        d.position.set(x, y);
+        inner.addChild(d);
+        // Thứ tự xoắn ốc: gần tâm trước, cùng vòng thì theo góc.
+        const ang = (Math.atan2(y, x) + Math.PI * 2.5) % (Math.PI * 2);
+        dots.push({ d, key: Math.round(Math.hypot(x, y) / size) * 10 + ang });
+      }
+    }
+    dots.sort((a, b) => a.key - b.key);
+    return {
+      animate: () => {
+        bg.alpha = 0;
+        this.gsap.to(bg, { alpha: 1, duration: 0.15 });
+        dots.forEach(({ d }, k) => {
+          d.scale.set(0);
+          this.gsap.to(d.scale, {
+            x: 1,
+            y: 1,
+            duration: 0.25,
+            delay: k * 0.04,
+            ease: "back.out(2.5)",
+          });
+        });
+      },
+    };
+  }
+
+  /** Nguệch ngoạc: zigzag tất định vẽ dần theo đường với chấm đầu bút đi trước; xong thì ô rung 2 px. */
+  private boxScribble(ctx: BoxCtx): BoxBuilt {
+    const { inner, box, color, h, alpha, thin } = ctx;
+    let seed = box * 7919 + 13;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    const pts = [{ x: -h * 0.8, y: -h * 0.7 }];
+    for (let i = 0; i < 9; i++)
+      pts.push({ x: (rnd() * 2 - 1) * h * 0.85, y: (rnd() * 2 - 1) * h * 0.85 });
+    const line = new this.px.Graphics();
+    const tip = new this.px.Graphics();
+    tip.circle(0, 0, thin * 1.2).fill({ color, alpha: 0.9 });
+    tip.visible = false;
+    inner.addChild(line, tip);
+    const draw = (p: number) => {
+      line.clear();
+      const total = pts.length - 1;
+      const upto = total * Math.min(1, Math.max(0, p));
+      const full = Math.floor(upto);
+      line.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i <= full; i++) line.lineTo(pts[i].x, pts[i].y);
+      let end = pts[Math.min(total, full)];
+      if (full < total) {
+        const t = upto - full;
+        const a = pts[full];
+        const b = pts[full + 1];
+        end = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        line.lineTo(end.x, end.y);
+      }
+      line.stroke({ width: thin * 2.2, color, alpha, cap: "round", join: "round" });
+      tip.position.set(end.x, end.y);
+    };
+    draw(1);
+    return {
+      animate: () => {
+        tip.visible = true;
+        const tw = { p: 0 };
+        this.gsap.to(tw, {
+          p: 1,
+          duration: 0.4,
+          ease: "power1.inOut",
+          onUpdate: () => !this.destroyed && draw(tw.p),
+          onComplete: () => {
+            if (this.destroyed) return;
+            tip.visible = false;
+            // Rung ô nhẹ 2 px (chỉ hình trong ô, không rung bàn).
+            const tl = this.gsap.timeline();
+            for (let i = 0; i < 4; i++) {
+              tl.to(inner.position, {
+                x: (i % 2 ? -1 : 1) * 2 * (1 - i / 4),
+                y: (i % 2 ? 1 : -1) * 1.2,
+                duration: 0.03,
+              });
+            }
+            tl.to(inner.position, { x: 0, y: 0, duration: 0.03 });
+          },
+        });
+      },
+    };
+  }
+
+  /** Ngôi sao ~80 % ô rơi từ trên xuống và nảy; chạm đất lóe 4 tia vàng ở 4 góc. */
+  private boxStar(ctx: BoxCtx): BoxBuilt {
+    const { inner, color, cell, h, alpha, thin } = ctx;
+    const R = cell * 0.4;
+    const star = new this.px.Graphics();
+    star
+      .star(0, 0, 5, R, R * 0.45, -Math.PI / 2)
+      .fill({ color, alpha })
+      .stroke({ width: thin, color, alpha: 0.9, join: "round" });
+    const rays = new this.px.Graphics();
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        const d = h * 0.75;
+        rays.moveTo(sx * d, sy * d).lineTo(sx * (d + h * 0.35), sy * (d + h * 0.35));
+      }
+    }
+    rays.stroke({ width: thin * 1.3, color: this.colors.accent, cap: "round" });
+    rays.alpha = 0;
+    inner.addChild(rays, star);
+    return {
+      animate: () => {
+        star.y = -cell * 0.6;
+        star.alpha = 0;
+        star.scale.set(0.5);
+        const tl = this.gsap.timeline();
+        tl.to(star, { y: 0, alpha: 1, duration: 0.2, ease: "power2.in" })
+          .to(star.scale, { x: 1.1, y: 1.1, duration: 0.2 }, 0)
+          .call(() => {
+            if (this.destroyed) return;
+            rays.alpha = 1;
+            rays.scale.set(0.5);
+            this.gsap.to(rays.scale, { x: 1, y: 1, duration: 0.15 });
+            this.gsap.to(rays, { alpha: 0, duration: 0.2, delay: 0.05 });
+          })
+          .to(star.scale, { x: 1, y: 1, duration: 0.15, ease: "back.out(3)" });
+      },
+    };
+  }
+
+  /** Dấu 10 điểm: vòng ngoài đứt quãng + chữ "10" nghiêng ±8°, đập từ to xuống, mực lan, rung bàn. */
+  private boxStamp(ctx: BoxCtx): BoxBuilt {
+    const { inner, box, color, size, h, thin } = ctx;
+    const ring = new this.px.Graphics();
+    const segs = 12;
+    for (let k = 0; k < segs; k++) {
+      // Vài đoạn đứt (tất định theo ô) như dấu đóng không đều mực.
+      if (hash01(box * 11 + k) < 0.22) continue;
+      const a0 = (k / segs) * Math.PI * 2;
+      const a1 = ((k + 0.92) / segs) * Math.PI * 2;
+      const r = h * 0.78;
+      ring.moveTo(Math.cos(a0) * r, Math.sin(a0) * r).arc(0, 0, r, a0, a1);
+    }
+    ring.stroke({ width: thin * 2, color, alpha: 0.85, cap: "round" });
+    ring.circle(0, 0, h * 0.62).stroke({ width: thin, color, alpha: 0.6 });
+    const text = this.makeText("10", color, size * 0.5, false);
+    text.alpha = 0.9;
+    const stamp = new this.px.Container();
+    stamp.addChild(ring, text);
+    stamp.rotation = ((hash01(box * 7 + 1) * 2 - 1) * 8 * Math.PI) / 180;
+    const bleed = new this.px.Graphics();
+    bleed.circle(0, 0, h * 0.86).fill({ color });
+    bleed.alpha = 0.12;
+    inner.addChild(bleed, stamp);
+    return {
+      animate: () => {
+        stamp.alpha = 0;
+        stamp.scale.set(1.6);
+        bleed.alpha = 0;
+        const tl = this.gsap.timeline();
+        tl.to(stamp, { alpha: 1, duration: 0.08 })
+          .to(stamp.scale, { x: 1, y: 1, duration: 0.22, ease: "power3.in" }, 0)
+          .call(() => {
+            if (this.destroyed) return;
+            // Mực lan quanh viền sau khi đập + rung bàn một lần nhẹ.
+            this.gsap.to(bleed, { alpha: 0.12, duration: 0.3 });
+            this.gsap.fromTo(bleed.scale, { x: 1, y: 1 }, { x: 1.15, y: 1.15, duration: 0.3 });
+            this.shake(0.3);
+          });
+      },
+    };
+  }
+
+  /** Đường tim (gốc ở tâm, bề ngang ~2w). */
+  private heartPath(gfx: Graphics, w: number) {
+    return gfx
+      .moveTo(0, w * 0.75)
+      .bezierCurveTo(-w * 1.35, -w * 0.1, -w * 0.6, -w * 1.05, 0, -w * 0.4)
+      .bezierCurveTo(w * 0.6, -w * 1.05, w * 1.35, -w * 0.1, 0, w * 0.75)
+      .closePath();
+  }
+
+  /** Trái tim đập hai nhịp khi hiện, 3 tim nhỏ bay lên tan dần; vệt sáng giấy ở góc trên trái. */
+  private boxHeart(ctx: BoxCtx): BoxBuilt {
+    const { inner, color, h, cell, alpha, thin, box } = ctx;
+    const w = h * 0.95;
+    const heart = new this.px.Graphics();
+    this.heartPath(heart, w)
+      .fill({ color, alpha: alpha + 0.25 })
+      .stroke({ width: thin, color, alpha: 0.9, join: "round" });
+    const hl = new this.px.Graphics();
+    hl.ellipse(0, 0, w * 0.2, w * 0.1).fill({ color: this.colors.paper, alpha: 0.75 });
+    hl.position.set(-w * 0.5, -w * 0.5);
+    hl.rotation = -0.7;
+    inner.addChild(heart, hl);
+    return {
+      animate: () => {
+        const tl = this.gsap.timeline();
+        tl.to(inner.scale, { x: 1.2, y: 1.2, duration: 0.1 })
+          .to(inner.scale, { x: 1, y: 1, duration: 0.1 })
+          .to(inner.scale, { x: 1.15, y: 1.15, duration: 0.12 })
+          .to(inner.scale, { x: 1, y: 1, duration: 0.13 });
+        // Ba tim nhỏ bay lên tan dần.
+        for (let k = 0; k < 3; k++) {
+          const m = new this.px.Graphics();
+          this.heartPath(m, h * 0.22).fill({ color, alpha: 0.9 });
+          m.position.set((hash01(box * 3 + k) - 0.5) * h, -h * 0.3);
+          m.scale.set(0.5);
+          inner.addChild(m);
+          this.gsap.to(m, {
+            y: -h * 0.3 - cell * 0.7,
+            alpha: 0,
+            duration: 0.6,
+            delay: k * 0.1,
+            ease: "power1.out",
+            onComplete: () => !this.destroyed && m.destroy(),
+          });
+          this.gsap.to(m.scale, { x: 1, y: 1, duration: 0.3, delay: k * 0.1 });
+        }
+      },
+    };
+  }
+
+  /** Đa giác tròn méo (đĩa sáp / nền cháy): `base(θ)` bán kính gốc, méo tất định theo ô. */
+  private wobblyPoly(
+    gfx: Graphics,
+    box: number,
+    n: number,
+    base: (a: number) => number,
+    amp: number,
+  ) {
+    const pts: number[] = [];
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2;
+      const r = base(a) * (1 + (hash01(box * 5 + k) - 0.5) * amp);
+      pts.push(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    return gfx.poly(pts);
+  }
+
+  /** Dấu sáp vàng: giọt sáp rơi và lan thành đĩa méo, con dấu đập in sao màu bút; sống: vệt lấp lánh. */
+  private boxSeal(ctx: BoxCtx): BoxBuilt {
+    const { inner, box, color, size, h, cell, thin } = ctx;
+    const wax = new this.px.Graphics();
+    this.wobblyPoly(wax, box, 14, () => h * 0.86, 0.14)
+      .fill({ color: this.colors.accent, alpha: 0.95 })
+      .stroke({ width: thin * 1.4, color: this.colors.ink, alpha: 0.9, join: "round" });
+    const star = new this.px.Graphics();
+    star.star(0, 0, 5, h * 0.55, h * 0.26, -Math.PI / 2).fill({ color, alpha: 0.95 });
+    // Vệt lấp lánh: ellipse sáng cắt theo mặt sáp, chạy ngang qua mỗi ~3 s (ticker).
+    const clip = new this.px.Graphics();
+    this.wobblyPoly(clip, box, 14, () => h * 0.86, 0.14).fill(0xffffff);
+    const shimmer = new this.px.Graphics();
+    shimmer.ellipse(0, 0, h * 0.16, h * 1.1).fill({ color: 0xffffff, alpha: 0.55 });
+    shimmer.rotation = 0.45;
+    shimmer.mask = clip;
+    shimmer.visible = false;
+    inner.addChild(wax, star, clip, shimmer);
+    return {
+      animate: () => {
+        wax.scale.set(0.3);
+        wax.y = -cell * 0.5;
+        star.alpha = 0;
+        star.scale.set(1.6);
+        const tl = this.gsap.timeline();
+        tl.to(wax, { y: 0, duration: 0.1, ease: "power2.in" })
+          .to(wax.scale, { x: 1, y: 1, duration: 0.25, ease: "back.out(1.6)" })
+          .to(star, { alpha: 1, duration: 0.06 }, "-=0.08")
+          .to(star.scale, { x: 1, y: 1, duration: 0.2, ease: "power3.in" }, "<");
+      },
+      live: (now) => {
+        const phase = ((now + hash01(box) * 3000) % 3000) / 3000;
+        if (phase < 0.14) {
+          shimmer.visible = true;
+          shimmer.x = (phase / 0.14 - 0.5) * size * 1.2;
+        } else shimmer.visible = false;
+      },
+    };
+  }
+
+  /** Hoa điểm tốt: 5 cánh nở lần lượt quanh nhụy vàng, phấn hoa bay lên; sống: cả hoa khẽ lay. */
+  private boxFlower(ctx: BoxCtx): BoxBuilt {
+    const { inner, box, color, h, cell, alpha, thin } = ctx;
+    const petals: Container[] = [];
+    for (let k = 0; k < 5; k++) {
+      const p = new this.px.Container();
+      const g = new this.px.Graphics();
+      g.ellipse(0, -h * 0.5, h * 0.24, h * 0.4)
+        .fill({ color, alpha })
+        .stroke({ width: thin * 0.7, color: this.colors.ink, alpha: 0.5 });
+      p.addChild(g);
+      p.rotation = (k / 5) * Math.PI * 2;
+      inner.addChild(p);
+      petals.push(p);
+    }
+    const pistil = new this.px.Graphics();
+    pistil
+      .circle(0, 0, h * 0.28)
+      .fill(this.colors.accent)
+      .stroke({ width: thin, color: this.colors.ink, alpha: 0.9 });
+    inner.addChild(pistil);
+    const phase = hash01(box * 3) * Math.PI * 2;
+    return {
+      animate: () => {
+        petals.forEach((p, k) => {
+          p.scale.set(0);
+          this.gsap.to(p.scale, {
+            x: 1,
+            y: 1,
+            duration: 0.25,
+            delay: k * 0.08,
+            ease: "back.out(2)",
+          });
+        });
+        pistil.scale.set(0.6);
+        this.gsap.to(pistil.scale, { x: 1, y: 1, duration: 0.3, ease: "back.out(2)" });
+        // Phấn hoa vàng bay lên.
+        for (let k = 0; k < 6; k++) {
+          const d = new this.px.Graphics();
+          d.circle(0, 0, cell * 0.025).fill({ color: this.colors.accent, alpha: 0.9 });
+          inner.addChild(d);
+          const ang = Math.random() * Math.PI * 2;
+          this.gsap.to(d, {
+            x: Math.cos(ang) * h * 0.8,
+            y: -h * 0.4 - Math.random() * cell * 0.6,
+            alpha: 0,
+            duration: 0.5 + Math.random() * 0.3,
+            delay: 0.1 + k * 0.05,
+            ease: "power1.out",
+            onComplete: () => !this.destroyed && d.destroy(),
+          });
+        }
+      },
+      live: (now) => {
+        inner.rotation = ((3 * Math.PI) / 180) * Math.sin((now / 2000) * Math.PI * 2 + phase);
+      },
+    };
+  }
+
+  /**
+   * Ô cháy: bùng lửa (hạt lửa dùng chung với Bút lửa) rồi để lại nền cháy xém mép lượn sóng + viền mực;
+   * sống: 2 đốm than hồng nhấp nháy + 1 làn khói mỏng bay lên (tối đa 3 vật thể / ô, trần toàn bàn).
+   */
+  private boxFlame(ctx: BoxCtx): BoxBuilt {
+    const { inner, box, form, color, h, cell, alpha, thin } = ctx;
+    const char = new this.px.Graphics();
+    // Hình vuông mép lượn sóng: bán kính theo góc của hình vuông, méo nhẹ tất định.
+    this.wobblyPoly(
+      char,
+      box,
+      20,
+      (a) => h / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))),
+      0.1,
+    )
+      .fill({ color, alpha })
+      .stroke({ width: thin, color: this.colors.ink, alpha: 0.5, join: "round" });
+    inner.addChild(char);
+    const burst = () => this.flameBurst(ctx.x, ctx.y, form, 8);
+    if (this.boxLive + 3 > BOX_LIVE_CAP) {
+      return { animate: burst };
+    }
+    this.boxLive += 3;
+    const embers: { g: Graphics; ph: number }[] = [];
+    for (let k = 0; k < 2; k++) {
+      const e = new this.px.Graphics();
+      e.circle(0, 0, cell * 0.03).fill(form.bright);
+      e.position.set(
+        (hash01(box * 17 + k) - 0.5) * h * 1.2,
+        (hash01(box * 19 + k) - 0.5) * h * 1.2,
+      );
+      inner.addChild(e);
+      embers.push({ g: e, ph: hash01(box * 23 + k) * Math.PI * 2 });
+    }
+    const smoke = new this.px.Graphics();
+    smoke.circle(0, 0, cell * 0.035).fill({ color: 0x8a8a8a, alpha: 1 });
+    smoke.alpha = 0;
+    inner.addChild(smoke);
+    const sx = (hash01(box * 29) - 0.5) * h;
+    const sPhase = hash01(box * 31);
+    return {
+      animate: () => {
+        char.alpha = 0;
+        this.gsap.to(char, { alpha: 1, duration: 0.3, delay: 0.15 });
+        burst();
+      },
+      live: (now) => {
+        for (const e of embers) e.g.alpha = 0.45 + 0.55 * Math.max(0, Math.sin(now / 180 + e.ph));
+        const t = (now / 1400 + sPhase) % 1;
+        smoke.position.set(sx + Math.sin(t * 6) * h * 0.15, -h * 0.3 - h * 1.3 * t);
+        smoke.scale.set(0.6 + t);
+        smoke.alpha = 0.2 * (1 - t);
+      },
+    };
   }
 
   // ---------- Hiệu ứng (docs/08 — Animation & Âm thanh) ----------
@@ -1201,7 +1696,7 @@ export class BoardRenderer {
 
   /**
    * Vụn bắn ra từ ô vừa ăn theo loại của skin (docs/08): `paper` chữ nhật giấy có trọng lực,
-   * `ink` giọt mực, `chalk` bụi phấn trắng, `spark` tia điện không rơi, `star` sao vàng.
+   * `ink` giọt mực, `chalk` bụi phấn trắng, `spark` tia điện không rơi, `star` sao vàng, `heart` tim nhỏ.
    */
   private burst(
     x: number,
@@ -1220,6 +1715,7 @@ export class BoardRenderer {
       chalk: [0xffffff, 0xf2f2f2, 0xe0e0e0, color],
       spark: [color, this.colors.accent, 0xffffff, color],
       star: [this.colors.accent, this.colors.accent, this.colors.paper, color],
+      heart: [color, color, blend(color, 0xffffff, 0.45), this.colors.paper],
     };
     const palette = palettes[kind];
     const parts: { s: InstanceType<Pixi["Graphics"]>; vx: number; vy: number; rot: number }[] = [];
@@ -1246,6 +1742,11 @@ export class BoardRenderer {
           s.star(0, 0, 5, h * 1.1, h * 0.5)
             .fill(c)
             .stroke({ width: 1, color: this.colors.ink, alpha: 0.6 });
+          break;
+        case "heart":
+          this.heartPath(s, h * 0.9)
+            .fill(c)
+            .stroke({ width: 1, color: this.colors.ink, alpha: 0.5 });
           break;
         case "paper":
         default:
@@ -1418,8 +1919,8 @@ export class BoardRenderer {
           counter.scale.set(1.25);
           this.gsap.to(counter.scale, { x: 1, y: 1, duration: 0.18, ease: "power2.out" });
           if (box) {
-            box.scale.set(1.3);
-            this.gsap.to(box.scale, { x: 1, y: 1, duration: 0.25, ease: "back.out(2)" });
+            box.c.scale.set(1.3);
+            this.gsap.to(box.c.scale, { x: 1, y: 1, duration: 0.25, ease: "back.out(2)" });
           }
           emit({ type: "count", owner, n: count });
         });

@@ -1,0 +1,18 @@
+{
+  "id": "box_flower",
+  "type": "box",
+  "rarity": "legendary",
+  "name": {
+    "vi": "Hoa điểm tốt",
+    "en": "Good-Mark Flower"
+  },
+  "description": {
+    "vi": "Bông hoa năm cánh màu bút, nhụy vàng; từng cánh nở và lay theo gió.",
+    "en": "A five-petal flower in your pen color with a golden heart; petals bloom one by one and sway."
+  },
+  "box": {
+    "effect": "flower",
+    "alpha": 0.7,
+    "particles": "star"
+  }
+}

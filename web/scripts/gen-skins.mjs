@@ -18,7 +18,7 @@ const PEN_COMBO_STYLES = ["sticker", "ink", "chalk", "neon", "sparkle", "fire"];
 const PEN_STYLES = ["flat", "twotone", "gradient", "neon", "brush", "fire", "rainbow", "metal"];
 const PEN_GRAINS = ["graphite", "wax"];
 const HEX = /^#[0-9a-f]{6}$/i;
-const PARTICLES = ["paper", "ink", "chalk", "spark", "star"];
+const PARTICLES = ["paper", "ink", "chalk", "spark", "star", "heart"];
 const BOX_EFFECTS = [
   "hatch",
   "fill",
@@ -29,6 +29,8 @@ const BOX_EFFECTS = [
   "stamp",
   "heart",
   "seal",
+  "flower",
+  "flame",
 ];
 
 const fail = (msg) => {
