@@ -62,6 +62,8 @@ export function ModeCard({ title, description, icon, tone, badge, href, ...rest 
           {description}
         </Text>
       </Stack>
+      {/* Nút mũi tên: animation riêng khi hover thẻ (học noitu) — trượt sang phải, đổi nền vàng,
+          mũi tên bên trong lắc nhẹ về phía trước. */}
       <Circle
         size="9"
         bg="paper"
@@ -71,6 +73,26 @@ export function ModeCard({ title, description, icon, tone, badge, href, ...rest 
         bottom={4}
         color="ink"
         aria-hidden
+        transitionProperty="transform, background-color, box-shadow"
+        transitionDuration="0.35s"
+        transitionTimingFunction="cubic-bezier(0.22, 1, 0.36, 1)"
+        _groupHover={
+          href
+            ? {
+                transform: "translateX(6px) scale(1.08)",
+                bg: "sun",
+                boxShadow: "stickerSm",
+                "& > svg": { animation: "okiaNudge 0.9s ease-in-out infinite" },
+              }
+            : undefined
+        }
+        _motionReduce={{ "& > svg": { animation: "none !important" } }}
+        css={{
+          "@keyframes okiaNudge": {
+            "0%, 100%": { transform: "translateX(0)" },
+            "50%": { transform: "translateX(3px)" },
+          },
+        }}
       >
         <LuArrowRight />
       </Circle>
@@ -87,11 +109,14 @@ export function ModeCard({ title, description, icon, tone, badge, href, ...rest 
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
+    className: "group",
     transitionProperty: "transform, box-shadow",
-    transitionDuration: "normal",
-    transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+    transitionDuration: "0.35s",
+    transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+    willChange: "transform",
     // Hover (học noitu): thẻ nhếch mép phải lên — xoay nhẹ ngược chiều kim đồng hồ, nhấc lên,
-    // bóng dài ra; bấm thì lún xuống. Giảm chuyển động: chỉ nhấc nhẹ, không xoay.
+    // bóng dài ra; easing ease-out mềm (không nảy) để không giật. Bấm thì lún xuống. Giảm chuyển
+    // động: chỉ nhấc nhẹ, không xoay.
     _hover: href
       ? { transform: "translate(-2px, -4px) rotate(-1.5deg)", boxShadow: "stickerLg" }
       : undefined,
