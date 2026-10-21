@@ -34,11 +34,13 @@ if (!(await walletPill.getAttribute("href"))?.endsWith("/shop"))
 // bằng gợi ý tạo tài khoản. Khách không có chấm đỏ.
 if (await page.getByTestId("gift-dot").isVisible()) throw new Error("khách lại có chấm quà");
 await page.getByTestId("gift-pill").click();
-await dialog.waitFor();
-await dialog.getByText("Điểm danh mỗi ngày").waitFor();
-await dialog.getByText("Ngày 7").waitFor();
-await dialog.getByText("Đăng nhập Google để nhận thưởng").first().waitFor();
-await dialog.getByText("Khởi động").waitFor();
+const gift = page.getByTestId("gift-dialog");
+await gift.waitFor();
+await gift.getByText("Kỷ lục: 0").waitFor();
+await gift.getByText("Ngày 7").waitFor();
+await gift.getByText("Đăng nhập Google để nhận thưởng").first().waitFor();
+await gift.getByRole("tab", { name: "Nhiệm vụ" }).click();
+await gift.getByText("Khởi động").waitFor();
 await dialog.getByText("Chăm chỉ").waitFor();
 await page.screenshot({ path: ".shots/econ-quests-guest-390.png" });
 console.log("khách: thấy điểm danh + 6 nhiệm vụ, không có nút Nhận");
@@ -46,7 +48,7 @@ console.log("khách: thấy điểm danh + 6 nhiệm vụ, không có nút Nhậ
 // Tài khoản thật qua /auth/dev-login (ngoài production; như đăng nhập Google) để tải avatar
 // và nuôi nhiệm vụ. Gọi trong trang để cookie refresh được đặt, rồi tải lại cho store boot.
 await page.keyboard.press("Escape");
-await dialog.waitFor({ state: "hidden" });
+await gift.waitFor({ state: "hidden" });
 const devStatus = await page.evaluate(async (email) => {
   const apiBase = `${location.protocol}//${location.hostname}:8000`;
   const r = await fetch(`${apiBase}/auth/dev-login`, {
@@ -119,11 +121,18 @@ await page.waitForTimeout(800);
 console.log("ván với máy xong; /me/events →", events.join(",") || "(chưa gọi)");
 await page.getByRole("dialog").getByRole("button", { name: "Chơi lại" }).click();
 
-// Hồ sơ: nhiệm vụ "Khởi động" 1/3.
-await page.getByTestId("user-button").click();
-await dialog.waitFor();
-await dialog.getByRole("tab", { name: "Nhiệm vụ" }).click();
-await dialog.getByText("1/3").first().waitFor({ timeout: 10000 });
+// Trang chủ → hộp quà → Điểm danh hôm nay → chấm đỏ còn (nhiệm vụ chưa xong? không) → tab Nhiệm vụ 1/3.
+await page.goto(base + "/", { waitUntil: "networkidle" });
+await page.getByTestId("gift-pill").click();
+await gift.waitFor();
+await gift.getByRole("button", { name: "Điểm danh hôm nay" }).click();
+await page.getByText("Nhận được +10 Ruột chì").waitFor({ timeout: 10000 });
+await gift.getByText("Chuỗi: 1 ngày").waitFor();
+await gift.getByRole("button", { name: /Đã điểm danh hôm nay/ }).waitFor();
+console.log("điểm danh: +10 Ruột chì, chuỗi 1 ngày");
+await gift.getByRole("tab", { name: "Nhiệm vụ" }).click();
+await gift.getByText("1/3").first().waitFor({ timeout: 10000 });
+await gift.getByRole("link", { name: "Chơi ngay" }).first().waitFor();
 console.log("nhiệm vụ Khởi động: 1/3");
 await page.screenshot({ path: ".shots/econ-quests-390.png" });
 

@@ -101,6 +101,8 @@ export type CheckinOut = {
   checkedToday: boolean;
   streak: number;
   cycleDay: number;
+  /** Kỷ lục chuỗi dài nhất từng đạt. */
+  bestStreak: number;
   rewards: Reward[];
   nextReset: number;
 };

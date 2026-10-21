@@ -47,7 +47,7 @@ Tiền phụ, hiếm, không mua được. Nguồn: ngày 7 của chu kỳ đi�
 
 - Tiến trình: phòng online do server ghi khi `game_over` (bỏ `afk` và đầu hàng trước nước 10); ván với máy do client báo `POST /me/events` (≤ 30/giờ, ván ≥ 24 nước) cho tới khi bot chạy ở server (P2-06).
 - `GET /me/progress` trả ví + điểm danh + nhiệm vụ + mốc reset; nhận thưởng qua `POST /me/checkin`, `POST /me/quests/{id}/claim` — chỉ tài khoản **đã xác minh email**; khách và chưa xác minh vẫn thấy tiến trình.
-- Giao diện: hộp thoại hồ sơ, tab *Nhiệm vụ* = "quà mỗi ngày" (dải điểm danh 7 ngày ở trên, rồi thanh tiến trình nhiệm vụ, nút Nhận, đếm giờ tới lúc làm mới); trang chủ có nút ví (Ruột chì ‖ Hoa điểm tốt → cửa hàng) và nút hộp quà mở thẳng tab này, chấm đỏ khi còn thưởng chưa nhận (xem [14](14-thiet-ke-giao-dien.md)).
+- Giao diện (học noitu, 2026-10-21): hộp **"Quà mỗi ngày"** riêng (`web/src/components/economy/gift-dialog.tsx`), mở từ nút hộp quà trang chủ, không dính hồ sơ. Nút chia đôi *Điểm danh* / *Nhiệm vụ*, mục còn thưởng có chấm đỏ. Điểm danh: dòng "Chuỗi: n ngày" + "Kỷ lục: n" (`checkin.bestStreak` = max streak từng đạt), lưới 7 thẻ ngày (đã nhận tô mint, hôm nay viền đậm, ngày 7 viền vàng + hộp quà), nút rộng "Điểm danh hôm nay" / "Đã điểm danh hôm nay ✓". Nhiệm vụ: thẻ có icon tròn, tên, thanh tiến trình + số, chip thưởng; bên phải "Chơi ngay" (chưa đủ → /play hoặc /ranked) / "Nhận" (đủ, thẻ tô vàng nhạt) / "Đã nhận". Trang chủ: nút ví (Ruột chì ‖ Hoa điểm tốt → cửa hàng), nút hộp quà có chấm đỏ khi còn điểm danh/nhiệm vụ chưa nhận (xem [14](14-thiet-ke-giao-dien.md)). Hồ sơ chỉ còn tab Tổng quan / Hạng / Tài khoản.
 
 ### Thành tựu (bộ khởi điểm, mỗi thành tựu 5 cấp)
 

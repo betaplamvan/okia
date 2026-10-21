@@ -34,6 +34,7 @@ class CheckinOut(CamelModel):
     checked_today: bool
     streak: int
     cycle_day: int
+    best_streak: int
     rewards: list[dict[str, int]]
     next_reset: int
 
@@ -85,6 +86,7 @@ async def build_progress(db: AsyncSession, user: User) -> ProgressOut:
             checked_today=st.checked_today,
             streak=st.streak,
             cycle_day=st.cycle_day,
+            best_streak=st.best_streak,
             rewards=list(st.rewards),
             next_reset=st.next_reset,
         ),

@@ -19,15 +19,14 @@ import { LuPencilLine, LuShoppingBag } from "react-icons/lu";
 import { AccountTab } from "@/components/auth/account-tab";
 import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { EditProfileForm } from "@/components/auth/edit-profile-form";
-import { CheckinStrip } from "@/components/economy/checkin-strip";
-import { QuestsList } from "@/components/economy/quests-list";
 import { RankTab } from "@/components/ranked/rank-tab";
 import { WalletChips } from "@/components/economy/wallet-chips";
 import { Link } from "@/i18n/navigation";
 import { type ProfileTab, useAuth } from "@/stores/auth";
 
 // Hồ sơ người chơi dạng hộp thoại (học từ noitu): avatar + tên + huy hiệu, ví hai loại tiền,
-// "Chỉnh sửa hồ sơ" (tên, ngôn ngữ, ảnh đại diện), tab Tổng quan (điểm danh) / Nhiệm vụ / Tài khoản.
+// "Chỉnh sửa hồ sơ" (tên, ngôn ngữ, ảnh đại diện), tab Tổng quan / Hạng / Tài khoản. Điểm danh và
+// nhiệm vụ nằm ở hộp "Quà mỗi ngày" riêng (gift-dialog.tsx).
 export function ProfileDialog() {
   const t = useTranslations("Auth");
   const te = useTranslations("Economy");
@@ -35,7 +34,6 @@ export function ProfileDialog() {
   const tc = useTranslations("Common");
   const format = useFormatter();
   const user = useAuth((s) => s.user);
-  const progress = useAuth((s) => s.progress);
   const open = useAuth((s) => s.profileOpen);
   const tab = useAuth((s) => s.profileTab);
   const openProfile = useAuth((s) => s.openProfile);
@@ -131,7 +129,7 @@ export function ProfileDialog() {
                     lazyMount
                   >
                     <Tabs.List gap={2} justifyContent="center" flexWrap="wrap">
-                      {(["overview", "rank", "quests", "account"] as const).map((key) => (
+                      {(["overview", "rank", "account"] as const).map((key) => (
                         <Tabs.Trigger
                           key={key}
                           value={key}
@@ -144,7 +142,7 @@ export function ProfileDialog() {
                           fontWeight="600"
                           fontFamily="hand"
                         >
-                          {key === "quests" ? te("quests") : key === "rank" ? tr("tab") : t(key)}
+                          {key === "rank" ? tr("tab") : t(key)}
                         </Tabs.Trigger>
                       ))}
                     </Tabs.List>
@@ -155,17 +153,6 @@ export function ProfileDialog() {
                     </Tabs.Content>
                     <Tabs.Content value="rank" pt={4}>
                       <RankTab />
-                    </Tabs.Content>
-                    {/* "Quà mỗi ngày": điểm danh + nhiệm vụ chung một tab (nút hộp quà trang chủ mở thẳng). */}
-                    <Tabs.Content value="quests" pt={4}>
-                      {progress ? (
-                        <Stack gap={4}>
-                          <CheckinStrip progress={progress} />
-                          <QuestsList progress={progress} />
-                        </Stack>
-                      ) : (
-                        <Text fontSize="sm">{t("loading")}</Text>
-                      )}
                     </Tabs.Content>
                     <Tabs.Content value="account" pt={4}>
                       <AccountTab />

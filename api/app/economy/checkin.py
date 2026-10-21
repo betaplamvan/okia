@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.economy import periods, wallet
@@ -32,6 +32,7 @@ class CheckinStatus:
     checked_today: bool
     streak: int  # số ngày liên tiếp tính tới hôm nay (0 nếu hôm nay chưa và hôm qua không có)
     cycle_day: int  # 1..7: ngày sẽ nhận (hoặc vừa nhận) hôm nay
+    best_streak: int  # kỷ lục chuỗi dài nhất từng đạt (để khoe "Kỷ lục: n")
     rewards: tuple[dict[str, int], ...]
     next_reset: int  # epoch ms
 
@@ -54,6 +55,11 @@ def _streak_for_today(last: Checkin | None, today) -> tuple[bool, int]:
     return False, 0
 
 
+async def _best(db: AsyncSession, user_id: uuid.UUID) -> int:
+    res = await db.execute(select(func.max(Checkin.streak)).where(Checkin.user_id == user_id))
+    return int(res.scalar_one() or 0)
+
+
 async def status(
     db: AsyncSession, user_id: uuid.UUID, now: datetime | None = None
 ) -> CheckinStatus:
@@ -65,6 +71,7 @@ async def status(
         checked_today=done,
         streak=streak,
         cycle_day=cycle_day,
+        best_streak=max(await _best(db, user_id), streak),
         rewards=REWARDS,
         next_reset=periods.epoch_ms(periods.next_daily_reset(now)),
     )

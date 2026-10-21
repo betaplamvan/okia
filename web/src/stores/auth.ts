@@ -22,7 +22,9 @@ import {
 const DEVICE_KEY = "okia:device";
 const SKEW_MS = 30_000;
 
-export type ProfileTab = "overview" | "rank" | "quests" | "account";
+export type ProfileTab = "overview" | "rank" | "account";
+/** Hộp "Quà mỗi ngày" (nút hộp quà trang chủ): điểm danh / nhiệm vụ. */
+export type GiftTab = "checkin" | "quests";
 
 type AuthState = {
   status: "idle" | "loading" | "ready" | "offline";
@@ -32,6 +34,8 @@ type AuthState = {
   locale: string;
   profileOpen: boolean;
   profileTab: ProfileTab;
+  giftOpen: boolean;
+  giftTab: GiftTab;
   /** Ví + điểm danh + nhiệm vụ (GET /me/progress); null khi chưa tải. */
   progress: ProgressOut | null;
   /** Hạng mùa này + lịch sử trận xếp hạng (GET /me/rank); null khi chưa tải. */
@@ -52,6 +56,8 @@ type AuthState = {
   applyToken(tok: TokenOut): void;
   openProfile(tab?: ProfileTab): void;
   closeProfile(): void;
+  openGift(tab?: GiftTab): void;
+  closeGift(): void;
   loadProgress(): Promise<ProgressOut | null>;
   loadRank(): Promise<MyRankOut | null>;
   loadSkins(): Promise<MySkinsOut | null>;
@@ -97,6 +103,8 @@ export const useAuth = create<AuthState>()((set, get) => ({
   locale: "vi",
   profileOpen: false,
   profileTab: "overview",
+  giftOpen: false,
+  giftTab: "checkin",
   progress: null,
   rank: null,
   skins: null,
@@ -207,6 +215,14 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
   closeProfile() {
     set({ profileOpen: false });
+  },
+
+  openGift(tab) {
+    set({ giftOpen: true, giftTab: tab ?? get().giftTab });
+    void get().loadProgress();
+  },
+  closeGift() {
+    set({ giftOpen: false });
   },
 
   async loadProgress() {

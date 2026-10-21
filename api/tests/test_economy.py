@@ -89,6 +89,7 @@ async def test_checkin_cycle_and_streak_reset(client: AsyncClient) -> None:
         # Lỡ một ngày → về ngày 1, streak 1.
         st, _ = await checkin.check_in(db, user_id, now=t0 + timedelta(days=9))
         assert st.streak == 1 and st.cycle_day == 1
+        assert st.best_streak == 8  # kỷ lục giữ nguyên dù chuỗi về 1
         await db.commit()
         # Ranh giới ngày theo giờ VN: 23:30 VN (16:30 UTC) và 00:30 VN hôm sau là hai ngày.
         st = await checkin.status(db, user_id, now=t0 + timedelta(days=9, hours=13, minutes=30))

@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { ProfileDialog } from "@/components/auth/profile-dialog";
+import { GiftDialog } from "@/components/economy/gift-dialog";
 import { toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/stores/auth";
 
@@ -48,5 +49,10 @@ export function AuthProvider() {
     });
   }, [boot, locale, openProfile, t]);
 
-  return <ProfileDialog />;
+  return (
+    <>
+      <ProfileDialog />
+      <GiftDialog />
+    </>
+  );
 }

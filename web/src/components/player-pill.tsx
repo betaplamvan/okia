@@ -10,7 +10,7 @@ import { useAuth } from "@/stores/auth";
 // Hàng nút dưới bảng hiệu (học noitu.fun, docs/14): ba nút sticker rời nhau —
 //  1. hồ sơ: avatar + tên → mở hộp hồ sơ;
 //  2. ví: Ruột chì | Hoa điểm tốt trên một nút vàng → cửa hàng (nơi tiêu tiền);
-//  3. quà mỗi ngày: hộp quà → tab Nhiệm vụ (điểm danh + nhiệm vụ), có chấm đỏ khi có thưởng chưa nhận.
+//  3. quà mỗi ngày: hộp quà → hộp "Quà mỗi ngày" riêng (điểm danh / nhiệm vụ), chấm đỏ khi còn thưởng.
 // Dữ liệu từ store xác thực (/me); chưa tải xong thì hiện "Khách".
 export function PlayerPill() {
   const t = useTranslations("Common");
@@ -20,6 +20,7 @@ export function PlayerPill() {
   const user = useAuth((s) => s.user);
   const progress = useAuth((s) => s.progress);
   const openProfile = useAuth((s) => s.openProfile);
+  const openGift = useAuth((s) => s.openGift);
   const loadProgress = useAuth((s) => s.loadProgress);
 
   // Tải tiến trình để biết có quà chưa nhận (khách không nhận được thưởng → khỏi tải).
@@ -87,7 +88,7 @@ export function PlayerPill() {
           bg="pink"
           size="lg"
           aria-label={te("dailyGift")}
-          onClick={() => openProfile("quests")}
+          onClick={() => openGift()}
           data-testid="gift-pill"
         >
           <LuGift />

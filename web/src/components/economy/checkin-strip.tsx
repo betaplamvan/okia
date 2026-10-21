@@ -3,19 +3,20 @@
 import { Box, Button, HStack, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { LuCheck } from "react-icons/lu";
+import { LuCheck, LuFlame, LuGift } from "react-icons/lu";
 import { RewardChips, useRewardLabel } from "@/components/economy/wallet-chips";
 import { toaster } from "@/components/ui/toaster";
 import { ApiError, type ProgressOut } from "@/lib/api";
 import { useAuth } from "@/stores/auth";
 
-// Điểm danh 7 ngày (ADR-0010): ô ngày đã nhận tô mint, ngày hôm nay nổi bật, ngày 7 có Hoa điểm tốt.
+// Điểm danh 7 ngày (ADR-0010, bố cục học noitu): dòng "Chuỗi / Kỷ lục", lưới thẻ ngày (4 + 3),
+// ngày đã nhận tô mint, hôm nay viền đậm + bóng, ngày 7 có hộp quà + Hoa điểm tốt; nút rộng ở đáy.
 export function CheckinStrip({ progress }: { progress: ProgressOut }) {
   const t = useTranslations("Economy");
   const checkin = useAuth((s) => s.checkin);
   const rewardLabel = useRewardLabel();
   const [busy, setBusy] = useState(false);
-  const { checkedToday, cycleDay, streak, rewards } = progress.checkin;
+  const { checkedToday, cycleDay, streak, bestStreak, rewards } = progress.checkin;
   // Số ô đã nhận trong chu kỳ hiện tại.
   const doneCount = checkedToday ? cycleDay : cycleDay - 1;
 
@@ -32,39 +33,52 @@ export function CheckinStrip({ progress }: { progress: ProgressOut }) {
   }
 
   return (
-    <Stack gap={3} bg="cream" border="2px solid" borderColor="ink" borderRadius="lg" p={3}>
+    <Stack gap={3}>
       <HStack justify="space-between" align="baseline">
-        <Text fontWeight="700" fontSize="lg">
-          {t("checkinTitle")}
-        </Text>
+        <HStack gap={1} fontWeight="700">
+          <Box color="coral" aria-hidden="true">
+            <LuFlame />
+          </Box>
+          <Text>{t("streak", { n: String(streak) })}</Text>
+        </HStack>
         <Text fontSize="sm" opacity={0.75}>
-          {t("streak", { n: String(streak) })}
+          {t("bestStreak", { n: String(bestStreak) })}
         </Text>
       </HStack>
-      <SimpleGrid columns={7} gap={1.5}>
+
+      <SimpleGrid columns={{ base: 4, sm: 4 }} gap={2}>
         {rewards.map((reward, i) => {
           const day = i + 1;
           const done = day <= doneCount;
-          const today = !checkedToday && day === cycleDay;
+          const today = day === cycleDay;
+          const last = day === rewards.length;
           return (
             <Stack
               key={day}
-              gap={1}
+              gap={1.5}
               align="center"
-              bg={done ? "mint" : today ? "sun" : "paper"}
+              bg={done ? "mint" : "paper"}
               border="2px solid"
-              borderColor="ink"
-              borderRadius="md"
+              borderColor={last && !done ? "sun" : "ink"}
+              borderWidth={today || last ? "3px" : "2px"}
+              borderRadius="lg"
               boxShadow={today ? "stickerSm" : undefined}
-              px={0.5}
-              py={1.5}
+              opacity={!done && !today && day < cycleDay ? 0.5 : 1}
+              px={1}
+              py={2}
               minW={0}
               position="relative"
+              data-testid={`checkin-day-${day}`}
             >
-              <Text fontSize="xs" fontWeight="700" lineHeight="1">
+              <Text fontSize="sm" fontWeight="700" lineHeight="1">
                 {t("day", { n: String(day) })}
               </Text>
               <RewardChips reward={reward} muted={done} />
+              {last ? (
+                <Box color="coral" fontSize="lg" lineHeight="1" aria-hidden="true">
+                  <LuGift />
+                </Box>
+              ) : null}
               {done ? (
                 <Box
                   position="absolute"
@@ -82,6 +96,7 @@ export function CheckinStrip({ progress }: { progress: ProgressOut }) {
           );
         })}
       </SimpleGrid>
+
       {!progress.canClaim ? (
         <Text fontSize="sm" opacity={0.8}>
           {t("needAccount")}
@@ -89,13 +104,15 @@ export function CheckinStrip({ progress }: { progress: ProgressOut }) {
       ) : (
         <Button
           variant="sticker"
-          bg={checkedToday ? "paper" : "mint"}
-          size="sm"
+          bg={checkedToday ? "mint" : "sun"}
+          size="lg"
+          w="full"
           disabled={checkedToday}
           loading={busy}
           onClick={onCheckin}
+          _disabled={{ opacity: 1, cursor: "default", boxShadow: "stickerSm" }}
         >
-          {checkedToday ? <LuCheck /> : null} {checkedToday ? t("checkedIn") : t("checkinButton")}
+          {checkedToday ? t("checkedIn") : t("checkinButton")} {checkedToday ? <LuCheck /> : null}
         </Button>
       )}
       <Text fontSize="xs" opacity={0.65}>
