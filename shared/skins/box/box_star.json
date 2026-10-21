@@ -1,0 +1,18 @@
+{
+  "id": "box_star",
+  "type": "box",
+  "rarity": "rare",
+  "name": {
+    "vi": "Ngôi sao",
+    "en": "Star"
+  },
+  "description": {
+    "vi": "Một ngôi sao to đóng vào ô.",
+    "en": "A big star stamped into the box."
+  },
+  "box": {
+    "effect": "star",
+    "alpha": 0.3,
+    "particles": "star"
+  }
+}

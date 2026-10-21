@@ -69,6 +69,7 @@ export class NetworkController implements GameController {
         names: [null, null],
         avatars: [null, null],
         ranks: [null, null],
+        loadouts: [null, null],
         turnSeconds: null,
         deadline: null,
         opponentOnline: false,
@@ -183,11 +184,13 @@ export class NetworkController implements GameController {
     const names: [string | null, string | null] = [null, null];
     const avatars: [string | null, string | null] = [null, null];
     const ranks: [RankOut | null, RankOut | null] = [null, null];
+    const loadouts: OnlineInfo["loadouts"] = [null, null];
     let opponentOnline = false;
     for (const p of rs.players) {
       names[p.seat] = p.name;
       avatars[p.seat] = p.avatarUrl ?? null;
       ranks[p.seat] = p.rank ?? null;
+      loadouts[p.seat] = rs.loadouts?.[p.userId] ?? null;
       if (p.userId !== me) opponentOnline = p.online ?? false;
     }
     this.serverState = fromServer(rs.state);
@@ -209,6 +212,7 @@ export class NetworkController implements GameController {
         names,
         avatars,
         ranks,
+        loadouts,
         turnSeconds: rs.turnSeconds ?? null,
         deadline: rs.deadline ?? null,
         opponentOnline,

@@ -13,7 +13,7 @@
     "INVALID_BOARD": "Bàn chơi không hợp lệ.",
     "ALREADY_IN_GAME": "Bạn đang ở một trận khác.",
     "RATE_LIMITED": "Thao tác quá nhanh, thử lại sau {retryAfter} giây.",
-    "INSUFFICIENT_FUNDS": "Không đủ Ruột chì.",
+    "INSUFFICIENT_FUNDS": "Không đủ Ruột chì / Hoa điểm tốt.",
     "INTERNAL": "Có lỗi xảy ra, thử lại sau.",
     "IDENTITY_TAKEN": "Tài khoản Google/email này đã thuộc về một tài khoản khác.",
     "BANNED": "Tài khoản đang bị khóa.",
@@ -31,7 +31,10 @@
     "QUEST_CLAIMED": "Bạn đã nhận thưởng nhiệm vụ này rồi.",
     "AVATAR_INVALID": "Ảnh không hợp lệ.",
     "AVATAR_TOO_LARGE": "Ảnh quá lớn (tối đa 2 MB).",
-    "STORAGE_UNAVAILABLE": "Kho lưu ảnh tạm thời không sẵn sàng, thử lại sau."
+    "STORAGE_UNAVAILABLE": "Kho lưu ảnh tạm thời không sẵn sàng, thử lại sau.",
+    "UNKNOWN_ITEM": "Vật phẩm không tồn tại.",
+    "ALREADY_OWNED": "Bạn đã có vật phẩm này rồi.",
+    "NOT_OWNED": "Bạn chưa sở hữu vật phẩm này."
   },
   "currency": {
     "lead": "Ruột chì",

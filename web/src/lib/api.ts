@@ -30,7 +30,7 @@ export class ApiError extends Error {
 }
 
 export type ApiInit = {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   /** multipart/form-data (upload) — không JSON hóa, trình duyệt tự đặt Content-Type. */
   form?: FormData;
@@ -76,12 +76,15 @@ export type Identity = { provider: "google" };
 export type Wallet = { lead: number; flower: number };
 export type Currency = keyof Wallet;
 
+export type LoadoutOut = { pen: string; box: string };
+
 export type User = {
   id: string;
   displayName: string;
   avatarUrl: string | null;
   hasCustomAvatar: boolean;
   wallet: Wallet;
+  loadout: LoadoutOut;
   email: string | null;
   emailVerified: boolean;
   isGuest: boolean;
@@ -127,6 +130,15 @@ export type TokenOut = {
   expiresIn: number;
   user: User;
   switched: boolean;
+};
+
+// ---------- Shop & skin (api/app/skins/router.py, docs/08) ----------
+
+export type MySkinsOut = {
+  owned: string[];
+  loadout: LoadoutOut;
+  wallet: Wallet;
+  canBuy: boolean;
 };
 
 // ---------- Xếp hạng (api/app/rating/router.py, docs/07) ----------

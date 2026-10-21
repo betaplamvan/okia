@@ -1,105 +1,101 @@
 # 08 — Hệ thống skin
 
-## Bốn loại skin
+Quyết định: [ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md) (2026-10-21). **Đã làm:** catalog 19 skin, engine, shop `/shop`, mua/trang bị, loadout trong trận. Code: `shared/skins/` (manifest), `web/src/game/skins/`, `web/src/game/renderer/board-renderer.ts` (hiệu ứng), `api/app/skins/` (catalog, kho, shop).
 
-| Loại | Ảnh hưởng | Ví dụ |
+## Hai loại skin
+
+| Loại | Ảnh hưởng | Skin hiện có |
 |---|---|---|
-| `pen` — Bút | Con trỏ/đầu bút khi vẽ, âm thanh vẽ; **kèm hiệu ứng COMBO và bộ âm thanh ăn chuỗi** (chữ nổ, vụn giấy, tiếng "ting"/lấp lánh riêng của bút) | Bút bi xanh, bút chì 2B, bút mực tím, phấn trắng, bút dạ neon |
-| `stroke` — Nét vẽ | Texture, độ run tay, animation chạy nét | Nét thường, nét run tay, mực loang, nét lấp lánh |
-| `box` — Ô đã ăn | Hiệu ứng và hình khi chiếm ô | Gạch chéo, tô màu, dấu "10", chữ ký cô giáo, sticker |
-| `board` — Bàn đấu | Nền, lưới, chấm, âm thanh nền | Vở ô li 4 ly, giấy caro, bảng đen, giấy kiểm tra |
+| `pen` — Bút | **Một gói trọn:** nét vẽ (bề dày, mờ, run tay, đầu nét, nét đứt, thanh đậm, quầng sáng, cầu vồng), **bộ tiếng ăn ô / combo riêng**, **kiểu chữ COMBO**, **loại vụn** bắn ra, mốc combo bắt đầu rung bàn | Bút bi (default), Bút chì 2B, Bút dạ, Sáp màu, Bút mực tím, Phấn trắng, Bút neon, Bút lông, Bút vàng, Bút cầu vồng |
+| `box` — Ô đã ăn | Hình tô vào ô khi chiếm + loại vụn | Gạch chéo (default), Tô kín, Gạch ca-rô, Chấm bi, Nguệch ngoạc, Ngôi sao, Dấu 10 điểm, Trái tim, Con dấu vàng |
 
-Mỗi người chơi trang bị một skin mỗi loại (`loadouts`). Trong trận, **mỗi bên thấy skin bút/nét/ô của chính đối thủ** (được gửi trong `room_state.loadouts`); **bàn đấu** là bàn của người xem.
+Mỗi người chơi trang bị một skin mỗi loại (`loadouts`). Trong trận, **mỗi bên thấy bút/ô của chính người vẽ** (gửi trong `room_state.loadouts`, key = user id); chơi với máy thì máy dùng skin mặc định. Màu bút vẫn là màu ghế (xanh/đỏ) để phân biệt hai người — skin chỉ đổi *cách* vẽ (bút cầu vồng pha màu ghế với vòng màu).
+
+## Năm bậc hiếm
+
+| `rarity` | Màu | Giá | Ví dụ |
+|---|---|---|---|
+| `common` | **Trắng** `#fffcf2` | 100 Ruột chì (default: miễn phí) | Bút chì 2B, Tô kín |
+| `uncommon` | **Xanh lá** `#7cf5c5` | 250 Ruột chì | Bút dạ, Sáp màu, Gạch ca-rô, Chấm bi |
+| `rare` | **Xanh lam** `#8ec5ff` | 600 Ruột chì | Bút mực tím, Phấn trắng, Nguệch ngoạc, Ngôi sao |
+| `epic` | **Tím** `#c9a7ff` | 1 500 Ruột chì | Bút neon, Bút lông, Dấu 10 điểm, Trái tim |
+| `legendary` | **Vàng** `#ffd93d` | **5 Hoa điểm tốt** | Bút vàng, Bút cầu vồng, Con dấu vàng |
+
+Giá cố định trong `api/app/skins/catalog.py` (`RARITY_PRICE`) và `web/src/game/skins/skins.ts`; manifest không ghi giá. Thẻ trong shop viền và bóng theo màu bậc.
 
 ## Manifest
 
-Skin được mô tả bằng dữ liệu, không bằng code. File nguồn ở `shared/skins/<type>/<id>.json`, được seed vào `items.manifest`. Asset nằm trên CDN theo `assetBase`.
+Nguồn chuẩn: `shared/skins/<type>/<id>.json`. `pnpm gen:skins` kiểm tra (id khớp tên file, đủ `name`/`description` vi + en, enum hợp lệ, đúng một `default` mỗi loại) rồi sinh `api/app/skins/catalog.json` + `web/src/game/skins/catalog.data.ts`. **Không sửa tay** hai file sinh.
 
 ```json
 {
   "id": "pen_ink_purple",
   "type": "pen",
+  "rarity": "rare",
   "name": { "vi": "Bút mực tím", "en": "Purple Ink Pen" },
-  "rarity": "rare",
-  "price": 450,
-  "assetBase": "skins/pen_ink_purple/",
-  "pen":    { "sprite": "nib.png", "tipOffset": [4, 28] },
-  "combo":  { "style": "ink_splash", "particles": "ink", "shakeFrom": 3 },
-  "sfx":    { "draw": "scribble_ink", "capture": "ink_ting", "combo": "ink_sparkle" },
-  "colors": { "light": "#5b3fa8", "dark": "#b9a4ff" }
+  "description": { "vi": "Mực tím học trò; ăn ô là mực bắn tung tóe.", "en": "…" },
+  "pen":   { "width": 1.1, "alpha": 0.95, "jitter": 0.8, "taper": true },
+  "combo": { "style": "ink", "particles": "ink", "shakeFrom": 3 },
+  "sfx":   { "capture": "capture_ink", "combo": "combo_ink" }
 }
 ```
 
-Skin bút là **một gói trọn**: ngoài đầu bút và tiếng vẽ, nó quyết định cả cảm giác khi ăn chuỗi —
-`combo.style` chọn kiểu chữ "COMBO ×n" nổ ra (danh sách cố định trong engine: `sticker` mặc định, `ink_splash`, `chalk_dust`, `neon`…), `combo.particles` chọn loại vụn bắn ra (`paper`, `ink`, `chalk`, `spark`), `combo.shakeFrom` là mốc combo bắt đầu rung bàn. `sfx.capture` là tiếng ăn ô (phát cao dần theo combo), `sfx.combo` là tiếng lấp lánh từ ô thứ 2 trong lượt. Thiếu trường nào thì engine dùng bộ mặc định (`sticker` + `paper` + `capture`/`combo` của bút mặc định). Chữ COMBO luôn lấy từ hàm `t` của giao diện (vi/en), skin không chứa chữ.
+| Trường `pen` | Ý nghĩa |
+|---|---|
+| `width` | hệ số bề dày so với nét mặc định |
+| `alpha` | độ mờ |
+| `jitter` | hệ số run tay (1 = mặc định; 2B/sáp > 2) |
+| `cap` | `round` \| `square` (bút dạ) |
+| `taper` | thanh đậm: mảnh hai đầu, dày giữa (bút lông, mực) |
+| `glow` | màu quầng sáng dưới nét (neon, vàng) |
+| `dash` | `[vẽ, hở]` theo tỷ lệ ô — nét đứt (phấn) |
+| `hue` | `rainbow`: mỗi cạnh một màu vòng màu pha với màu ghế |
+
+`combo.style` ∈ `sticker` (vàng viền đen, mặc định) · `ink` (màu bút, viền giấy, xoay mạnh) · `chalk` (trắng, không viền) · `neon` (màu glow, viền màu bút) · `sparkle` (vàng + thêm chùm sao). `combo.particles` và `box.particles` ∈ `paper` (vụn giấy, có trọng lực) · `ink` (giọt mực) · `chalk` (bụi trắng, rơi chậm) · `spark` (tia, không rơi) · `star` (sao vàng). `sfx.capture`/`sfx.combo` là tên trong audio sprite; tên lạ → engine dùng `capture`/`combo` mặc định.
 
 ```json
 {
-  "id": "stroke_shaky",
-  "type": "stroke",
-  "name": { "vi": "Nét run tay", "en": "Shaky Hand" },
-  "rarity": "common",
-  "price": 150,
-  "stroke": { "texture": "pencil.png", "width": 3, "jitter": 0.6, "drawMs": 180, "ease": "power2.out" }
-}
-```
-
-```json
-{
-  "id": "box_stamp_10",
+  "id": "box_stamp10",
   "type": "box",
-  "name": { "vi": "Dấu 10 điểm", "en": "Perfect 10 Stamp" },
   "rarity": "epic",
-  "price": 1200,
-  "box": { "effect": "stamp", "sprite": "stamp10.png", "durationMs": 350, "particles": "paper" },
-  "sfx": { "capture": "stamp_thud" }
+  "name": { "vi": "Dấu 10 điểm", "en": "Perfect 10 Stamp" },
+  "description": { "vi": "…", "en": "…" },
+  "box": { "effect": "stamp", "alpha": 0.3, "particles": "paper" }
 }
 ```
 
-```json
-{
-  "id": "board_blackboard",
-  "type": "board",
-  "name": { "vi": "Bảng đen", "en": "Blackboard" },
-  "rarity": "rare",
-  "price": 450,
-  "board": { "background": "blackboard.jpg", "gridColor": "#ffffff22", "dotSprite": "chalk_dot.png" },
-  "sfx": { "ambient": "classroom_ambient" }
-}
-```
-
-Trường `name` (và `description` nếu có) luôn có đủ `vi` và `en` — script seed từ chối manifest thiếu ngôn ngữ.
-
-Hiệu ứng (`effect`) là một danh sách cố định được code sẵn trong engine (`hatch`, `fill`, `stamp`, `sticker`, `signature`…). Skin chỉ chọn hiệu ứng và tham số, nên thêm skin mới **không cần sửa code**.
+`box.effect` ∈ `hatch` · `fill` · `crosshatch` · `dots` · `scribble` · `star` · `stamp` (vòng tròn + chữ "10", đóng từ trên xuống) · `heart` · `seal` (dấu tròn vàng + sao màu bút). Danh sách cố định trong engine (`drawBoxEffect`); thêm skin mới chỉ cần chọn hiệu ứng và tham số.
 
 ## Animation trong trận
 
 | Sự kiện | Hiệu ứng |
 |---|---|
-| Hover/chạm gần cạnh | Cạnh hiện mờ, đầu bút đi theo |
-| Vẽ cạnh | Nét chạy từ chấm đầu đến chấm cuối trong `drawMs` |
-| Ăn ô | Hiệu ứng `box.effect` + particle, ô nảy nhẹ |
-| Ăn chuỗi | Chữ "COMBO ×n" nổ ra tại ô vừa ăn (kiểu chữ/vụn theo skin **bút**), rung bàn nhẹ từ ×3 |
-| Lượt chuyển | Thanh timer đổi bên, ảnh đại diện sáng lên |
-| Kết thúc | Đếm ô từng người (ô nảy lần lượt + số to giữa bàn, tiếng "pop" cao dần), xong mới hiện kết quả; dấu "THẮNG"/"THUA" đóng xuống |
+| Hover/chạm gần cạnh | Cạnh hiện mờ bằng chính bút của mình |
+| Vẽ cạnh | Nét chạy từ chấm đầu đến chấm cuối (180 ms) theo tham số bút |
+| Ăn ô | `box.effect` + vụn theo `box.particles`; `stamp`/`seal` đóng từ to xuống, còn lại nảy từ nhỏ lên |
+| Ăn chuỗi | Chữ "COMBO ×n" theo `combo.style` của **bút người vừa đi**, vụn theo `combo.particles`, rung bàn từ `combo.shakeFrom` |
+| Lượt chuyển | Thanh timer đổi bên |
+| Kết thúc | Đếm ô từng người (ô nảy lần lượt + số to giữa bàn, tiếng "pop" cao dần), xong mới hiện kết quả |
 
-Thiết bị yếu hoặc người chơi bật "Giảm hiệu ứng" (và `prefers-reduced-motion`) → tắt particle, rung, chữ nổ và bỏ qua đếm ô (kết quả hiện ngay).
-
-**Đã làm (P0-14):** lớp `fx` trong `BoardRenderer` — vụn giấy khi ăn ô, chữ COMBO (PixiJS Text, font Patrick Hand, viền + bóng cứng kiểu sticker; nhãn qua `labels.combo` do màn chơi truyền từ `t`), rung bàn từ ×3, đếm ô cuối ván phát sự kiện `count`/`settled` để màn chơi phát tiếng và chỉ mở hộp thoại kết quả sau khi đếm xong. Hiện mới có bộ mặc định; tham số theo skin bút sẽ nối ở P2-16.
+Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt particle, rung, chữ nổ và bỏ qua đếm ô.
 
 ## Âm thanh
 
-- Dùng **audio sprite** (một file `.webm` + `.mp3` dự phòng) qua Howler để giảm số request và độ trễ trên iOS. **Đã làm (P0-15/16):** `web/scripts/build-audio.mjs` (ffmpeg-static) gộp `shared/audio/core/*` + `shared/audio/ui/*` thành `public/assets/audio/core.{webm,mp3,json}` và chuẩn hóa nhạc nền (`loudnorm -18 LUFS`) vào `public/assets/audio/music/`; chạy tự động trước `dev`/`build` (`predev`/`prebuild`). Tiếng tổng hợp (bút chì, ting, combo, đếm ô, gõ, thắng/thua) sinh bởi `scripts/synth-sfx.mjs`; nguồn ngoài ghi ở [credits.md](credits.md). Cài đặt 2 kênh (nhạc / hiệu ứng, bật-tắt + âm lượng) trong popover ở header, lưu `localStorage`; nhạc nền chỉ bắt đầu sau cử chỉ đầu tiên của người dùng.
-- Âm thanh mặc định: `draw_default`, `capture_ting`, `turn_change`, `school_drum` (vào trận), `win`, `lose`.
-- **Combo:** khi ăn ô thứ `n` trong một lượt, phát `capture` với `rate = 1 + 0.08 × (n-1)` (tối đa 1.6) → cao độ tăng dần; từ ô thứ 2 phát thêm `combo` (lấp lánh, `rate = 1 + 0.06 × (n-2)`, tối đa 1.5). Cả `capture` lẫn `combo` là **tiếng của skin bút** đang trang bị (xem manifest `sfx` ở trên).
-- **Đếm ô cuối ván:** `count` (pop ngắn) mỗi ô, cao dần theo số đếm.
-- Rung (`navigator.vibrate`) 15 ms khi ăn ô, mẫu `[15, 30, 25]` từ combo ×3, trên thiết bị hỗ trợ.
-- Âm lượng nhạc / hiệu ứng tách riêng, lưu ở `localStorage`.
+- **Audio sprite** (một file `core.webm` + `core.mp3` dự phòng) qua Howler; `web/scripts/build-audio.mjs` gộp `shared/audio/core/*` + `shared/audio/ui/*`, chạy trước `dev`/`build`. Mọi tiếng trong game tổng hợp bởi `scripts/synth-sfx.mjs` (tất định, có seed); nguồn ngoài ghi ở [credits.md](credits.md).
+- **Bộ tiếng theo bút:** `capture` (ting mặc định), `capture_soft` (chì/sáp), `capture_marker` (dạ), `capture_ink` (mực "ục"), `capture_chalk` (gõ phấn), `capture_neon` (blip sóng vuông), `capture_bell` (chuông); `combo` (lấp lánh mặc định), `combo_ink`, `combo_chalk`, `combo_neon`, `combo_bell`.
+- **Combo:** ô thứ `n` trong một lượt phát `capture` của bút với `rate = 1 + 0.08 × (n−1)` (tối đa 1.6); từ ô thứ 2 phát thêm `combo` (`rate = 1 + 0.06 × (n−2)`, tối đa 1.5). Hai tiếng là của **bút người vừa đi** (`use-game-sounds.ts` đọc `SeatSkins`).
+- Rung (`navigator.vibrate`) 15 ms khi ăn ô, mẫu `[15, 30, 25]` từ combo ×3.
+
+## Shop & trang bị
+
+- `/shop`: tab **Bút** / **Ô đã ăn**, lưới 2 cột trên điện thoại (3–4 trên desktop), ví ở đầu trang; thẻ = xem trước SVG tĩnh + tên + bậc (màu) + giá; **Thử** mở bàn mẫu 3×3 thật (BoardCanvas) với nút "Vẽ thử" đi từng nước theo kịch bản có ăn 2 ô liên tiếp để nghe tiếng và thấy COMBO; **Mua** (hộp xác nhận) → **Trang bị** → "Đang dùng". Khách xem/thử được, mua/trang bị mời đăng nhập Google.
+- API: `GET /skins` (catalog), `GET /me/skins` (sở hữu, loadout, ví, `canBuy`), `POST /me/skins/{id}/buy`, `PUT /me/loadout` `{pen?, box?}`; `/me` có `loadout`. Lỗi: `UNKNOWN_ITEM`, `ALREADY_OWNED`, `NOT_OWNED`, `INSUFFICIENT_FUNDS`.
+- Lối vào: nút giỏ hàng ở trang chủ (hàng nút tròn) và trong hộp thoại hồ sơ. Smoke: `pnpm smoke:shop`.
 
 ## Quy trình thêm skin
 
-1. Làm asset theo [12 — Asset](12-asset.md) (ưu tiên thủ tục/SVG) → đặt vào `shared/skins/<type>/<id>/`.
-2. Viết manifest `shared/skins/<type>/<id>.json`.
-3. `pnpm assets:build` → kiểm tra manifest, đóng gói atlas/audio sprite, xuất ra `web/public/assets/`.
-4. Chạy script seed → upsert vào `items`, upload asset lên R2.
-5. Kiểm tra trên trang `/dev/skins` (chỉ môi trường dev): xem trước mọi skin trên bàn mẫu.
+1. Viết manifest `shared/skins/<type>/<id>.json` (chọn hiệu ứng/tham số có sẵn; cần tiếng mới thì thêm generator vào `web/scripts/synth-sfx.mjs` rồi `node scripts/synth-sfx.mjs` + `pnpm assets:audio`).
+2. `pnpm gen:skins` → hai bản sinh; test `api/tests/test_skins.py` và `web` (typecheck) phải xanh.
+3. Xem trên `/shop` → Thử. Không cần seed DB hay upload asset.
+
+Chưa làm (giữ ở lộ trình): skin `board` (bàn đấu), rương/bộ sưu tập (ADR-0007), tủ trưng bày, skin `reward` theo mùa/sự kiện.

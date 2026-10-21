@@ -1,0 +1,18 @@
+{
+  "id": "box_heart",
+  "type": "box",
+  "rarity": "epic",
+  "name": {
+    "vi": "Trái tim",
+    "en": "Heart"
+  },
+  "description": {
+    "vi": "Trái tim tô kín, ăn ô nào thương ô đó.",
+    "en": "A filled heart for every box you love."
+  },
+  "box": {
+    "effect": "heart",
+    "alpha": 0.35,
+    "particles": "star"
+  }
+}

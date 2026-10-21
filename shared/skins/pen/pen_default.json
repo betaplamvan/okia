@@ -1,0 +1,28 @@
+{
+  "id": "pen_default",
+  "type": "pen",
+  "rarity": "common",
+  "name": {
+    "vi": "Bút bi",
+    "en": "Ballpoint Pen"
+  },
+  "description": {
+    "vi": "Nét bút bi quen thuộc, có sẵn cho mọi người.",
+    "en": "The familiar ballpoint stroke, free for everyone."
+  },
+  "pen": {
+    "width": 1.0,
+    "alpha": 1.0,
+    "jitter": 1.0
+  },
+  "combo": {
+    "style": "sticker",
+    "particles": "paper",
+    "shakeFrom": 3
+  },
+  "sfx": {
+    "capture": "capture",
+    "combo": "combo"
+  },
+  "default": true
+}

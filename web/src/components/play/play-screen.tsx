@@ -29,6 +29,7 @@ import { useGameSounds } from "@/components/play/use-game-sounds";
 import { audio } from "@/game/audio/audio-manager";
 import { LocalBotController, type GameResult } from "@/game/controller";
 import { DEFAULT_MAP_ID } from "@/game/maps";
+import { seatSkins } from "@/game/skins/skins";
 import type { RendererEvent } from "@/game/renderer/board-renderer";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/stores/auth";
@@ -78,7 +79,13 @@ export function PlayScreen() {
     if (e.type === "count") audio.playCount(e.n);
     else setSettled(e.result);
   }, []);
-  useGameSounds(session);
+  // Skin của mình theo ghế đang ngồi; máy dùng skin mặc định (ADR-0013).
+  const loadout = useAuth((s) => s.user?.loadout);
+  const skins = useMemo(() => {
+    const mine = session.human;
+    return seatSkins(mine === 0 ? loadout : null, mine === 1 ? loadout : null);
+  }, [loadout, session.human]);
+  useGameSounds(session, skins);
 
   const openMaps = () => {
     audio.playUi("click");
@@ -188,6 +195,7 @@ export function PlayScreen() {
               twoTapTouch={twoTapTouch}
               label={t("board")}
               comboLabel={comboLabel}
+              skins={skins}
             />
             {twoTapTouch ? (
               <Text textAlign="center" fontSize="sm" color="cream" opacity={0.8} mt={1}>

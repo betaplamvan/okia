@@ -97,7 +97,7 @@ Tổng Ruột chì tối đa từ thành tựu khởi điểm ≈ 2.300 (tương
 
 | Loại | Ví dụ | Giá lẻ (Ruột chì) |
 |---|---|---|
-| `pen` / `stroke` / `box` / `board` (skin, [08](08-skin.md)) | theo độ hiếm | common 150 · rare 450 · epic 1.200 · legendary 3.000 |
+| `pen` / `box` (skin, [08](08-skin.md), ADR-0013 — **đã làm**) | theo bậc hiếm | trắng 100 · xanh lá 250 · xanh lam 600 · tím 1.500 Ruột chì · **vàng 5 Hoa điểm tốt** |
 | `frame` (khung avatar), `badge` (huy hiệu) | chỉ từ cấp độ / mùa / thành tựu | không bán (`reward`) |
 | `card` — vật phẩm tiêu hao | Thẻ đổi tên 500 (lần đổi đầu miễn phí). Ảnh đại diện tự tải **miễn phí** (ADR-0010) | có `quantity` |
 | `reward` | khung mùa giải, dấu ô kỷ niệm | không bán |
@@ -130,7 +130,7 @@ Tổng Ruột chì tối đa từ thành tựu khởi điểm ≈ 2.300 (tương
 ```
 
 - Tab: **Rương** · **Vật phẩm** (mua lẻ, lọc theo loại) · **Thẻ** (chức năng) · **Tủ đồ**.
-- **Thử:** xem skin trên bàn mẫu, chỉ ở client, không lưu.
+- **Thử:** xem skin trên bàn mẫu, chỉ ở client, không lưu — **đã làm** (`/shop`, hộp "Thử" với nút "Vẽ thử").
 - **Mở rương:** animation mở (nắp bật, vật phẩm bay lên, "TRÙNG — hoàn 250" nếu trùng); nút "Mở tiếp".
 - **Header:** hiện Ruột chì + Hoa điểm tốt, Lv + thanh EXP, lối tắt tới shop (pill người chơi).
 - **Shop xoay vòng:** mỗi ngày 6 vật phẩm lẻ ngẫu nhiên (seed ngày) **giảm 20%**.

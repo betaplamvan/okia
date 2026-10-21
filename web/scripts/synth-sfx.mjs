@@ -173,8 +173,132 @@ function pop(freq = 1200) {
   return normalize(out, 0.7);
 }
 
+// ---------- Bộ tiếng theo skin bút (docs/08 — mỗi bút có capture/combo riêng) ----------
+
+/** Sóng vuông/sin có trượt cao độ (f0 → f1) và decay; dùng cho blip neon, blob mực, squeak dạ. */
+function slide(f0, f1, durMs, { shape = "sin", decay = 14, attack = 40 } = {}) {
+  const n = Math.floor((SR * durMs) / 1000);
+  const out = new Array(n);
+  let phase = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const f = f0 + (f1 - f0) * t;
+    phase += (2 * Math.PI * f) / SR;
+    const env = Math.exp(-(i / SR) * decay) * Math.min(1, i / attack);
+    const v = shape === "square" ? Math.sign(Math.sin(phase)) * 0.6 : Math.sin(phase);
+    out[i] = env * v;
+  }
+  return normalize(out, 0.75);
+}
+
+/** Ting mềm (bút chì, sáp): ít hài, thêm chút nhiễu giấy, tắt nhanh. */
+function tingSoft(seed, freq = 740) {
+  const r = rng(seed);
+  const n = Math.floor(SR * 0.22);
+  const out = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const env = Math.exp(-t * 16) * Math.min(1, i / 80);
+    out[i] =
+      env * (Math.sin(2 * Math.PI * freq * t) * 0.8 + (r() * 2 - 1) * 0.12 * Math.exp(-t * 60));
+  }
+  return normalize(out, 0.7);
+}
+
+/** Blob mực: trượt xuống trầm, hơi "ục". */
+function blob(seed) {
+  const r = rng(seed);
+  const base = slide(520, 180, 200, { decay: 12 });
+  return normalize(
+    base.map((v, i) => v + (r() * 2 - 1) * 0.05 * Math.exp(-(i / SR) * 40)),
+    0.75,
+  );
+}
+
+/** Gõ phấn: click nhiễu sáng + sin cao rất ngắn. */
+function tap(seed) {
+  const r = rng(seed);
+  const n = Math.floor(SR * 0.12);
+  const out = new Array(n);
+  let prev = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const x = r() * 2 - 1;
+    const hp = x - prev;
+    prev = x;
+    out[i] =
+      hp * 0.5 * Math.exp(-t * 90) + Math.sin(2 * Math.PI * 1900 * t) * 0.5 * Math.exp(-t * 45);
+  }
+  return normalize(out, 0.7);
+}
+
+/** Chuông: nhiều partial không hài, ngân lâu. */
+function bell(freq, durMs = 700) {
+  const n = Math.floor((SR * durMs) / 1000);
+  const out = new Array(n);
+  const partials = [
+    [1, 0.6, 3.2],
+    [2.0, 0.3, 4.5],
+    [2.74, 0.25, 5],
+    [4.1, 0.12, 7],
+    [5.4, 0.08, 9],
+  ];
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    let v = 0;
+    for (const [k, a, d] of partials)
+      v += a * Math.sin(2 * Math.PI * freq * k * t) * Math.exp(-t * d);
+    out[i] = v * Math.min(1, i / 40);
+  }
+  return normalize(out, 0.75);
+}
+
+/** Chuỗi tiếng nối nhau (combo): mỗi phần tử là mảng mẫu, cách nhau stepMs, cộng chồng. */
+function sequence(parts, stepMs) {
+  const step = Math.floor((SR * stepMs) / 1000);
+  const n = step * (parts.length - 1) + Math.max(...parts.map((p) => p.length));
+  const out = new Array(n).fill(0);
+  parts.forEach((p, k) => {
+    for (let i = 0; i < p.length; i++) out[k * step + i] += p[i];
+  });
+  return normalize(out, 0.8);
+}
+
+/** Bụi phấn: 4 bụm nhiễu lọc thông cao, cao dần. */
+function chalkDust(seed) {
+  const r = rng(seed);
+  const parts = [];
+  for (let k = 0; k < 4; k++) {
+    const n = Math.floor(SR * 0.09);
+    const p = new Array(n);
+    let prev = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / SR;
+      const x = r() * 2 - 1;
+      const hp = x - prev * (0.6 - k * 0.1);
+      prev = x;
+      p[i] = hp * Math.exp(-t * 50) * 0.6;
+    }
+    parts.push(p);
+  }
+  return sequence(parts, 55);
+}
+
 const files = {
   "combo.wav": sparkle(71),
+  "capture_soft.wav": tingSoft(3),
+  "capture_marker.wav": slide(600, 1250, 140, { decay: 18 }),
+  "capture_ink.wav": blob(9),
+  "capture_chalk.wav": tap(13),
+  "capture_neon.wav": slide(440, 880, 160, { shape: "square", decay: 16 }),
+  "capture_bell.wav": bell(1046.5),
+  "combo_ink.wav": sequence([slide(300, 520, 120), slide(380, 640, 120), slide(460, 780, 160)], 70),
+  "combo_chalk.wav": chalkDust(17),
+  "combo_neon.wav": sequence(
+    [659.25, 830.61, 987.77, 1318.5].map((f) => slide(f, f, 110, { shape: "square", decay: 20 })),
+    60,
+  ),
+  "combo_bell.wav": sequence([bell(1318.5, 450), bell(1567.98, 450), bell(2093, 600)], 90),
   "count.wav": pop(),
   "draw_01.wav": pencil(11, 170),
   "draw_02.wav": pencil(23, 190),

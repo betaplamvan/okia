@@ -1,0 +1,31 @@
+{
+  "id": "pen_chalk",
+  "type": "pen",
+  "rarity": "rare",
+  "name": {
+    "vi": "Phấn trắng",
+    "en": "White Chalk"
+  },
+  "description": {
+    "vi": "Nét phấn đứt quãng, bụi phấn bay khi ăn ô.",
+    "en": "Dusty broken chalk stroke with chalk puffs on capture."
+  },
+  "pen": {
+    "width": 1.3,
+    "alpha": 0.9,
+    "jitter": 1.4,
+    "dash": [
+      0.55,
+      0.2
+    ]
+  },
+  "combo": {
+    "style": "chalk",
+    "particles": "chalk",
+    "shakeFrom": 3
+  },
+  "sfx": {
+    "capture": "capture_chalk",
+    "combo": "combo_chalk"
+  }
+}

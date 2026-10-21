@@ -22,6 +22,10 @@ Endpoint: `/auth/guest`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, `/
 
 `GET /seasons/current`, `GET /leaderboard`, `GET /me/rank`; ghép trận qua WS `queue`/`queue_cancel` → `matched`. Worker nền `app/matchmaking/worker.py` (khóa `lock:mm`) chạy trong lifespan cùng timer. Mùa tự mở khi hết (8 tuần), không cần job.
 
+## Shop & skin (docs/08, ADR-0013)
+
+`GET /skins`, `GET /me/skins`, `POST /me/skins/{id}/buy`, `PUT /me/loadout`. Catalog là bản sinh `app/skins/catalog.json` từ `shared/skins/**.json` (`pnpm gen:skins` bên web); giá theo bậc hiếm trong `app/skins/catalog.py`. Ngoài production, `POST /auth/dev-login` nhận `lead`/`flower` để cộng sẵn tiền cho smoke test.
+
 Cấu hình cần làm một lần:
 
 - **Resend:** tạo API key tại https://resend.com/api-keys → `RESEND_API_KEY`. Chưa có tên miền thì giữ

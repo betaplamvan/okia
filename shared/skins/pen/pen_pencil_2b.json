@@ -1,0 +1,27 @@
+{
+  "id": "pen_pencil_2b",
+  "type": "pen",
+  "rarity": "common",
+  "name": {
+    "vi": "Bút chì 2B",
+    "en": "2B Pencil"
+  },
+  "description": {
+    "vi": "Nét chì hơi run, mờ nhẹ như vẽ vội dưới ngăn bàn.",
+    "en": "A slightly shaky, soft graphite stroke."
+  },
+  "pen": {
+    "width": 0.9,
+    "alpha": 0.82,
+    "jitter": 2.2
+  },
+  "combo": {
+    "style": "sticker",
+    "particles": "chalk",
+    "shakeFrom": 3
+  },
+  "sfx": {
+    "capture": "capture_soft",
+    "combo": "combo"
+  }
+}

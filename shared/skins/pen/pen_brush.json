@@ -1,0 +1,28 @@
+{
+  "id": "pen_brush",
+  "type": "pen",
+  "rarity": "epic",
+  "name": {
+    "vi": "Bút lông",
+    "en": "Brush Pen"
+  },
+  "description": {
+    "vi": "Nét lông đậm nhạt, thanh đậm như viết thư pháp.",
+    "en": "Calligraphy brush with tapered thick-and-thin strokes."
+  },
+  "pen": {
+    "width": 1.5,
+    "alpha": 0.92,
+    "jitter": 1.2,
+    "taper": true
+  },
+  "combo": {
+    "style": "ink",
+    "particles": "ink",
+    "shakeFrom": 3
+  },
+  "sfx": {
+    "capture": "capture_ink",
+    "combo": "combo_ink"
+  }
+}

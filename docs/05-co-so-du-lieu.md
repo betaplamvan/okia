@@ -161,26 +161,24 @@ CREATE INDEX ON quest_progress (user_id, period);
 -- ảnh riêng); object avatars/{id}/{seq}.webp trên MinIO/S3 (app/storage.py). Cột avatar_blob BYTEA từng
 -- giữ ảnh trong DB đã bỏ (2026-10-21).
 
-CREATE TABLE items (
-  id          TEXT PRIMARY KEY,         -- 'pen_ink_purple'
-  type        TEXT NOT NULL,            -- pen | stroke | box | board
-  rarity      TEXT NOT NULL,            -- common | rare | epic | legendary | reward
-  -- type: pen | stroke | box | board | frame | badge | card (tiêu hao)
-  price       INT,                      -- Ruột chì; NULL = không bán (rarity 'reward')
-  name        JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),
-  description JSONB CHECK (description IS NULL OR (description ? 'vi' AND description ? 'en')),
-  manifest    JSONB NOT NULL,
-  active      BOOLEAN NOT NULL DEFAULT true,
-  CHECK ((price IS NOT NULL) = (rarity <> 'reward'))
-);
-
+-- Skin (ADR-0013, ĐÃ LÀM: api/app/models/skins.py + migration d587729fc5d3). KHÔNG có bảng items:
+-- catalog là file shared/skins/**.json → bản sinh api/app/skins/catalog.json; giá theo bậc hiếm
+-- (common/uncommon/rare/epic: 100/250/600/1500 Ruột chì, legendary: 5 Hoa) nằm trong code.
 CREATE TABLE inventory (
-  user_id     UUID REFERENCES users,
-  item_id     TEXT REFERENCES items,
-  source      TEXT NOT NULL,            -- default | purchase | chest | reward | level | achievement
-  quantity    INT NOT NULL DEFAULT 1,   -- > 1 chỉ với vật phẩm tiêu hao (type 'card')
+  user_id     UUID REFERENCES users ON DELETE CASCADE,
+  item_id     TEXT,                     -- id trong catalog (skin default không ghi — ai cũng có)
+  source      TEXT NOT NULL,            -- purchase | reward | admin
   PRIMARY KEY (user_id, item_id)
 );
+
+CREATE TABLE loadouts (                 -- không có dòng = dùng skin default
+  user_id     UUID PRIMARY KEY REFERENCES users ON DELETE CASCADE,
+  pen         TEXT,
+  box         TEXT,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Bảng items/quantity (vật phẩm tiêu hao, thẻ) để lại cho giai đoạn rương/thẻ (ADR-0007):
 
 -- Bộ sưu tập & rương (ADR-0007)
 CREATE TABLE collections (
@@ -244,13 +242,7 @@ CREATE TABLE user_achievements (
 );
 -- users: thêm exp INT NOT NULL DEFAULT 0, level INT NOT NULL DEFAULT 1 (cấp n cần 50×n EXP)
 
-CREATE TABLE loadouts (
-  user_id     UUID PRIMARY KEY REFERENCES users,
-  pen         TEXT REFERENCES items,
-  stroke      TEXT REFERENCES items,
-  box         TEXT REFERENCES items,
-  board       TEXT REFERENCES items
-);
+-- loadouts: xem phần Skin ở trên (chỉ pen + box, ADR-0013).
 ```
 
 ### Phát hiện dàn xếp kết quả

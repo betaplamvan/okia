@@ -1,0 +1,18 @@
+{
+  "id": "box_crosshatch",
+  "type": "box",
+  "rarity": "uncommon",
+  "name": {
+    "vi": "Gạch ca-rô",
+    "en": "Crosshatch"
+  },
+  "description": {
+    "vi": "Gạch hai chiều cho ô thêm dày dặn.",
+    "en": "Hatch both ways for a denser box."
+  },
+  "box": {
+    "effect": "crosshatch",
+    "alpha": 0.2,
+    "particles": "paper"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "pen_marker",
+  "type": "pen",
+  "rarity": "uncommon",
+  "name": {
+    "vi": "Bút dạ",
+    "en": "Marker"
+  },
+  "description": {
+    "vi": "Nét dày, đầu vuông, mực loang nhẹ ở mép.",
+    "en": "Thick square-tipped stroke with a soft bleed."
+  },
+  "pen": {
+    "width": 1.7,
+    "alpha": 0.78,
+    "jitter": 0.6,
+    "cap": "square"
+  },
+  "combo": {
+    "style": "sticker",
+    "particles": "paper",
+    "shakeFrom": 3
+  },
+  "sfx": {
+    "capture": "capture_marker",
+    "combo": "combo"
+  }
+}

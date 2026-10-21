@@ -1,0 +1,449 @@
+{
+  "skins": [
+    {
+      "id": "pen_brush",
+      "type": "pen",
+      "rarity": "epic",
+      "name": {
+        "vi": "Bút lông",
+        "en": "Brush Pen"
+      },
+      "description": {
+        "vi": "Nét lông đậm nhạt, thanh đậm như viết thư pháp.",
+        "en": "Calligraphy brush with tapered thick-and-thin strokes."
+      },
+      "pen": {
+        "width": 1.5,
+        "alpha": 0.92,
+        "jitter": 1.2,
+        "taper": true
+      },
+      "combo": {
+        "style": "ink",
+        "particles": "ink",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_ink",
+        "combo": "combo_ink"
+      }
+    },
+    {
+      "id": "pen_chalk",
+      "type": "pen",
+      "rarity": "rare",
+      "name": {
+        "vi": "Phấn trắng",
+        "en": "White Chalk"
+      },
+      "description": {
+        "vi": "Nét phấn đứt quãng, bụi phấn bay khi ăn ô.",
+        "en": "Dusty broken chalk stroke with chalk puffs on capture."
+      },
+      "pen": {
+        "width": 1.3,
+        "alpha": 0.9,
+        "jitter": 1.4,
+        "dash": [
+          0.55,
+          0.2
+        ]
+      },
+      "combo": {
+        "style": "chalk",
+        "particles": "chalk",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_chalk",
+        "combo": "combo_chalk"
+      }
+    },
+    {
+      "id": "pen_crayon",
+      "type": "pen",
+      "rarity": "uncommon",
+      "name": {
+        "vi": "Sáp màu",
+        "en": "Crayon"
+      },
+      "description": {
+        "vi": "Nét sáp to, sần, đúng chất lớp mẫu giáo.",
+        "en": "Chunky waxy stroke straight from kindergarten."
+      },
+      "pen": {
+        "width": 1.6,
+        "alpha": 0.7,
+        "jitter": 2.6,
+        "cap": "round"
+      },
+      "combo": {
+        "style": "sticker",
+        "particles": "paper",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_soft",
+        "combo": "combo"
+      }
+    },
+    {
+      "id": "pen_default",
+      "type": "pen",
+      "rarity": "common",
+      "name": {
+        "vi": "Bút bi",
+        "en": "Ballpoint Pen"
+      },
+      "description": {
+        "vi": "Nét bút bi quen thuộc, có sẵn cho mọi người.",
+        "en": "The familiar ballpoint stroke, free for everyone."
+      },
+      "pen": {
+        "width": 1,
+        "alpha": 1,
+        "jitter": 1
+      },
+      "combo": {
+        "style": "sticker",
+        "particles": "paper",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture",
+        "combo": "combo"
+      },
+      "default": true
+    },
+    {
+      "id": "pen_gold",
+      "type": "pen",
+      "rarity": "legendary",
+      "name": {
+        "vi": "Bút vàng",
+        "en": "Golden Pen"
+      },
+      "description": {
+        "vi": "Nét viền vàng, sao lấp lánh và tiếng chuông khi ăn ô.",
+        "en": "Gold-rimmed stroke, twinkling stars and a bell on capture."
+      },
+      "pen": {
+        "width": 1.1,
+        "alpha": 1,
+        "jitter": 0.6,
+        "glow": "#ffd93d"
+      },
+      "combo": {
+        "style": "sparkle",
+        "particles": "star",
+        "shakeFrom": 2
+      },
+      "sfx": {
+        "capture": "capture_bell",
+        "combo": "combo_bell"
+      }
+    },
+    {
+      "id": "pen_ink_purple",
+      "type": "pen",
+      "rarity": "rare",
+      "name": {
+        "vi": "Bút mực tím",
+        "en": "Purple Ink Pen"
+      },
+      "description": {
+        "vi": "Mực tím học trò; ăn ô là mực bắn tung tóe.",
+        "en": "Schoolkid purple ink that splashes on every capture."
+      },
+      "pen": {
+        "width": 1.1,
+        "alpha": 0.95,
+        "jitter": 0.8,
+        "taper": true
+      },
+      "combo": {
+        "style": "ink",
+        "particles": "ink",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_ink",
+        "combo": "combo_ink"
+      }
+    },
+    {
+      "id": "pen_marker",
+      "type": "pen",
+      "rarity": "uncommon",
+      "name": {
+        "vi": "Bút dạ",
+        "en": "Marker"
+      },
+      "description": {
+        "vi": "Nét dày, đầu vuông, mực loang nhẹ ở mép.",
+        "en": "Thick square-tipped stroke with a soft bleed."
+      },
+      "pen": {
+        "width": 1.7,
+        "alpha": 0.78,
+        "jitter": 0.6,
+        "cap": "square"
+      },
+      "combo": {
+        "style": "sticker",
+        "particles": "paper",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_marker",
+        "combo": "combo"
+      }
+    },
+    {
+      "id": "pen_neon",
+      "type": "pen",
+      "rarity": "epic",
+      "name": {
+        "vi": "Bút neon",
+        "en": "Neon Pen"
+      },
+      "description": {
+        "vi": "Nét phát sáng, tia điện bắn ra khi ăn chuỗi.",
+        "en": "Glowing stroke with electric sparks on combos."
+      },
+      "pen": {
+        "width": 0.9,
+        "alpha": 1,
+        "jitter": 0.4,
+        "glow": "#7cf5c5"
+      },
+      "combo": {
+        "style": "neon",
+        "particles": "spark",
+        "shakeFrom": 2
+      },
+      "sfx": {
+        "capture": "capture_neon",
+        "combo": "combo_neon"
+      }
+    },
+    {
+      "id": "pen_pencil_2b",
+      "type": "pen",
+      "rarity": "common",
+      "name": {
+        "vi": "Bút chì 2B",
+        "en": "2B Pencil"
+      },
+      "description": {
+        "vi": "Nét chì hơi run, mờ nhẹ như vẽ vội dưới ngăn bàn.",
+        "en": "A slightly shaky, soft graphite stroke."
+      },
+      "pen": {
+        "width": 0.9,
+        "alpha": 0.82,
+        "jitter": 2.2
+      },
+      "combo": {
+        "style": "sticker",
+        "particles": "chalk",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_soft",
+        "combo": "combo"
+      }
+    },
+    {
+      "id": "pen_rainbow",
+      "type": "pen",
+      "rarity": "legendary",
+      "name": {
+        "vi": "Bút cầu vồng",
+        "en": "Rainbow Pen"
+      },
+      "description": {
+        "vi": "Mỗi nét một màu cầu vồng; combo nổ ra như pháo hoa.",
+        "en": "Every stroke a different rainbow hue; combos burst like fireworks."
+      },
+      "pen": {
+        "width": 1.1,
+        "alpha": 1,
+        "jitter": 0.8,
+        "hue": "rainbow"
+      },
+      "combo": {
+        "style": "sparkle",
+        "particles": "star",
+        "shakeFrom": 2
+      },
+      "sfx": {
+        "capture": "capture_bell",
+        "combo": "combo_neon"
+      }
+    },
+    {
+      "id": "box_crosshatch",
+      "type": "box",
+      "rarity": "uncommon",
+      "name": {
+        "vi": "Gạch ca-rô",
+        "en": "Crosshatch"
+      },
+      "description": {
+        "vi": "Gạch hai chiều cho ô thêm dày dặn.",
+        "en": "Hatch both ways for a denser box."
+      },
+      "box": {
+        "effect": "crosshatch",
+        "alpha": 0.2,
+        "particles": "paper"
+      }
+    },
+    {
+      "id": "box_default",
+      "type": "box",
+      "rarity": "common",
+      "name": {
+        "vi": "Gạch chéo",
+        "en": "Hatch"
+      },
+      "description": {
+        "vi": "Tô vội vài gạch chéo, kiểu cổ điển.",
+        "en": "A few quick diagonal hatches, the classic."
+      },
+      "box": {
+        "effect": "hatch",
+        "alpha": 0.22,
+        "particles": "paper"
+      },
+      "default": true
+    },
+    {
+      "id": "box_dots",
+      "type": "box",
+      "rarity": "uncommon",
+      "name": {
+        "vi": "Chấm bi",
+        "en": "Polka Dots"
+      },
+      "description": {
+        "vi": "Chấm bi đều tăm tắp trong ô.",
+        "en": "Neat polka dots inside the box."
+      },
+      "box": {
+        "effect": "dots",
+        "alpha": 0.25,
+        "particles": "paper"
+      }
+    },
+    {
+      "id": "box_fill",
+      "type": "box",
+      "rarity": "common",
+      "name": {
+        "vi": "Tô kín",
+        "en": "Solid Fill"
+      },
+      "description": {
+        "vi": "Tô kín ô bằng màu bút.",
+        "en": "Fill the whole box with your pen color."
+      },
+      "box": {
+        "effect": "fill",
+        "alpha": 0.4,
+        "particles": "paper"
+      }
+    },
+    {
+      "id": "box_heart",
+      "type": "box",
+      "rarity": "epic",
+      "name": {
+        "vi": "Trái tim",
+        "en": "Heart"
+      },
+      "description": {
+        "vi": "Trái tim tô kín, ăn ô nào thương ô đó.",
+        "en": "A filled heart for every box you love."
+      },
+      "box": {
+        "effect": "heart",
+        "alpha": 0.35,
+        "particles": "star"
+      }
+    },
+    {
+      "id": "box_scribble",
+      "type": "box",
+      "rarity": "rare",
+      "name": {
+        "vi": "Nguệch ngoạc",
+        "en": "Scribble"
+      },
+      "description": {
+        "vi": "Tô nguệch ngoạc như sắp hết giờ kiểm tra.",
+        "en": "Scribbled over like the exam is about to end."
+      },
+      "box": {
+        "effect": "scribble",
+        "alpha": 0.25,
+        "particles": "ink"
+      }
+    },
+    {
+      "id": "box_seal",
+      "type": "box",
+      "rarity": "legendary",
+      "name": {
+        "vi": "Con dấu vàng",
+        "en": "Golden Seal"
+      },
+      "description": {
+        "vi": "Con dấu vàng kim, sao bắn tung tóe khi đóng.",
+        "en": "A golden wax seal with a burst of stars."
+      },
+      "box": {
+        "effect": "seal",
+        "alpha": 0.5,
+        "particles": "star"
+      }
+    },
+    {
+      "id": "box_stamp10",
+      "type": "box",
+      "rarity": "epic",
+      "name": {
+        "vi": "Dấu 10 điểm",
+        "en": "Perfect 10 Stamp"
+      },
+      "description": {
+        "vi": "Con dấu 10 điểm đỏ chót của cô giáo.",
+        "en": "The teacher's bright red perfect-10 stamp."
+      },
+      "box": {
+        "effect": "stamp",
+        "alpha": 0.3,
+        "particles": "paper"
+      }
+    },
+    {
+      "id": "box_star",
+      "type": "box",
+      "rarity": "rare",
+      "name": {
+        "vi": "Ngôi sao",
+        "en": "Star"
+      },
+      "description": {
+        "vi": "Một ngôi sao to đóng vào ô.",
+        "en": "A big star stamped into the box."
+      },
+      "box": {
+        "effect": "star",
+        "alpha": 0.3,
+        "particles": "star"
+      }
+    }
+  ]
+}

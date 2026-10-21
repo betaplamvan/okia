@@ -1,0 +1,18 @@
+{
+  "id": "box_seal",
+  "type": "box",
+  "rarity": "legendary",
+  "name": {
+    "vi": "Con dấu vàng",
+    "en": "Golden Seal"
+  },
+  "description": {
+    "vi": "Con dấu vàng kim, sao bắn tung tóe khi đóng.",
+    "en": "A golden wax seal with a burst of stars."
+  },
+  "box": {
+    "effect": "seal",
+    "alpha": 0.5,
+    "particles": "star"
+  }
+}

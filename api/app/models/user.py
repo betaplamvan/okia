@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, CreatedAtMixin
 from app.models.economy import Wallet
+from app.models.skins import Loadout
 
 
 class User(Base, CreatedAtMixin):
@@ -49,6 +50,7 @@ class User(Base, CreatedAtMixin):
         back_populates="user", cascade="all, delete-orphan"
     )
     wallet: Mapped["Wallet | None"] = relationship(lazy="selectin", uselist=False)
+    loadout: Mapped["Loadout | None"] = relationship(lazy="selectin", uselist=False)
 
 
 class AuthIdentity(Base, CreatedAtMixin):

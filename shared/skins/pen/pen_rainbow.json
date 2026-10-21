@@ -1,0 +1,28 @@
+{
+  "id": "pen_rainbow",
+  "type": "pen",
+  "rarity": "legendary",
+  "name": {
+    "vi": "Bút cầu vồng",
+    "en": "Rainbow Pen"
+  },
+  "description": {
+    "vi": "Mỗi nét một màu cầu vồng; combo nổ ra như pháo hoa.",
+    "en": "Every stroke a different rainbow hue; combos burst like fireworks."
+  },
+  "pen": {
+    "width": 1.1,
+    "alpha": 1.0,
+    "jitter": 0.8,
+    "hue": "rainbow"
+  },
+  "combo": {
+    "style": "sparkle",
+    "particles": "star",
+    "shakeFrom": 2
+  },
+  "sfx": {
+    "capture": "capture_bell",
+    "combo": "combo_neon"
+  }
+}

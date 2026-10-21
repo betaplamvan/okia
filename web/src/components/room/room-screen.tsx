@@ -22,6 +22,7 @@ import { PlayerChip } from "@/components/play/player-chip";
 import { useGameSounds } from "@/components/play/use-game-sounds";
 import { RewardChips } from "@/components/economy/wallet-chips";
 import { TierBadge } from "@/components/ranked/tier-badge";
+import { seatSkins } from "@/game/skins/skins";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
 import type { GameResult } from "@/game/controller";
@@ -74,7 +75,14 @@ export function RoomScreen({ code }: { code: string }) {
   const getSession = useCallback(() => controller.getSession(), [controller]);
   const session = useSyncExternalStore(subscribe, getSession, getSession);
   const connection = useConnection((s) => s.status);
-  useGameSounds(session);
+  const loadouts = session.online?.loadouts;
+  const skins = useMemo(
+    () => seatSkins(loadouts?.[0], loadouts?.[1]),
+    // Chỉ đổi khi id skin đổi (loadouts là mảng mới mỗi room_state).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [loadouts?.[0]?.pen, loadouts?.[0]?.box, loadouts?.[1]?.pen, loadouts?.[1]?.box],
+  );
+  useGameSounds(session, skins);
 
   const onSelectEdge = useCallback((edge: number) => controller.play(edge), [controller]);
   const onRendererEvent = useCallback((e: RendererEvent) => {
@@ -222,6 +230,7 @@ export function RoomScreen({ code }: { code: string }) {
               twoTapTouch={Math.max(state.rows, state.cols) >= 7}
               label={tp("board")}
               comboLabel={comboLabel}
+              skins={skins}
             />
           </>
         }

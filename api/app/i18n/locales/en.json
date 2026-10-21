@@ -13,7 +13,7 @@
     "INVALID_BOARD": "Invalid board.",
     "ALREADY_IN_GAME": "You are already in another game.",
     "RATE_LIMITED": "Too fast, try again in {retryAfter} seconds.",
-    "INSUFFICIENT_FUNDS": "Not enough Lead.",
+    "INSUFFICIENT_FUNDS": "Not enough Lead / Flowers.",
     "INTERNAL": "Something went wrong, please try again.",
     "IDENTITY_TAKEN": "This Google account/email already belongs to another account.",
     "BANNED": "This account is suspended.",
@@ -31,7 +31,10 @@
     "QUEST_CLAIMED": "You already claimed this quest.",
     "AVATAR_INVALID": "Invalid image.",
     "AVATAR_TOO_LARGE": "Image too large (max 2 MB).",
-    "STORAGE_UNAVAILABLE": "File storage is temporarily unavailable, try again later."
+    "STORAGE_UNAVAILABLE": "File storage is temporarily unavailable, try again later.",
+    "UNKNOWN_ITEM": "Item not found.",
+    "ALREADY_OWNED": "You already own this item.",
+    "NOT_OWNED": "You don't own this item."
   },
   "currency": {
     "lead": "Lead",

@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { LuPencilLine } from "react-icons/lu";
+import { LuPencilLine, LuShoppingBag } from "react-icons/lu";
 import { AccountTab } from "@/components/auth/account-tab";
 import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { EditProfileForm } from "@/components/auth/edit-profile-form";
@@ -23,6 +23,7 @@ import { CheckinStrip } from "@/components/economy/checkin-strip";
 import { QuestsList } from "@/components/economy/quests-list";
 import { RankTab } from "@/components/ranked/rank-tab";
 import { WalletChips } from "@/components/economy/wallet-chips";
+import { Link } from "@/i18n/navigation";
 import { type ProfileTab, useAuth } from "@/stores/auth";
 
 // Hồ sơ người chơi dạng hộp thoại (học từ noitu): avatar + tên + huy hiệu, ví hai loại tiền,
@@ -31,6 +32,7 @@ export function ProfileDialog() {
   const t = useTranslations("Auth");
   const te = useTranslations("Economy");
   const tr = useTranslations("Ranked");
+  const tc = useTranslations("Common");
   const format = useFormatter();
   const user = useAuth((s) => s.user);
   const progress = useAuth((s) => s.progress);
@@ -114,6 +116,11 @@ export function ProfileDialog() {
                         <LuPencilLine /> {t("editProfile")}
                       </Button>
                       <WalletChips wallet={user.wallet} />
+                      <Button asChild variant="sticker" size="sm" onClick={closeProfile}>
+                        <Link href="/shop">
+                          <LuShoppingBag /> {tc("shop")}
+                        </Link>
+                      </Button>
                     </HStack>
                   )}
 

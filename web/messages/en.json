@@ -14,7 +14,8 @@
     "share": "Share",
     "copied": "Link copied!",
     "shareText": "Come play dots & boxes with me!",
-    "playNow": "Play now"
+    "playNow": "Play now",
+    "shop": "Shop"
   },
   "Home": {
     "tagline": "Dots & boxes on grid paper. Grab a friend and draw a few lines!",
@@ -343,5 +344,41 @@
     "loading": "Loading…",
     "refresh": "Refresh",
     "play": "Play ranked"
+  },
+  "Shop": {
+    "title": "Shop",
+    "intro": "Buy skins with Lead (and Flowers for gold tier). Your opponent sees your pen and boxes in a game.",
+    "pens": "Pens",
+    "boxes": "Boxes",
+    "penHint": "A pen sets your stroke, capture sound and COMBO effect.",
+    "boxHint": "The mark drawn in each box you capture.",
+    "buy": "Buy",
+    "equip": "Equip",
+    "equipped": "Equipped",
+    "owned": "Owned",
+    "free": "Free",
+    "try": "Try",
+    "tryTitle": "Try {name}",
+    "tryHint": "Tap “Draw” to see this skin's stroke, capture and sound.",
+    "drawNext": "Draw",
+    "replay": "Replay",
+    "bought": "Bought {name}!",
+    "equippedToast": "Equipped {name}.",
+    "notEnough": "Not enough funds. Win ranked games, check in and do quests to earn more.",
+    "guest": "Sign in with Google to buy and equip skins. Guests can still browse and try.",
+    "signIn": "Sign in with Google",
+    "rarity": {
+      "common": "White",
+      "uncommon": "Green",
+      "rare": "Blue",
+      "epic": "Purple",
+      "legendary": "Gold"
+    },
+    "confirmTitle": "Buy {name}?",
+    "confirmBody": "Price {price}. Once bought it's yours forever.",
+    "cancel": "Later",
+    "loadError": "Could not load the shop.",
+    "filterAll": "All",
+    "onlyOwned": "Mine"
   }
 }

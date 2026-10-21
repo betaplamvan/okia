@@ -17,7 +17,7 @@ Game Dots & Boxes trên web, lấy cảm hứng từ trò chơi trên giấy ô 
 | 05 | [Cơ sở dữ liệu](05-co-so-du-lieu.md) | Schema Postgres, key Redis |
 | 06 | [Kinh tế & donate](06-kinh-te.md) | Ruột chì (một loại tiền, miễn phí, từ xếp hạng), ví, shop, donate |
 | 07 | [Xếp hạng & ghép trận](07-xep-hang-ghep-tran.md) | Rating ẩn Glicko-2, điểm hạng hiển thị, mùa giải, matchmaking nới dần, chốt trận, BXH |
-| 08 | [Hệ thống skin](08-skin.md) | Loại skin, manifest, animation, âm thanh |
+| 08 | [Hệ thống skin](08-skin.md) | Bút và ô đã ăn, năm bậc hiếm, manifest, hiệu ứng, âm thanh theo bút, shop |
 | 09 | [Lộ trình](09-lo-trinh.md) | Các giai đoạn và checklist |
 | 10 | [Ghi chú pháp lý](10-phap-ly.md) | Giấy phép, donate, dữ liệu cá nhân |
 | 11 | [Responsive & đa ngôn ngữ](11-responsive-i18n.md) | Bố cục mobile-first, canvas, i18n vi/en ở FE và BE, bảng thuật ngữ |

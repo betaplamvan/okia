@@ -44,6 +44,8 @@ TABLES = [
     "sessions",
     "auth_identities",
     "matches",
+    "inventory",
+    "loadouts",
     "ratings",
     "seasons",
     "users",

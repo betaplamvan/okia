@@ -169,17 +169,17 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [x] **P2-12** Thưởng 30 Ruột chì cho người thắng trận xếp hạng khi `game_over` (cùng transaction với rating, `rating.service.settle`); không thưởng afk/đầu hàng trước nước 10; casual/bot/phòng riêng không có dòng ledger. *Còn:* ghi rõ ở màn chọn chế độ rằng chỉ xếp hạng mới cho Ruột chì
 - [ ] **P2-13** Phát hiện dàn xếp kết quả: bảng `match_flags`, quy tắc cặp tài khoản gặp nhau bất thường, giữ thưởng/rating của trận bị cờ; test
 
-### M2.7 Vật phẩm & trang bị
-- [ ] **P2-14** Model + migration `items` (tên/mô tả `{vi, en}`, một cột `price`), `inventory`, `loadouts`; script seed từ `shared/skins/` (từ chối manifest thiếu ngôn ngữ); cấp skin mặc định cho người mới
-- [ ] **P2-15** API mua (`purchase`: `debit` + `inventory` trong một transaction), trang bị (`PUT /loadout`); trả tên vật phẩm theo locale; gửi loadout trong `room_state`
+### M2.7 Vật phẩm & trang bị ([ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md))
+- [x] **P2-14** Catalog bằng file `shared/skins/**.json` → `pnpm gen:skins` (kiểm tra vi/en, enum, default) sinh bản cho api + web; model + migration `inventory`, `loadouts` (không có bảng `items`); skin default ai cũng có
+- [x] **P2-15** API mua (`debit` + `inventory` trong một transaction, idempotent), trang bị (`PUT /me/loadout`), `GET /me/skins`, `/me.loadout`; loadout gửi trong `room_state.loadouts` (phòng riêng và xếp hạng); `tests/test_skins.py`
 
 ### M2.8 Engine skin phía client
-- [ ] **P2-16** Nạp manifest + asset theo nhu cầu, áp dụng bàn/bút/nét cho renderer; skin bút kèm kiểu chữ COMBO, loại vụn và bộ tiếng `capture`/`combo` riêng ([08](08-skin.md#manifest))
-- [ ] **P2-17** Thư viện hiệu ứng ô (`hatch`, `fill`, `stamp`, `sticker`, `signature`); trang `/dev/skins` xem trước
+- [x] **P2-16** `web/src/game/skins/` + `BoardRenderer.setSkins`: nét theo bút (bề dày, mờ, run tay, đầu nét, nét đứt, thanh đậm, quầng sáng, cầu vồng), kiểu chữ COMBO, loại vụn, mốc rung; bộ tiếng `capture`/`combo` riêng từng bút (11 tiếng tổng hợp mới trong `synth-sfx.mjs`)
+- [x] **P2-17** Thư viện hiệu ứng ô: `hatch`, `fill`, `crosshatch`, `dots`, `scribble`, `star`, `stamp`, `heart`, `seal`. *Còn:* trang `/dev/skins` (hộp "Thử" trong shop đã thay vai trò xem trước)
 
 ### M2.9 Shop
-- [ ] **P2-18** Trang shop responsive (lưới 2 cột trên điện thoại, nhiều cột trên desktop): danh mục, shop xoay vòng theo ngày, mua bằng Ruột chì, ví trên header
-- [ ] **P2-19** Nút "Thử" trên bàn mẫu, luồng mua → đề nghị trang bị ngay; trang kho đồ & trang bị
+- [x] **P2-18** `/shop` responsive (2 cột điện thoại, 3–4 desktop): tab Bút / Ô, năm bậc hiếm theo màu trắng–xanh lá–xanh lam–tím–vàng, mua bằng Ruột chì (bậc vàng: Hoa điểm tốt), ví ở đầu trang, lối vào từ trang chủ và hồ sơ. *Còn:* shop xoay vòng theo ngày
+- [x] **P2-19** Nút "Thử" (bàn mẫu thật, "Vẽ thử" từng nước), mua (xác nhận) → trang bị ngay trên thẻ; kho = thẻ "Đã có"/"Đang dùng" trong shop; smoke `pnpm smoke:shop`
 
 ### M2.10 Nội dung
 ### M2.11 Thành tựu, cấp độ, rương, tủ trưng bày ([ADR-0007](adr/0007-thanh-tuu-cap-do-ruong.md))

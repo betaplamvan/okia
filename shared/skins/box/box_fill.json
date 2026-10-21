@@ -1,0 +1,18 @@
+{
+  "id": "box_fill",
+  "type": "box",
+  "rarity": "common",
+  "name": {
+    "vi": "Tô kín",
+    "en": "Solid Fill"
+  },
+  "description": {
+    "vi": "Tô kín ô bằng màu bút.",
+    "en": "Fill the whole box with your pen color."
+  },
+  "box": {
+    "effect": "fill",
+    "alpha": 0.4,
+    "particles": "paper"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "pen_gold",
+  "type": "pen",
+  "rarity": "legendary",
+  "name": {
+    "vi": "Bút vàng",
+    "en": "Golden Pen"
+  },
+  "description": {
+    "vi": "Nét viền vàng, sao lấp lánh và tiếng chuông khi ăn ô.",
+    "en": "Gold-rimmed stroke, twinkling stars and a bell on capture."
+  },
+  "pen": {
+    "width": 1.1,
+    "alpha": 1.0,
+    "jitter": 0.6,
+    "glow": "#ffd93d"
+  },
+  "combo": {
+    "style": "sparkle",
+    "particles": "star",
+    "shakeFrom": 2
+  },
+  "sfx": {
+    "capture": "capture_bell",
+    "combo": "combo_bell"
+  }
+}

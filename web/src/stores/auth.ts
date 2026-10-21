@@ -11,6 +11,7 @@ import {
   ApiError,
   type ApiInit,
   type MyRankOut,
+  type MySkinsOut,
   type ProgressOut,
   type Reward,
   type RewardOut,
@@ -35,6 +36,8 @@ type AuthState = {
   progress: ProgressOut | null;
   /** Hạng mùa này + lịch sử trận xếp hạng (GET /me/rank); null khi chưa tải. */
   rank: MyRankOut | null;
+  /** Skin sở hữu + đang trang bị (GET /me/skins); null khi chưa tải. */
+  skins: MySkinsOut | null;
 
   boot(locale: string): Promise<void>;
   /** Gọi API kèm Bearer; hết hạn thì refresh trước, 401 thì refresh rồi thử lại một lần. */
@@ -51,6 +54,9 @@ type AuthState = {
   closeProfile(): void;
   loadProgress(): Promise<ProgressOut | null>;
   loadRank(): Promise<MyRankOut | null>;
+  loadSkins(): Promise<MySkinsOut | null>;
+  buySkin(id: string): Promise<MySkinsOut>;
+  equipSkin(patch: { pen?: string; box?: string }): Promise<MySkinsOut>;
   checkin(): Promise<Reward>;
   claimQuest(id: string): Promise<Reward>;
   /** Ván với máy xong → nuôi nhiệm vụ (bỏ qua với khách). */
@@ -93,6 +99,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   profileTab: "overview",
   progress: null,
   rank: null,
+  skins: null,
 
   applyToken(tok) {
     const prev = get().user;
@@ -102,7 +109,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
       expiresAt: Date.now() + tok.expiresIn * 1000,
       status: "ready",
       // Đổi người (khách → tài khoản, đăng xuất) → dữ liệu hạng/tiến trình cũ không còn đúng.
-      ...(prev && prev.id !== tok.user.id ? { rank: null, progress: null } : {}),
+      ...(prev && prev.id !== tok.user.id ? { rank: null, progress: null, skins: null } : {}),
     });
   },
 
@@ -223,6 +230,29 @@ export const useAuth = create<AuthState>()((set, get) => ({
     } catch {
       return null;
     }
+  },
+
+  async loadSkins() {
+    if (!get().user) return null;
+    try {
+      const skins = await get().authed<MySkinsOut>("/me/skins");
+      set({ skins });
+      return skins;
+    } catch {
+      return null;
+    }
+  },
+
+  async buySkin(id) {
+    const skins = await get().authed<MySkinsOut>(`/me/skins/${id}/buy`, { method: "POST" });
+    set({ skins, user: { ...get().user!, wallet: skins.wallet } });
+    return skins;
+  },
+
+  async equipSkin(patch) {
+    const skins = await get().authed<MySkinsOut>("/me/loadout", { method: "PUT", body: patch });
+    set({ skins, user: { ...get().user!, loadout: skins.loadout } });
+    return skins;
   },
 
   async checkin() {

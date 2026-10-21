@@ -137,12 +137,15 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
                 board=msg.board,
                 turn_seconds=msg.turn_seconds,
                 show_last_move=msg.show_last_move,
+                loadout=await _loadout(uid),
             )
             await _presence_join(hub, conn, room.id)
             await conn.send(rooms.room_state_msg(room, await rooms.online_map(redis, room.id)))
 
         case m.RoomJoin():
-            res = await rooms.join(redis, user_id=uid, name=name, room_id=msg.room_id)
+            res = await rooms.join(
+                redis, user_id=uid, name=name, room_id=msg.room_id, loadout=await _loadout(uid)
+            )
             room = res.room
             await _presence_join(hub, conn, room.id)
             online = await rooms.online_map(redis, room.id)
@@ -188,11 +191,20 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
             await mmq.dequeue(redis, uid)
 
 
+async def _loadout(user_id: str) -> dict[str, str]:
+    """Skin đang trang bị, gửi trong room_state.loadouts để đối thủ thấy bút/ô của mình."""
+    from app.skins import service as skins
+
+    async with get_session_factory()() as db:
+        return await skins.loadout_of(db, uuid.UUID(user_id))
+
+
 async def _ranked_entry(redis, user_id: str) -> mmq.Entry:
     """Vào hàng chờ xếp hạng (docs/07): cần tài khoản thật đã xác minh, không đang dở trận.
     Đọc lại user từ DB vì khách có thể vừa nâng cấp Google trong phiên WS này."""
     from app.economy.router import avatar_url_for
     from app.rating import service as rating
+    from app.skins import service as skins
 
     if await rooms.active_room_id(redis, user_id):
         raise AppError("ALREADY_IN_GAME", 409)
@@ -217,5 +229,6 @@ async def _ranked_entry(redis, user_id: str) -> mmq.Entry:
             locale=user.locale,
             rank=rank.to_dict() if rank else None,
             avatar_url=avatar_url_for(user),
+            loadout=await skins.loadout_of(db, user.id),
         )
     return await mmq.enqueue(redis, entry)

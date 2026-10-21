@@ -49,6 +49,7 @@ class Player:
     timeouts: int = 0  # số lần hết giờ liên tiếp
     avatar_url: str | None = None
     rank: dict[str, Any] | None = None  # hạng hiển thị lúc vào trận (chỉ phòng xếp hạng)
+    loadout: dict[str, str] | None = None  # skin bút / ô đang trang bị (ADR-0013)
 
     def to_dict(self) -> dict[str, Any]:
         return self.__dict__.copy()
@@ -212,6 +213,7 @@ async def create(
     board: str,
     turn_seconds: int | None,
     show_last_move: bool = True,
+    loadout: dict[str, str] | None = None,
 ) -> Room:
     if await active_room_id(redis, user_id):
         raise AppError("ALREADY_IN_GAME", 409)
@@ -229,7 +231,7 @@ async def create(
         turn_seconds=turn_seconds,
         host_id=user_id,
         status="waiting",
-        players=[Player(user_id=user_id, name=name, seat=0)],
+        players=[Player(user_id=user_id, name=name, seat=0, loadout=loadout)],
         state=maps.create_game(game_map),
         show_last_move=show_last_move,
     )
@@ -243,7 +245,14 @@ class JoinResult:
     started: bool  # vừa đủ 2 người → ván bắt đầu
 
 
-async def join(redis: Redis, *, user_id: str, name: str, room_id: str) -> JoinResult:
+async def join(
+    redis: Redis,
+    *,
+    user_id: str,
+    name: str,
+    room_id: str,
+    loadout: dict[str, str] | None = None,
+) -> JoinResult:
     room_id = room_id.strip().upper()
     async with RoomLock(redis, room_id):
         room = await load(redis, room_id)
@@ -259,7 +268,7 @@ async def join(redis: Redis, *, user_id: str, name: str, room_id: str) -> JoinRe
         # Chủ phòng đi trước hay sau: ngẫu nhiên cho công bằng.
         host = room.players[0]
         host.seat = random.randint(0, 1)
-        room.players.append(Player(user_id=user_id, name=name, seat=1 - host.seat))
+        room.players.append(Player(user_id=user_id, name=name, seat=1 - host.seat, loadout=loadout))
         room.status = "playing"
         room.started_at = now_ms()
         room.deadline = room.next_deadline()
@@ -286,8 +295,17 @@ async def create_ranked(redis: Redis, a: "Entry", b: "Entry") -> Room:
         host_id=a.user_id,
         status="playing",
         players=[
-            Player(a.user_id, a.name, seat_a, avatar_url=a.avatar_url, rank=a.rank),
-            Player(b.user_id, b.name, 1 - seat_a, avatar_url=b.avatar_url, rank=b.rank),
+            Player(
+                a.user_id, a.name, seat_a, avatar_url=a.avatar_url, rank=a.rank, loadout=a.loadout
+            ),
+            Player(
+                b.user_id,
+                b.name,
+                1 - seat_a,
+                avatar_url=b.avatar_url,
+                rank=b.rank,
+                loadout=b.loadout,
+            ),
         ],
         state=maps.create_game(game_map),
         started_at=now_ms(),
@@ -568,4 +586,5 @@ def room_state_msg(room: Room, online: dict[str, bool]) -> m.RoomState:
         state=state_out(room.state),
         deadline=room.deadline,
         result=m.GameOver(**room.result) if room.result else None,
+        loadouts={p.user_id: p.loadout for p in room.players if p.loadout},
     )

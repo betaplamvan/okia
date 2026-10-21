@@ -18,6 +18,7 @@ from app.game.timer import TimerWorker
 from app.i18n import Locale, resolve_locale, t
 from app.matchmaking.worker import MatchmakingWorker
 from app.rating.router import router as rating_router
+from app.skins.router import router as skins_router
 from app.ws.endpoint import router as ws_router
 from app.ws.hub import Hub
 
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(economy_router)
     app.include_router(rating_router)
+    app.include_router(skins_router)
     app.include_router(ws_router)
 
     @app.get("/healthz", tags=["ops"])

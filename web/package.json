@@ -27,7 +27,9 @@
     "smoke:room": "node scripts/smoke-room.mjs",
     "gen:maps": "node scripts/gen-maps.mjs",
     "smoke:economy": "node scripts/smoke-economy.mjs",
-    "smoke:ranked": "node scripts/smoke-ranked.mjs"
+    "smoke:ranked": "node scripts/smoke-ranked.mjs",
+    "gen:skins": "node scripts/gen-skins.mjs",
+    "smoke:shop": "node scripts/smoke-shop.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.37.0",

@@ -24,6 +24,9 @@ class DevLoginIn(CamelModel):
 
     email: EmailStr
     display_name: str | None = Field(default=None, max_length=32)
+    # Cộng sẵn tiền để smoke test shop (chỉ ngoài production).
+    lead: int = Field(default=0, ge=0, le=100_000)
+    flower: int = Field(default=0, ge=0, le=1_000)
 
     @field_validator("email")
     @classmethod
@@ -55,12 +58,20 @@ class WalletBrief(CamelModel):
     flower: int = 0
 
 
+class LoadoutBrief(CamelModel):
+    """Skin đang trang bị (ADR-0013): id bút / ô đã ăn, luôn có giá trị (default khi chưa chọn)."""
+
+    pen: str
+    box: str
+
+
 class UserOut(CamelModel):
     id: uuid.UUID
     display_name: str
     avatar_url: str | None
     has_custom_avatar: bool = False
     wallet: WalletBrief = WalletBrief()
+    loadout: LoadoutBrief
     email: str | None
     email_verified: bool
     is_guest: bool

@@ -48,6 +48,7 @@ class Entry:
     rank: dict[str, Any] | None = None
     avatar_url: str | None = None
     last_opponent: str | None = None
+    loadout: dict[str, str] | None = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))

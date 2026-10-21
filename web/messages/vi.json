@@ -14,7 +14,8 @@
     "share": "Chia sẻ",
     "copied": "Đã sao chép link!",
     "shareText": "Chơi trò ăn ô trên giấy ô li với mình nhé!",
-    "playNow": "Chơi ngay"
+    "playNow": "Chơi ngay",
+    "shop": "Cửa hàng"
   },
   "Home": {
     "tagline": "Trò ăn ô trên giấy ô li. Rủ bạn bè vào vẽ vài nét nào!",
@@ -343,5 +344,41 @@
     "loading": "Đang tải…",
     "refresh": "Tải lại",
     "play": "Đấu xếp hạng"
+  },
+  "Shop": {
+    "title": "Cửa hàng",
+    "intro": "Mua skin bằng Ruột chì (và Hoa điểm tốt cho bậc vàng). Đối thủ sẽ thấy bút và ô của bạn trong trận.",
+    "pens": "Bút",
+    "boxes": "Ô đã ăn",
+    "penHint": "Bút quyết định nét vẽ, tiếng ăn ô và hiệu ứng COMBO.",
+    "boxHint": "Hình tô vào ô khi bạn ăn được.",
+    "buy": "Mua",
+    "equip": "Trang bị",
+    "equipped": "Đang dùng",
+    "owned": "Đã có",
+    "free": "Miễn phí",
+    "try": "Thử",
+    "tryTitle": "Thử {name}",
+    "tryHint": "Bấm “Vẽ thử” để xem nét, ô ăn và tiếng của skin này.",
+    "drawNext": "Vẽ thử",
+    "replay": "Vẽ lại",
+    "bought": "Đã mua {name}!",
+    "equippedToast": "Đã trang bị {name}.",
+    "notEnough": "Không đủ tiền. Thắng xếp hạng, điểm danh và làm nhiệm vụ để kiếm thêm.",
+    "guest": "Đăng nhập Google để mua và trang bị skin. Khách vẫn xem và thử được.",
+    "signIn": "Đăng nhập Google",
+    "rarity": {
+      "common": "Trắng",
+      "uncommon": "Xanh lá",
+      "rare": "Xanh lam",
+      "epic": "Tím",
+      "legendary": "Vàng"
+    },
+    "confirmTitle": "Mua {name}?",
+    "confirmBody": "Giá {price}. Mua xong là của bạn mãi mãi.",
+    "cancel": "Để sau",
+    "loadError": "Không tải được cửa hàng.",
+    "filterAll": "Tất cả",
+    "onlyOwned": "Của tôi"
   }
 }

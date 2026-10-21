@@ -6,6 +6,14 @@
  */
 import type { GameResult, GameSession } from "../controller";
 import { edgeCount, edgeEndpoints, horizontalEdgeCount, VOID, type Player } from "../rules";
+import {
+  seatSkins,
+  type BoxSkin,
+  type Particles,
+  type PenParams,
+  type PenSkin,
+  type SeatSkins,
+} from "../skins/skins";
 
 type Pixi = typeof import("pixi.js");
 type Gsap = typeof import("gsap").gsap;
@@ -115,6 +123,8 @@ export class BoardRenderer {
   }
 
   private readonly colors: RendererColors;
+  /** Skin bút / ô theo ghế (docs/08, ADR-0013): mỗi bên thấy bút và ô của chính người vẽ. */
+  private skins: SeatSkins = seatSkins(null, null);
   private readonly layers: Record<
     "paper" | "boxes" | "marks" | "edges" | "preview" | "dots" | "fx",
     InstanceType<Pixi["Container"]>
@@ -156,9 +166,23 @@ export class BoardRenderer {
     const moved = !!prev && session.state.moveNo > prev.state.moveNo && !!lastMove;
     if (moved && lastMove.captured.length > 0 && combo >= 2 && !this.opts.reducedMotion) {
       this.popCombo(lastMove.captured, lastMove.by, combo);
-      if (combo >= 3) this.shake(Math.min(1, (combo - 2) / 4));
+      const shakeFrom = this.skins.pens[lastMove.by].combo.shakeFrom;
+      if (combo >= shakeFrom) this.shake(Math.min(1, (combo - shakeFrom + 1) / 4));
     }
     if (result && !prev?.result) this.settle(result);
+  }
+
+  /** Đổi bộ skin theo ghế; vẽ lại toàn bộ nếu đã có ván (xem trước trong shop đổi tức thì). */
+  setSkins(skins: SeatSkins) {
+    if (this.destroyed) return;
+    const same =
+      skins.pens[0] === this.skins.pens[0] &&
+      skins.pens[1] === this.skins.pens[1] &&
+      skins.boxes[0] === this.skins.boxes[0] &&
+      skins.boxes[1] === this.skins.boxes[1];
+    if (same) return;
+    this.skins = skins;
+    if (this.session && this.geo) this.redrawAllPieces();
   }
 
   /** Bật/tắt chạm hai lần (bàn 7×7 trên màn hình hẹp) mà không tạo lại renderer. */
@@ -400,14 +424,13 @@ export class BoardRenderer {
     }
   }
 
-  /** Điểm trên nét vẽ với độ run tay ổn định theo id cạnh. */
-  private strokePoints(edge: number): { x: number; y: number }[] {
+  /** Điểm trên nét vẽ với độ run tay ổn định theo id cạnh (`jitter` = hệ số theo skin bút). */
+  private strokePoints(edge: number, jitter = 1, n = 6): { x: number; y: number }[] {
     const g = this.geo!;
     const [a, b] = edgeEndpoints(g.rows, g.cols, edge);
     const p0 = this.dot(a.r, a.c);
     const p1 = this.dot(b.r, b.c);
-    const n = 6;
-    const amp = g.cell * 0.03;
+    const amp = g.cell * 0.03 * jitter;
     const nx = -(p1.y - p0.y);
     const ny = p1.x - p0.x;
     const len = Math.hypot(nx, ny) || 1;
@@ -425,37 +448,95 @@ export class BoardRenderer {
     return pts;
   }
 
+  /** Màu nét của một cạnh: màu người chơi, hoặc pha cầu vồng theo id cạnh (bút cầu vồng). */
+  private strokeColor(edge: number, owner: Player, pen: PenParams): number {
+    const base = this.colors.pens[owner];
+    if (pen.hue !== "rainbow") return base;
+    const RAINBOW = [0xff5f5f, 0xffa64d, 0xffe14d, 0x6ee77a, 0x4fc3ff, 0x8a7bff, 0xff7bd6];
+    return blend(RAINBOW[edge % RAINBOW.length], base, 0.4);
+  }
+
+  /**
+   * Vẽ một nét (toàn bộ hoặc tới `progress`) theo tham số skin bút: bề dày, mờ, run tay, đầu nét,
+   * quầng sáng (glow), nét đứt (dash), thanh đậm (taper).
+   */
   private drawStroke(
     gfx: InstanceType<Pixi["Graphics"]>,
     edge: number,
     color: number,
     progress: number,
     alpha = 1,
+    pen: PenParams = this.skins.pens[0].pen,
   ) {
-    const pts = this.strokePoints(edge);
     const g = this.geo!;
+    const n = pen.dash || pen.taper ? 24 : 6;
+    const pts = this.strokePoints(edge, pen.jitter ?? 1, n);
     gfx.clear();
     const total = pts.length - 1;
     const upto = total * Math.min(1, Math.max(0, progress));
     const full = Math.floor(upto);
-    gfx.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i <= full; i++) gfx.lineTo(pts[i].x, pts[i].y);
+    // Điểm cuối nội suy để nét "chạy".
+    const poly = pts.slice(0, full + 1);
     if (full < total) {
       const t = upto - full;
       const a = pts[full];
       const b = pts[full + 1];
-      gfx.lineTo(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+      poly.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
     }
-    gfx.stroke({ width: Math.max(3, g.cell * 0.09), color, alpha, cap: "round", join: "round" });
+    const width = Math.max(3, g.cell * 0.09) * pen.width;
+    const cap = pen.cap ?? "round";
+    const a = alpha * (pen.alpha ?? 1);
+    if (pen.glow && alpha >= 1) {
+      // Quầng sáng: nét rộng mờ bên dưới.
+      gfx.moveTo(poly[0].x, poly[0].y);
+      for (const q of poly.slice(1)) gfx.lineTo(q.x, q.y);
+      gfx.stroke({
+        width: width * 2.6,
+        color: parseHex(pen.glow),
+        alpha: 0.35,
+        cap,
+        join: "round",
+      });
+    }
+    if (pen.taper) {
+      // Thanh đậm: từng đoạn với bề dày theo sin(πt) (mảnh hai đầu, dày giữa).
+      for (let i = 1; i < poly.length; i++) {
+        const t = i / total;
+        const w = width * (0.45 + 0.75 * Math.sin(Math.PI * Math.min(1, t)));
+        gfx.moveTo(poly[i - 1].x, poly[i - 1].y).lineTo(poly[i].x, poly[i].y);
+        gfx.stroke({ width: w, color, alpha: a, cap: "round", join: "round" });
+      }
+      return;
+    }
+    if (pen.dash) {
+      // Nét đứt: lặp [vẽ, hở] theo tỷ lệ ô; vẽ các đoạn con nằm trong phần "vẽ".
+      const [on, off] = pen.dash;
+      const period = (on + off) * g.cell;
+      let dist = 0;
+      for (let i = 1; i < poly.length; i++) {
+        const seg = Math.hypot(poly[i].x - poly[i - 1].x, poly[i].y - poly[i - 1].y);
+        const phase = (dist % period) / g.cell;
+        if (phase < on * 0.98) {
+          gfx.moveTo(poly[i - 1].x, poly[i - 1].y).lineTo(poly[i].x, poly[i].y);
+        }
+        dist += seg;
+      }
+      gfx.stroke({ width, color, alpha: a, cap, join: "round" });
+      return;
+    }
+    gfx.moveTo(poly[0].x, poly[0].y);
+    for (const q of poly.slice(1)) gfx.lineTo(q.x, q.y);
+    gfx.stroke({ width, color, alpha: a, cap, join: "round" });
   }
 
   private addEdge(edge: number, owner: Player, animate: boolean) {
     const gfx = new this.px.Graphics();
     this.layers.edges.addChild(gfx);
     this.edgeG.set(edge, gfx);
-    const color = this.colors.pens[owner];
+    const pen = this.skins.pens[owner].pen;
+    const color = this.strokeColor(edge, owner, pen);
     if (!animate) {
-      this.drawStroke(gfx, edge, color, 1);
+      this.drawStroke(gfx, edge, color, 1, 1, pen);
       return;
     }
     const tween = { p: 0 };
@@ -463,7 +544,7 @@ export class BoardRenderer {
       p: 1,
       duration: 0.18,
       ease: "power2.out",
-      onUpdate: () => !this.destroyed && this.drawStroke(gfx, edge, color, tween.p),
+      onUpdate: () => !this.destroyed && this.drawStroke(gfx, edge, color, tween.p, 1, pen),
     });
   }
 
@@ -477,26 +558,114 @@ export class BoardRenderer {
     const size = g.cell - inset * 2;
     const container = new this.px.Container();
     container.position.set(p.x + g.cell / 2, p.y + g.cell / 2);
-    const gfx = new this.px.Graphics();
-    // Tô nhạt + gạch chéo như bút tô vội.
-    gfx.roundRect(-size / 2, -size / 2, size, size, size * 0.12).fill({ color, alpha: 0.22 });
-    const step = size / 4;
-    for (let i = -size; i < size; i += step) {
-      gfx
-        .moveTo(Math.max(-size / 2, i), Math.max(-size / 2, -i - size))
-        .lineTo(Math.min(size / 2, i + size), Math.min(size / 2, -i));
-    }
-    gfx.stroke({ width: Math.max(1.5, g.cell * 0.035), color, alpha: 0.55, cap: "round" });
-    container.addChild(gfx);
+    const skin = this.skins.boxes[owner];
+    container.addChild(this.drawBoxEffect(skin, box, color, size));
     this.layers.boxes.addChild(container);
     this.boxG.set(box, container);
     if (animate) {
       container.alpha = 0;
-      container.scale.set(0.6);
+      const from = skin.box.effect === "stamp" || skin.box.effect === "seal" ? 1.6 : 0.6;
+      container.scale.set(from);
       this.gsap.to(container, { alpha: 1, duration: 0.2 });
-      this.gsap.to(container.scale, { x: 1, y: 1, duration: 0.35, ease: "back.out(2)" });
-      this.burstPaper(container.x, container.y, color);
+      this.gsap.to(container.scale, {
+        x: 1,
+        y: 1,
+        duration: from > 1 ? 0.22 : 0.35,
+        ease: from > 1 ? "power3.in" : "back.out(2)",
+      });
+      this.burst(container.x, container.y, color, skin.box.particles);
     }
+  }
+
+  /** Hình ô đã ăn theo hiệu ứng của skin (docs/08: danh sách hiệu ứng cố định trong engine). */
+  private drawBoxEffect(
+    skin: BoxSkin,
+    box: number,
+    color: number,
+    size: number,
+  ): InstanceType<Pixi["Container"]> {
+    const g = this.geo!;
+    const gfx = new this.px.Graphics();
+    const { effect, alpha } = skin.box;
+    const thin = Math.max(1.5, g.cell * 0.035);
+    const h = size / 2;
+    const hatch = (dir: 1 | -1) => {
+      const step = size / 4;
+      for (let i = -size; i < size; i += step) {
+        const x0 = Math.max(-h, i);
+        const x1 = Math.min(h, i + size);
+        if (dir === 1) gfx.moveTo(x0, Math.max(-h, -i - size)).lineTo(x1, Math.min(h, -i));
+        else gfx.moveTo(x0, -Math.max(-h, -i - size)).lineTo(x1, -Math.min(h, -i));
+      }
+    };
+    switch (effect) {
+      case "fill":
+        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
+        break;
+      case "crosshatch":
+        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
+        hatch(1);
+        hatch(-1);
+        gfx.stroke({ width: thin, color, alpha: 0.55, cap: "round" });
+        break;
+      case "dots": {
+        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha: alpha * 0.5 });
+        const r = size * 0.09;
+        for (let i = 0; i < 3; i++)
+          for (let j = 0; j < 3; j++)
+            gfx.circle(-h + size * (0.2 + i * 0.3), -h + size * (0.2 + j * 0.3), r);
+        gfx.fill({ color, alpha: 0.7 });
+        break;
+      }
+      case "scribble": {
+        // Đường zigzag tất định theo id ô.
+        let seed = box * 7919 + 13;
+        const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+        gfx.moveTo(-h * 0.8, -h * 0.7);
+        for (let i = 0; i < 9; i++)
+          gfx.lineTo((rnd() * 2 - 1) * h * 0.85, (rnd() * 2 - 1) * h * 0.85);
+        gfx.stroke({ width: thin * 1.6, color, alpha: 0.6, cap: "round", join: "round" });
+        break;
+      }
+      case "star":
+        gfx.star(0, 0, 5, h * 0.9, h * 0.42, -Math.PI / 2).fill({ color, alpha: alpha + 0.3 });
+        gfx.stroke({ width: thin, color, alpha: 0.9, join: "round" });
+        break;
+      case "stamp": {
+        gfx.circle(0, 0, h * 0.78).stroke({ width: thin * 2, color, alpha: 0.85 });
+        gfx.circle(0, 0, h * 0.62).stroke({ width: thin, color, alpha: 0.6 });
+        const t = this.makeText("10", color, size * 0.5, false);
+        t.alpha = 0.9;
+        const c = new this.px.Container();
+        c.addChild(gfx, t);
+        c.rotation = ((box % 5) - 2) * 0.12;
+        return c;
+      }
+      case "heart": {
+        const w = h * 0.95;
+        gfx
+          .moveTo(0, w * 0.75)
+          .bezierCurveTo(-w * 1.35, -w * 0.1, -w * 0.6, -w * 1.05, 0, -w * 0.4)
+          .bezierCurveTo(w * 0.6, -w * 1.05, w * 1.35, -w * 0.1, 0, w * 0.75)
+          .closePath()
+          .fill({ color, alpha: alpha + 0.25 })
+          .stroke({ width: thin, color, alpha: 0.9, join: "round" });
+        break;
+      }
+      case "seal":
+        gfx.circle(0, 0, h * 0.86).fill({ color: this.colors.accent, alpha: 0.95 });
+        gfx
+          .circle(0, 0, h * 0.86)
+          .stroke({ width: thin * 1.4, color: this.colors.ink, alpha: 0.9 });
+        gfx.star(0, 0, 5, h * 0.55, h * 0.26, -Math.PI / 2).fill({ color, alpha: 0.95 });
+        break;
+      case "hatch":
+      default:
+        gfx.roundRect(-h, -h, size, size, size * 0.12).fill({ color, alpha });
+        hatch(1);
+        gfx.stroke({ width: thin, color, alpha: 0.55, cap: "round" });
+    }
+    return gfx;
   }
 
   // ---------- Hiệu ứng (docs/08 — Animation & Âm thanh) ----------
@@ -507,7 +676,13 @@ export class BoardRenderer {
     return { x: p.x + g.cell / 2, y: p.y + g.cell / 2 };
   }
 
-  private makeText(text: string, fill: number, fontSize: number) {
+  private makeText(
+    text: string,
+    fill: number,
+    fontSize: number,
+    sticker = true,
+    strokeColor = this.colors.ink,
+  ) {
     const t = new this.px.Text({
       text,
       style: {
@@ -515,35 +690,78 @@ export class BoardRenderer {
         fontSize,
         fontWeight: "700",
         fill,
-        stroke: { color: this.colors.ink, width: Math.max(2, fontSize * 0.11), join: "round" },
-        dropShadow: {
-          color: this.colors.ink,
-          alpha: 0.85,
-          blur: 0,
-          angle: Math.PI / 4,
-          distance: Math.max(2, fontSize * 0.1),
-        },
+        stroke: sticker
+          ? { color: strokeColor, width: Math.max(2, fontSize * 0.11), join: "round" }
+          : undefined,
+        dropShadow: sticker
+          ? {
+              color: this.colors.ink,
+              alpha: 0.85,
+              blur: 0,
+              angle: Math.PI / 4,
+              distance: Math.max(2, fontSize * 0.1),
+            }
+          : undefined,
       },
     });
     t.anchor.set(0.5);
     return t;
   }
 
-  /** Vụn giấy bắn ra từ ô vừa ăn: hình chữ nhật nhỏ, màu bút + giấy + vàng, có trọng lực. */
-  private burstPaper(x: number, y: number, color: number, count = 10, spread = 1) {
+  /**
+   * Vụn bắn ra từ ô vừa ăn theo loại của skin (docs/08): `paper` chữ nhật giấy có trọng lực,
+   * `ink` giọt mực, `chalk` bụi phấn trắng, `spark` tia điện không rơi, `star` sao vàng.
+   */
+  private burst(
+    x: number,
+    y: number,
+    color: number,
+    kind: Particles = "paper",
+    count = 10,
+    spread = 1,
+  ) {
     if (this.opts.reducedMotion) return;
     const g = this.geo!;
     const layer = this.layers.fx;
-    const palette = [color, color, this.colors.paper, this.colors.accent];
+    const palettes: Record<Particles, number[]> = {
+      paper: [color, color, this.colors.paper, this.colors.accent],
+      ink: [color, color, color, blend(color, this.colors.ink, 0.4)],
+      chalk: [0xffffff, 0xf2f2f2, 0xe0e0e0, color],
+      spark: [color, this.colors.accent, 0xffffff, color],
+      star: [this.colors.accent, this.colors.accent, this.colors.paper, color],
+    };
+    const palette = palettes[kind];
     const parts: { s: InstanceType<Pixi["Graphics"]>; vx: number; vy: number; rot: number }[] = [];
-    const speed = g.cell * 1.6 * spread;
-    for (let i = 0; i < count; i++) {
+    const speed = g.cell * (kind === "spark" ? 2.4 : 1.6) * spread;
+    const n = kind === "spark" || kind === "chalk" ? Math.round(count * 1.4) : count;
+    for (let i = 0; i < n; i++) {
       const s = new this.px.Graphics();
+      const c = palette[i % palette.length];
       const w = g.cell * (0.08 + Math.random() * 0.1);
       const h = g.cell * (0.05 + Math.random() * 0.06);
-      s.roundRect(-w / 2, -h / 2, w, h, h * 0.3)
-        .fill(palette[i % palette.length])
-        .stroke({ width: 1, color: this.colors.ink, alpha: 0.7 });
+      switch (kind) {
+        case "ink":
+          s.circle(0, 0, g.cell * (0.03 + Math.random() * 0.05)).fill({ color: c, alpha: 0.85 });
+          break;
+        case "chalk":
+          s.rect(-h / 2, -h / 2, h, h).fill({ color: c, alpha: 0.8 });
+          break;
+        case "spark":
+          s.moveTo(-w * 0.8, 0)
+            .lineTo(w * 0.8, 0)
+            .stroke({ width: Math.max(1.5, h * 0.5), color: c });
+          break;
+        case "star":
+          s.star(0, 0, 5, h * 1.1, h * 0.5)
+            .fill(c)
+            .stroke({ width: 1, color: this.colors.ink, alpha: 0.6 });
+          break;
+        case "paper":
+        default:
+          s.roundRect(-w / 2, -h / 2, w, h, h * 0.3)
+            .fill(c)
+            .stroke({ width: 1, color: this.colors.ink, alpha: 0.7 });
+      }
       s.position.set(x, y);
       s.rotation = Math.random() * Math.PI;
       layer.addChild(s);
@@ -552,13 +770,14 @@ export class BoardRenderer {
       parts.push({
         s,
         vx: Math.cos(ang) * v,
-        vy: Math.sin(ang) * v - speed * 0.5,
-        rot: (Math.random() - 0.5) * 12,
+        vy: Math.sin(ang) * v - (kind === "spark" ? 0 : speed * 0.5),
+        rot: kind === "spark" ? 0 : (Math.random() - 0.5) * 12,
       });
+      if (kind === "spark") s.rotation = ang;
     }
     const tween = { t: 0 };
-    const dur = 0.55 + Math.random() * 0.2;
-    const gravity = g.cell * 6;
+    const dur = (kind === "spark" ? 0.3 : 0.55) + Math.random() * 0.2;
+    const gravity = kind === "spark" ? 0 : kind === "chalk" ? g.cell * 2.5 : g.cell * 6;
     this.gsap.to(tween, {
       t: 1,
       duration: dur,
@@ -588,16 +807,19 @@ export class BoardRenderer {
     const cx = centers.reduce((a, c) => a + c.x, 0) / centers.length;
     const cy = centers.reduce((a, c) => a + c.y, 0) / centers.length;
     const fontSize = Math.max(20, Math.min(46, g.cell * 0.5 + combo * 2));
-    const text = this.makeText(label, this.colors.accent, fontSize);
+    const skin: PenSkin = this.skins.pens[by];
+    const penColor = this.colors.pens[by];
+    const text = this.comboText(label, skin, penColor, fontSize);
     // Giữ chữ trong khung canvas.
     const halfW = text.width / 2 + 4;
     const x = Math.min(g.width - halfW, Math.max(halfW, cx));
     const y = Math.max(fontSize, cy - g.cell * 0.2);
     text.position.set(x, y);
     text.scale.set(0.2);
-    text.rotation = (Math.random() - 0.5) * 0.3;
+    text.rotation = (Math.random() - 0.5) * (skin.combo.style === "ink" ? 0.5 : 0.3);
     this.layers.fx.addChild(text);
-    this.burstPaper(x, y, this.colors.pens[by], 6 + combo * 2, 1.4);
+    this.burst(x, y, penColor, skin.combo.particles, 6 + combo * 2, 1.4);
+    if (skin.combo.style === "sparkle") this.burst(x, y, penColor, "star", 8, 1.8);
     const tl = this.gsap.timeline({
       onComplete: () => {
         if (!this.destroyed) text.destroy();
@@ -607,6 +829,28 @@ export class BoardRenderer {
       .to(text, { rotation: 0, duration: 0.28 }, 0)
       .to(text.scale, { x: 1, y: 1, duration: 0.15 })
       .to(text, { y: y - g.cell * 0.6, alpha: 0, duration: 0.45, ease: "power1.in" }, "+=0.35");
+  }
+
+  /** Chữ COMBO theo kiểu của skin bút (docs/08): sticker, mực, phấn, neon, lấp lánh. */
+  private comboText(label: string, skin: PenSkin, penColor: number, fontSize: number) {
+    switch (skin.combo.style) {
+      case "ink":
+        return this.makeText(label, penColor, fontSize, true, this.colors.paper);
+      case "chalk": {
+        const t = this.makeText(label, 0xffffff, fontSize, false);
+        t.alpha = 0.92;
+        return t;
+      }
+      case "neon": {
+        const glow = skin.pen.glow ? parseHex(skin.pen.glow) : this.colors.accent;
+        return this.makeText(label, glow, fontSize * 1.1, true, penColor);
+      }
+      case "sparkle":
+        return this.makeText(label, this.colors.accent, fontSize * 1.1, true, this.colors.ink);
+      case "sticker":
+      default:
+        return this.makeText(label, this.colors.accent, fontSize);
+    }
   }
 
   /** Rung bàn nhẹ (combo ≥ 3). `intensity` 0–1. */
@@ -767,7 +1011,25 @@ export class BoardRenderer {
     this.previewEdge = edge;
     this.previewG.clear();
     if (edge === null || !this.session) return;
-    this.drawStroke(this.previewG, edge, this.colors.pens[this.session.human], 1, 0.35);
+    const seat = this.session.human;
+    const pen = this.skins.pens[seat].pen;
+    this.drawStroke(this.previewG, edge, this.strokeColor(edge, seat, pen), 1, 0.35, pen);
     this.host.style.cursor = "pointer";
   }
+}
+
+// ---------- Màu ----------
+
+function parseHex(hex: string): number {
+  return parseInt(hex.replace("#", ""), 16);
+}
+
+/** Pha hai màu: `t` = 0 → a, 1 → b. */
+function blend(a: number, b: number, t: number): number {
+  const ch = (shift: number) => {
+    const x = (a >> shift) & 0xff;
+    const y = (b >> shift) & 0xff;
+    return Math.round(x + (y - x) * t) & 0xff;
+  };
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }

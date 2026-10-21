@@ -128,6 +128,11 @@ Các trường hiển thị cho người chơi lưu dạng JSONB có đủ hai n
 | Tìm trận | Find a match |
 | Mùa (Học kỳ n) | Season (Semester n) |
 | Lên hạng / Rớt hạng | Promoted / Demoted |
+| Cửa hàng | Shop |
+| Bút / Ô đã ăn (loại skin) | Pens / Boxes |
+| Trắng · Xanh lá · Xanh lam · Tím · Vàng (bậc hiếm) | White · Green · Blue · Purple · Gold |
+| Trang bị / Đang dùng | Equip / Equipped |
+| Vẽ thử | Draw |
 | Chơi với máy | Play vs Bot |
 | Ghép trận thường | Casual Match |
 | Xếp hạng | Ranked |

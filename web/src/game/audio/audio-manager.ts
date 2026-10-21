@@ -118,16 +118,22 @@ class AudioManager {
     this.play(DRAW_VARIANTS[i], { rate: 0.94 + Math.random() * 0.12 });
   }
 
-  /** "Ting" ăn ô: ô thứ n trong một lượt cao hơn (đồ–rê–mi…), tối đa ×1.6. */
-  playCapture(combo: number): void {
-    const rate = Math.min(1.6, 1 + 0.08 * Math.max(0, combo - 1));
-    this.play("capture", { rate });
+  /** Có tiếng này trong sprite không (skin tham chiếu tên lạ → dùng tiếng mặc định). */
+  private spriteOr(name: string, fallback: string): string {
+    const sprite = (this.sfx as unknown as { _sprite?: Record<string, unknown> } | null)?._sprite;
+    return sprite && name in sprite ? name : fallback;
   }
 
-  /** Tiếng COMBO (ô thứ n ≥ 2 trong lượt): lấp lánh, cao dần, tối đa ×1.5. */
-  playCombo(combo: number): void {
+  /** "Ting" ăn ô (tiếng của skin bút, docs/08): ô thứ n trong lượt cao hơn, tối đa ×1.6. */
+  playCapture(combo: number, sprite = "capture"): void {
+    const rate = Math.min(1.6, 1 + 0.08 * Math.max(0, combo - 1));
+    this.play(this.spriteOr(sprite, "capture"), { rate });
+  }
+
+  /** Tiếng COMBO (ô thứ n ≥ 2 trong lượt), theo skin bút: cao dần, tối đa ×1.5. */
+  playCombo(combo: number, sprite = "combo"): void {
     const rate = Math.min(1.5, 1 + 0.06 * Math.max(0, combo - 2));
-    this.play("combo", { rate, volume: 0.85 });
+    this.play(this.spriteOr(sprite, "combo"), { rate, volume: 0.85 });
   }
 
   /** Tiếng đếm ô cuối ván: "pop" ngắn, cao dần theo số đếm. */

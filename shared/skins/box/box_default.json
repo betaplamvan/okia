@@ -1,0 +1,19 @@
+{
+  "id": "box_default",
+  "type": "box",
+  "rarity": "common",
+  "name": {
+    "vi": "Gạch chéo",
+    "en": "Hatch"
+  },
+  "description": {
+    "vi": "Tô vội vài gạch chéo, kiểu cổ điển.",
+    "en": "A few quick diagonal hatches, the classic."
+  },
+  "box": {
+    "effect": "hatch",
+    "alpha": 0.22,
+    "particles": "paper"
+  },
+  "default": true
+}

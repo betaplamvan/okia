@@ -4,6 +4,7 @@ import { Box } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import type { GameSession } from "@/game/controller";
 import type { BoardRenderer, RendererEvent } from "@/game/renderer/board-renderer";
+import type { SeatSkins } from "@/game/skins/skins";
 
 type BoardCanvasProps = {
   session: GameSession;
@@ -15,6 +16,8 @@ type BoardCanvasProps = {
   label: string;
   /** Chữ "COMBO ×n" đã dịch (P0-14: qua hàm t, engine không tự dịch). */
   comboLabel: (n: number) => string;
+  /** Skin bút / ô theo ghế (ADR-0013); bỏ trống = mặc định. */
+  skins?: SeatSkins;
 };
 
 // Mount BoardRenderer (PixiJS) đúng một lần cho mỗi lần mount; mọi cập nhật (ván, chế độ chạm)
@@ -26,6 +29,7 @@ export function BoardCanvas({
   twoTapTouch,
   label,
   comboLabel,
+  skins,
 }: BoardCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [renderer, setRenderer] = useState<BoardRenderer | null>(null);
@@ -71,6 +75,10 @@ export function BoardCanvas({
   useEffect(() => {
     renderer?.setTwoTapTouch(!!twoTapTouch);
   }, [renderer, twoTapTouch]);
+
+  useEffect(() => {
+    if (skins) renderer?.setSkins(skins);
+  }, [renderer, skins]);
 
   useEffect(() => {
     renderer?.setSession(session);

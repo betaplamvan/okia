@@ -1,0 +1,18 @@
+{
+  "id": "box_scribble",
+  "type": "box",
+  "rarity": "rare",
+  "name": {
+    "vi": "Nguệch ngoạc",
+    "en": "Scribble"
+  },
+  "description": {
+    "vi": "Tô nguệch ngoạc như sắp hết giờ kiểm tra.",
+    "en": "Scribbled over like the exam is about to end."
+  },
+  "box": {
+    "effect": "scribble",
+    "alpha": 0.25,
+    "particles": "ink"
+  }
+}
