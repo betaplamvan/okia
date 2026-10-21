@@ -95,12 +95,23 @@ def clear_refresh_cookie(response: Response) -> None:
     response.delete_cookie(REFRESH_COOKIE, path="/auth", domain=s.cookie_domain)
 
 
+async def _login(db: AsyncSession, request: Request, user: User) -> service.Issued:
+    """Phát phiên mới. Tài khoản thật: phiên ở nơi khác vừa bị thu hồi (service.issue) → đá luôn
+    các kết nối WS đang mở của tài khoản trên mọi tiến trình."""
+    from app.ws.endpoint import CLOSE_SESSION_REPLACED
+
+    issued = await service.issue(db, user, request.headers.get("user-agent"))
+    await ws_cache.invalidate(request.app.state.redis, user.id)
+    if not user.is_guest:
+        await request.app.state.hub.kick_user(str(user.id), CLOSE_SESSION_REPLACED)
+    return issued
+
+
 async def _issue(
     db: AsyncSession, request: Request, response: Response, user: User, *, switched: bool = False
 ) -> TokenOut:
-    issued = await service.issue(db, user, request.headers.get("user-agent"))
+    issued = await _login(db, request, user)
     set_refresh_cookie(response, issued.refresh_token)
-    await ws_cache.invalidate(request.app.state.redis, user.id)
     return TokenOut(
         access_token=issued.access_token,
         expires_in=get_settings().access_token_ttl_seconds,
@@ -222,7 +233,7 @@ async def google_callback(
         await ws_cache.invalidate(redis, current.id)
     if created:
         tasks.add_task(service.send_welcome, user)
-    issued = await service.issue(db, user, request.headers.get("user-agent"))
+    issued = await _login(db, request, user)
     resp = back(ctx.return_to, auth="google", switched="1" if switched else "0")
     set_refresh_cookie(resp, issued.refresh_token)
     return resp

@@ -84,7 +84,20 @@ def access_for(user: User) -> str:
 
 
 async def issue(db: AsyncSession, user: User, user_agent: str | None) -> Issued:
-    """Phát access JWT + refresh token mới, ghi `sessions`."""
+    """Phát access JWT + refresh token mới, ghi `sessions`.
+
+    Tài khoản thật chỉ giữ một phiên (docs/13 — Một phiên mỗi tài khoản): lần đăng nhập mới thu
+    hồi mọi phiên khác với lý do `replaced` và tăng `token_version` để access token cũ chết ngay.
+    Router lo phần đá kết nối WS. Khách không áp dụng: device id chỉ sống trong một trình duyệt,
+    và hai nơi chung device id sẽ tự đăng nhập khách đá nhau mãi.
+    """
+    if not user.is_guest:
+        await db.execute(
+            update(Session)
+            .where(Session.user_id == user.id, Session.revoked_at.is_(None))
+            .values(revoked_at=_now(), revoked_reason="replaced")
+        )
+        user.token_version += 1
     raw = security.new_refresh_token()
     db.add(
         Session(
@@ -100,13 +113,16 @@ async def issue(db: AsyncSession, user: User, user_agent: str | None) -> Issued:
 
 
 async def rotate(db: AsyncSession, raw: str, user_agent: str | None) -> Issued:
-    """Xoay refresh token. Dùng lại token đã xoay → thu hồi mọi phiên của user (docs/13)."""
+    """Xoay refresh token. Dùng lại token đã xoay → thu hồi mọi phiên của user (docs/13).
+    Token bị thay bởi lần đăng nhập nơi khác → `SESSION_REPLACED` (client báo cho người dùng)."""
     res = await db.execute(
         select(Session).where(Session.refresh_hash == security.hash_refresh_token(raw))
     )
     sess = res.scalar_one_or_none()
     if sess is None:
         raise AppError("UNAUTHORIZED", 401)
+    if sess.revoked_reason == "replaced":
+        raise AppError("SESSION_REPLACED", 401)
     if sess.revoked_at is not None:
         await revoke_all(db, sess.user_id)
         raise AppError("UNAUTHORIZED", 401)

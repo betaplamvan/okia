@@ -81,4 +81,6 @@ class Session(Base, CreatedAtMixin):
     user_agent: Mapped[str | None] = mapped_column(String(256))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # "replaced" = bị đá bởi lần đăng nhập ở nơi khác (docs/13); NULL = xoay / đăng xuất.
+    revoked_reason: Mapped[str | None] = mapped_column(String(16))
     replaced_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))

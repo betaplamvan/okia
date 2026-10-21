@@ -29,6 +29,9 @@ type Listener = (msg: ServerMsg) => void;
 const PING_MS = 20_000;
 const MAX_BACKOFF_MS = 30_000;
 const CLOSE_UNAUTHORIZED = 4401;
+/** Tài khoản đăng nhập nơi khác (docs/13). Refresh: cùng trình duyệt thì cookie mới vẫn dùng được,
+ *  khác nơi thì store về khách và báo người dùng. */
+const CLOSE_SESSION_REPLACED = 4409;
 
 export class WsClient {
   private ws: WebSocket | null = null;
@@ -39,6 +42,8 @@ export class WsClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private opening = false;
   private waiters: Array<() => void> = [];
+  /** Server vừa từ chối token (4401/4409) → lần nối sau phải refresh dù token chưa hết hạn. */
+  private stale = false;
 
   /** Bật kết nối (idempotent). Trả promise xong khi đã online lần này. */
   connect(): Promise<void> {
@@ -80,10 +85,11 @@ export class WsClient {
       const auth = useAuth.getState();
       await auth.boot(auth.locale);
       let s = useAuth.getState();
-      if (!s.accessToken || Date.now() > s.expiresAt - 30_000) {
+      if (this.stale || !s.accessToken || Date.now() > s.expiresAt - 30_000) {
         const user = await s.refresh().catch(() => null);
         if (!user) await s.guest();
         s = useAuth.getState();
+        this.stale = false;
       }
       const token = s.accessToken;
       if (!token) throw new Error("no token");
@@ -120,8 +126,10 @@ export class WsClient {
         this.clearTimers();
         if (!this.wanted) return;
         useConnection.setState({ status: "offline" });
-        // 4401: token hết hạn → open() sẽ refresh trước khi nối lại.
-        const delay = ev.code === CLOSE_UNAUTHORIZED ? 300 : this.backoff();
+        // 4401 / 4409: token không còn dùng được → open() refresh trước khi nối lại.
+        const rejected = ev.code === CLOSE_UNAUTHORIZED || ev.code === CLOSE_SESSION_REPLACED;
+        if (rejected) this.stale = true;
+        const delay = rejected ? 300 : this.backoff();
         this.reconnectTimer = setTimeout(() => void this.open(), delay);
       };
       ws.onerror = () => {

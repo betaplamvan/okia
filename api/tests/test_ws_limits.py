@@ -124,3 +124,25 @@ def test_logout_all_invalidates_cache(client: TestClient) -> None:
     with pytest.raises(WebSocketDisconnect) as e:
         open_ws(client, tok)
     assert e.value.code == endpoint.CLOSE_UNAUTHORIZED
+
+
+def test_new_login_kicks_old_ws(client: TestClient) -> None:
+    """Một phiên mỗi tài khoản (docs/13): đăng nhập nơi mới đóng WS nơi cũ với 4409, token cũ
+    không nối lại được nữa."""
+
+    def login() -> str:
+        r = client.post("/auth/dev-login", json={"email": "kick@example.com"})
+        assert r.status_code == 200, r.text
+        client.cookies.clear()
+        return r.json()["accessToken"]
+
+    old = login()
+    ws = open_ws(client, old)
+    new = login()
+    with pytest.raises(WebSocketDisconnect) as e:
+        ws.receive_text()
+    assert e.value.code == endpoint.CLOSE_SESSION_REPLACED
+    with pytest.raises(WebSocketDisconnect) as e:
+        open_ws(client, old)
+    assert e.value.code == endpoint.CLOSE_UNAUTHORIZED
+    open_ws(client, new)

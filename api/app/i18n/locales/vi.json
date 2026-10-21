@@ -1,6 +1,7 @@
 {
   "errors": {
     "UNAUTHORIZED": "Bạn cần đăng nhập.",
+    "SESSION_REPLACED": "Tài khoản của bạn vừa đăng nhập ở nơi khác.",
     "GUEST_NOT_ALLOWED": "Tạo tài khoản để dùng tính năng này.",
     "EMAIL_NOT_VERIFIED": "Hãy xác minh email để chơi xếp hạng.",
     "NOT_YOUR_TURN": "Chưa đến lượt bạn.",

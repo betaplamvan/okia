@@ -22,7 +22,7 @@ function showError(e: unknown, fallback: string) {
   toaster.error({ title: e instanceof ApiError && e.message ? e.message : fallback });
 }
 
-function GoogleButton({ label }: { label: string }) {
+export function GoogleButton({ label }: { label: string }) {
   const t = useTranslations("Auth");
   const googleStart = useAuth((s) => s.googleStart);
   const pathname = usePathname();

@@ -4,6 +4,9 @@
  * Khởi động (boot): thử /auth/refresh; không có phiên → tự đăng nhập khách bằng device id
  * trong localStorage (giống noitu: vào là có tài khoản ngay, không cần màn đăng nhập).
  * Chỉ có khách và Google (ADR-0011) — không có mật khẩu.
+ *
+ * Một phiên mỗi tài khoản (docs/13): tài khoản đăng nhập nơi khác → refresh ở đây trả
+ * SESSION_REPLACED → chuyển về khách và bật `sessionReplaced` để hiện hộp thông báo.
  */
 import { create } from "zustand";
 import {
@@ -20,6 +23,9 @@ import {
 } from "@/lib/api";
 
 const DEVICE_KEY = "okia:device";
+/** Tab nào nhận SESSION_REPLACED thì ghi khóa này: các tab cùng trình duyệt (sự kiện `storage`) cũng
+ *  báo, vì cookie chung đã thành cookie khách và refresh ở đó sẽ lặng lẽ ra khách. */
+export const SESSION_REPLACED_KEY = "okia:session-replaced";
 const SKEW_MS = 30_000;
 
 export type ProfileTab = "overview" | "rank" | "account";
@@ -42,11 +48,19 @@ type AuthState = {
   rank: MyRankOut | null;
   /** Skin sở hữu + đang trang bị (GET /me/skins); null khi chưa tải. */
   skins: MySkinsOut | null;
+  /** Tài khoản vừa đăng nhập nơi khác, phiên ở đây đã bị thay (đã về khách) → hiện thông báo. */
+  sessionReplaced: boolean;
 
   boot(locale: string): Promise<void>;
   /** Gọi API kèm Bearer; hết hạn thì refresh trước, 401 thì refresh rồi thử lại một lần. */
   authed<T>(path: string, init?: ApiInit): Promise<T>;
+  /** Làm mới phiên. Phiên bị thay ở nơi khác → về khách, trả user khách. */
   refresh(): Promise<User | null>;
+  /** Tài khoản thật: hỏi /me để biết phiên còn sống (tab quay lại, định kỳ). */
+  checkSession(): Promise<void>;
+  /** Tab khác cùng trình duyệt vừa nhận SESSION_REPLACED. */
+  replacedInOtherTab(): Promise<void>;
+  dismissSessionReplaced(): void;
   guest(): Promise<void>;
   logout(): Promise<void>;
   logoutAll(): Promise<void>;
@@ -94,6 +108,9 @@ function deviceId(): string {
 }
 
 let bootPromise: Promise<void> | null = null;
+// Một lần refresh tại một thời điểm: REST 401 và WS 4409 cùng lúc mà mỗi bên tự xoay cookie thì bên
+// chậm gửi token vừa bị xoay → server coi là dùng lại token và thu hồi cả phiên.
+let refreshPromise: Promise<User | null> | null = null;
 
 export const useAuth = create<AuthState>()((set, get) => ({
   status: "idle",
@@ -108,6 +125,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   progress: null,
   rank: null,
   skins: null,
+  sessionReplaced: false,
 
   applyToken(tok) {
     const prev = get().user;
@@ -137,18 +155,57 @@ export const useAuth = create<AuthState>()((set, get) => ({
     return bootPromise;
   },
 
-  async refresh() {
-    try {
-      const tok = await api<TokenOut>("/auth/refresh", { method: "POST", locale: get().locale });
-      get().applyToken(tok);
-      return tok.user;
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
+  refresh() {
+    refreshPromise ??= (async () => {
+      try {
+        const tok = await api<TokenOut>("/auth/refresh", { method: "POST", locale: get().locale });
+        get().applyToken(tok);
+        return tok.user;
+      } catch (e) {
+        if (!(e instanceof ApiError && e.status === 401)) throw e;
         set({ user: null, accessToken: null, expiresAt: 0 });
-        return null;
+        if (e.code !== "SESSION_REPLACED") return null;
+        set({ sessionReplaced: true, profileOpen: false, giftOpen: false });
+        try {
+          localStorage.setItem(SESSION_REPLACED_KEY, String(Date.now()));
+        } catch {
+          // Không có localStorage: tab khác sẽ tự phát hiện ở lần refresh sau.
+        }
+        await get().guest();
+        return get().user;
       }
-      throw e;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+    return refreshPromise;
+  },
+
+  async checkSession() {
+    const u = get().user;
+    if (!u || u.isGuest) return;
+    try {
+      const user = await get().authed<User>("/me");
+      if (get().user?.id === user.id) set({ user });
+    } catch {
+      // Mạng lỗi: lần sau kiểm tra lại. Phiên bị thay đã được refresh() xử lý.
     }
+  },
+
+  async replacedInOtherTab() {
+    const u = get().user;
+    if (!u || u.isGuest) return;
+    set({ sessionReplaced: true, profileOpen: false, giftOpen: false });
+    const user = await get()
+      .refresh()
+      .catch(() => null);
+    if (!user)
+      await get()
+        .guest()
+        .catch(() => undefined);
+  },
+
+  dismissSessionReplaced() {
+    set({ sessionReplaced: false });
   },
 
   async guest() {

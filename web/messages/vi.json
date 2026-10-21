@@ -178,7 +178,12 @@
     "statGames": "Ván xếp hạng mùa này",
     "statWins": "Thắng",
     "statStreak": "Chuỗi điểm danh",
-    "statBest": "Kỷ lục chuỗi"
+    "statBest": "Kỷ lục chuỗi",
+    "replacedTitle": "Tài khoản đã đăng nhập ở nơi khác",
+    "replacedBody": "Tài khoản của bạn vừa đăng nhập trên thiết bị hoặc trình duyệt khác nên phiên ở đây đã kết thúc. Bạn đang chơi tiếp với tư cách khách.",
+    "replacedHint": "Đăng nhập lại ở đây sẽ đăng xuất nơi kia.",
+    "replacedLogin": "Đăng nhập lại",
+    "replacedDismiss": "Chơi tiếp như khách"
   },
   "Room": {
     "title": "Phòng riêng",

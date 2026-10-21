@@ -3,6 +3,8 @@
 Mỗi tiến trình giữ map room_id → các kết nối đang xem phòng đó; sự kiện phòng được publish lên
 kênh `room:{id}` và mọi tiến trình đang psubscribe `room:*` đẩy tới kết nối của mình.
 Kênh `user:{id}` gửi riêng cho một người (ghép trận: `matched`, `queue_status`).
+Kênh `kick:{id}` (nội dung = mã đóng) đóng mọi kết nối của một người trên mọi tiến trình — dùng khi
+tài khoản đăng nhập nơi khác (docs/13 — Một phiên mỗi tài khoản).
 """
 
 import asyncio
@@ -29,6 +31,8 @@ class Connection:
     # Token bucket chống spam tin (docs/04 — Giới hạn): nạp `rate` tin/giây, tối đa `burst`.
     tokens: float = 0.0
     tokens_at: float = 0.0
+    # Server đã đóng kết nối (kick) → vòng nhận tin dừng, không gọi receive trên socket đã đóng.
+    kicked: bool = False
 
     def take(self, now: float, rate: float, burst: int) -> bool:
         """Lấy một token; False = đang vượt tần suất."""
@@ -68,7 +72,7 @@ class Hub:
 
     async def _listen(self) -> None:
         pubsub = self.redis.pubsub()
-        await pubsub.psubscribe("room:*", "user:*")
+        await pubsub.psubscribe("room:*", "user:*", "kick:*")
         try:
             async for item in pubsub.listen():
                 if item.get("type") != "pmessage":
@@ -76,6 +80,9 @@ class Hub:
                 channel = item["channel"]
                 kind, target = channel.split(":", 1)
                 data = item["data"]
+                if kind == "kick":
+                    await self._close_user(target, int(data))
+                    continue
                 targets = self.by_room if kind == "room" else self.by_user
                 for conn in list(targets.get(target, ())):
                     try:
@@ -131,3 +138,12 @@ class Hub:
 
     async def publish_user(self, user_id: str, msg: m.Msg) -> None:
         await self.redis.publish(f"user:{user_id}", m.dump(msg))
+
+    async def kick_user(self, user_id: str, code: int) -> None:
+        await self.redis.publish(f"kick:{user_id}", str(code))
+
+    async def _close_user(self, user_id: str, code: int) -> None:
+        for conn in list(self.by_user.get(user_id, ())):
+            conn.kicked = True
+            with contextlib.suppress(Exception):
+                await conn.ws.close(code=code)

@@ -111,6 +111,32 @@ async def test_logout_all_invalidates_access_tokens(client: AsyncClient) -> None
     assert r.status_code == 401
 
 
+async def test_new_login_replaces_old_session(client: AsyncClient) -> None:
+    """Một phiên mỗi tài khoản: đăng nhập nơi mới → nơi cũ mất access lẫn refresh."""
+    a = await dev_login(client)
+    cookie_a = client.cookies["okia_refresh"]
+    client.cookies.clear()
+    b = await dev_login(client)
+    r = await client.get("/me", headers=bearer(a["accessToken"]))
+    assert r.status_code == 401
+    cookie_b = client.cookies["okia_refresh"]
+    client.cookies.set("okia_refresh", cookie_a, path="/auth")
+    r = await client.post("/auth/refresh")
+    assert r.status_code == 401
+    assert r.json()["code"] == "SESSION_REPLACED"
+    # Nơi cũ refresh hỏng không được coi là dùng lại token → phiên mới vẫn sống.
+    client.cookies.set("okia_refresh", cookie_b, path="/auth")
+    assert (await client.get("/me", headers=bearer(b["accessToken"]))).status_code == 200
+    assert (await client.post("/auth/refresh")).status_code == 200
+
+
+async def test_guest_sessions_are_not_replaced(client: AsyncClient) -> None:
+    a = await guest(client)
+    b = await guest(client)
+    assert (await client.get("/me", headers=bearer(a["accessToken"]))).status_code == 200
+    assert (await client.get("/me", headers=bearer(b["accessToken"]))).status_code == 200
+
+
 # ---------- Google ----------
 
 

@@ -56,6 +56,7 @@ CREATE TABLE sessions (                 -- refresh token
   user_agent    TEXT,
   expires_at    TIMESTAMPTZ NOT NULL,
   revoked_at    TIMESTAMPTZ,
+  revoked_reason TEXT,                  -- 'replaced' = bị đá bởi lần đăng nhập nơi khác (docs/13)
   replaced_by   UUID                    -- phiên mới sau khi xoay
 );
 CREATE INDEX ON sessions (user_id);

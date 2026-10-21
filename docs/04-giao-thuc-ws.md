@@ -79,6 +79,7 @@ Tính trên **mỗi tiến trình uvicorn** (`WEB_CONCURRENCY=2` trên productio
 | Mã đóng | Khi nào | Client nên |
 |---|---|---|
 | `4401` | Token sai / hết hạn / đã thu hồi | Refresh token rồi nối lại (0,3 s) |
+| `4409` | Tài khoản vừa đăng nhập nơi khác ([13](13-xac-thuc.md#một-phiên-mỗi-tài-khoản)); server đá mọi kết nối của tài khoản qua kênh Redis `kick:{user_id}` | Refresh rồi nối lại (0,3 s). Cùng trình duyệt thì cookie mới vẫn dùng được; khác nơi thì refresh trả `SESSION_REPLACED` → về khách + báo |
 | `4429` | Quá số kết nối cho phép của tài khoản hoặc IP | Không nối lại ngay; đóng tab thừa |
 | `4430` | Gửi tin quá dày (token bucket 20 tin/giây, cộng dồn tối đa 40) hoặc tin > 16 KB | Nối lại theo backoff thường |
 

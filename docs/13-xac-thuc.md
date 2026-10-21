@@ -71,6 +71,27 @@ Một tài khoản chỉ có identity `google`; không có thao tác gỡ identi
   chỉ cần tăng số này.
 - Trang "Thiết bị đang đăng nhập" (giai đoạn 3) liệt kê `sessions`, cho thu hồi từng phiên.
 
+## Một phiên mỗi tài khoản
+
+Tài khoản thật (Google, dev-login) chỉ đăng nhập ở **một nơi**; lần đăng nhập sau chiếm lần trước
+(2026-10-21).
+
+- `service.issue` khi đăng nhập: thu hồi mọi phiên còn sống của tài khoản với
+  `sessions.revoked_reason = 'replaced'`, tăng `token_version` (access token cũ chết ngay với REST và
+  WS), rồi router publish `kick:{user_id}` → mọi tiến trình đóng WS của tài khoản với mã **4409**.
+- Nơi cũ refresh bằng token bị thay → `401 SESSION_REPLACED`. Không coi là "dùng lại token đã xoay"
+  (nếu không sẽ thu hồi luôn phiên mới).
+- Client (`stores/auth.ts`): refresh nhận `SESSION_REPLACED` → về khách bằng device id, bật
+  `sessionReplaced` → hộp thoại "Tài khoản đã đăng nhập ở nơi khác" (nút *Đăng nhập lại* = Google,
+  sẽ đá nơi kia; hoặc chơi tiếp như khách).
+- Phát hiện ở nơi cũ: ngay lập tức nếu đang có WS (4409); không có WS thì khi quay lại tab / focus
+  và mỗi 60 giây lúc tab đang hiện (`checkSession` → `GET /me`), hoặc ở request kế tiếp.
+- Các tab **cùng trình duyệt** dùng chung cookie refresh nên chỉ refresh lặng lẽ, không bị báo.
+- **Khách không áp dụng**: device id chỉ sống trong một trình duyệt, và hai nơi chung device id sẽ
+  tự đăng nhập khách đá nhau mãi.
+- Refresh phía client chỉ chạy một lần tại một thời điểm (REST 401 và WS 4409 cùng lúc không xoay
+  cookie hai lần).
+
 ## Email giao dịch
 
 - Dịch vụ: **Resend** (SDK Python `resend`), gửi từ `Ô Kìa <no-reply@okia.io.vn>` — tên miền
@@ -101,6 +122,7 @@ Một tài khoản chỉ có identity `google`; không có thao tác gỡ identi
 | `code` | Khi nào |
 |---|---|
 | `UNAUTHORIZED` | Thiếu/sai/hết hạn token |
+| `SESSION_REPLACED` | Refresh bằng phiên đã bị lần đăng nhập nơi khác thay thế |
 | `GUEST_NOT_ALLOWED` | Khách gọi tính năng cần tài khoản |
 | `EMAIL_NOT_VERIFIED` | Tài khoản cũ chưa xác minh (hiếm, trước ADR-0011) |
 | `IDENTITY_TAKEN` | Google đã thuộc tài khoản khác |

@@ -29,6 +29,8 @@ CLOSE_UNAUTHORIZED = 4401
 CLOSE_TOO_MANY = 4429
 # Gửi tin quá dày hoặc quá lớn — client bị ngắt, nối lại theo backoff.
 CLOSE_FLOOD = 4430
+# Tài khoản vừa đăng nhập nơi khác (docs/13) — client refresh; phiên đã bị thay thì báo người dùng.
+CLOSE_SESSION_REPLACED = 4409
 
 
 def hub_of(ws: WebSocket) -> Hub:
@@ -89,7 +91,7 @@ async def ws_endpoint(ws: WebSocket, token: str = "", lang: str | None = None) -
                 server_time=rooms.now_ms(),
             )
         )
-        while True:
+        while not conn.kicked:
             raw = await ws.receive_text()
             # Tin quá lớn hoặc quá dày → ngắt kết nối (không xử lý, không trả lời từng tin).
             if len(raw) > cfg.ws_max_msg_bytes or not conn.take(

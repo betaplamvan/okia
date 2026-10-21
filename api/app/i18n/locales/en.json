@@ -1,6 +1,7 @@
 {
   "errors": {
     "UNAUTHORIZED": "Please sign in.",
+    "SESSION_REPLACED": "Your account just signed in somewhere else.",
     "GUEST_NOT_ALLOWED": "Create an account to use this feature.",
     "EMAIL_NOT_VERIFIED": "Verify your email to play ranked.",
     "NOT_YOUR_TURN": "It is not your turn.",
