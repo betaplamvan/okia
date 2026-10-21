@@ -13,6 +13,7 @@ from app.db import get_session_factory
 from app.errors import AppError
 from app.game import room as rooms
 from app.i18n import Locale, resolve_locale, t
+from app.matchmaking import queue as mmq
 from app.ws import messages as m
 from app.ws.hub import Connection, Hub
 
@@ -52,6 +53,7 @@ async def ws_endpoint(ws: WebSocket, token: str = "", lang: str | None = None) -
     conn = Connection(ws=ws, user_id=user_id, locale=locale)
     hub.add(conn)
     name = user.display_name
+    await mmq.touch_online(redis, user_id)
     try:
         await conn.send(
             m.Welcome(
@@ -91,6 +93,10 @@ async def _on_disconnect(hub: Hub, user_id: str, watched: list[str]) -> None:
         rooms_ = watched or await _rooms_of(hub.redis, user_id)
         for rid in rooms_:
             await _presence_leave(hub, rid, user_id)
+        # Tab cuối của người này đóng → rời hàng chờ (client sẽ tự vào lại khi nối lại) và offline.
+        if user_id not in hub.by_user:
+            await mmq.dequeue(hub.redis, user_id)
+            await mmq.leave_online(hub.redis, user_id)
     except Exception:  # noqa: BLE001
         log.exception("dọn dẹp kết nối %s", user_id)
 
@@ -120,6 +126,7 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
     uid = conn.user_id
     match msg:
         case m.Ping():
+            await mmq.touch_online(redis, uid)
             await conn.send(m.Pong())
 
         case m.RoomCreate():
@@ -171,5 +178,44 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
                 raise AppError("ROOM_NOT_FOUND", 404)
             await hub.publish(room.id, m.EmoteOut(room_id=room.id, by=seat, id=msg.id))  # type: ignore[arg-type]
 
-        case m.Queue() | m.QueueCancel():
-            raise AppError("UNSUPPORTED", 501)
+        case m.Queue():
+            if msg.mode != "ranked":
+                raise AppError("UNSUPPORTED", 501)  # casual: giai đoạn sau (P2-06)
+            entry = await _ranked_entry(redis, uid)
+            await conn.send(m.Queued(mode="ranked", board="random", since=entry.since))
+
+        case m.QueueCancel():
+            await mmq.dequeue(redis, uid)
+
+
+async def _ranked_entry(redis, user_id: str) -> mmq.Entry:
+    """Vào hàng chờ xếp hạng (docs/07): cần tài khoản thật đã xác minh, không đang dở trận.
+    Đọc lại user từ DB vì khách có thể vừa nâng cấp Google trong phiên WS này."""
+    from app.economy.router import avatar_url_for
+    from app.rating import service as rating
+
+    if await rooms.active_room_id(redis, user_id):
+        raise AppError("ALREADY_IN_GAME", 409)
+    async with get_session_factory()() as db:
+        user = await service.get_user(db, uuid.UUID(user_id))
+        if user is None:
+            raise AppError("UNAUTHORIZED", 401)
+        if user.is_guest:
+            raise AppError("GUEST_NOT_ALLOWED", 403)
+        if user.email_verified_at is None:
+            raise AppError("EMAIL_NOT_VERIFIED", 403)
+        season = await rating.current_season(db)
+        r = await rating.get_or_create_rating(db, user.id, season)
+        await db.commit()
+        rank = rating.visible_rank(r)
+        entry = mmq.Entry(
+            user_id=user_id,
+            name=user.display_name,
+            mmr=r.mmr,
+            rd=r.rd,
+            since=mmq.now_ms(),
+            locale=user.locale,
+            rank=rank.to_dict() if rank else None,
+            avatar_url=avatar_url_for(user),
+        )
+    return await mmq.enqueue(redis, entry)

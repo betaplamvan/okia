@@ -123,6 +123,11 @@ Các trường hiển thị cho người chơi lưu dạng JSONB có đủ hai n
 | Học sinh khá | Good Student |
 | Học sinh giỏi | Honor Student |
 | Thủ khoa | Valedictorian |
+| Điểm hạng | Rank points |
+| Phân hạng (5 trận đầu mùa) | Placement |
+| Tìm trận | Find a match |
+| Mùa (Học kỳ n) | Season (Semester n) |
+| Lên hạng / Rớt hạng | Promoted / Demoted |
 | Chơi với máy | Play vs Bot |
 | Ghép trận thường | Casual Match |
 | Xếp hạng | Ranked |

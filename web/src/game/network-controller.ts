@@ -13,7 +13,7 @@ import {
 } from "./controller";
 import { createGameForMap, DEFAULT_MAP_ID } from "./maps";
 import { applyMove, type GameState, type Player } from "./rules";
-import type { GameOver, GameStateOut, RoomState, ServerMsg } from "./ws-types";
+import type { GameOver, GameStateOut, RankOut, RoomState, ServerMsg } from "./ws-types";
 import { useConnection, type WsClient } from "@/net/ws-client";
 
 export type NetworkEvent =
@@ -33,7 +33,7 @@ function fromServer(s: GameStateOut): GameState {
 }
 
 function resultOf(over: GameOver): GameResult {
-  return { winner: over.winner ?? null, reason: over.reason };
+  return { winner: over.winner ?? null, reason: over.reason, ranked: over.ranked ?? null };
 }
 
 export class NetworkController implements GameController {
@@ -64,8 +64,11 @@ export class NetworkController implements GameController {
       result: null,
       online: {
         roomId,
+        mode: "private",
         status: "connecting",
         names: [null, null],
+        avatars: [null, null],
+        ranks: [null, null],
         turnSeconds: null,
         deadline: null,
         opponentOnline: false,
@@ -178,9 +181,13 @@ export class NetworkController implements GameController {
     const seat = (mine?.seat ?? 0) as Player;
     this.mySeat = mine ? seat : null;
     const names: [string | null, string | null] = [null, null];
+    const avatars: [string | null, string | null] = [null, null];
+    const ranks: [RankOut | null, RankOut | null] = [null, null];
     let opponentOnline = false;
     for (const p of rs.players) {
       names[p.seat] = p.name;
+      avatars[p.seat] = p.avatarUrl ?? null;
+      ranks[p.seat] = p.rank ?? null;
       if (p.userId !== me) opponentOnline = p.online ?? false;
     }
     this.serverState = fromServer(rs.state);
@@ -197,8 +204,11 @@ export class NetworkController implements GameController {
         result: rs.result ? resultOf(rs.result) : null,
       },
       {
+        mode: rs.mode,
         status: rs.status,
         names,
+        avatars,
+        ranks,
         turnSeconds: rs.turnSeconds ?? null,
         deadline: rs.deadline ?? null,
         opponentOnline,

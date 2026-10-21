@@ -6,6 +6,7 @@
 import { chooseMove } from "./bot";
 import { createGameForMap, DEFAULT_MAP_ID, resolveMapId } from "./maps";
 import { applyMove, winner, type GameState, type Player } from "./rules";
+import type { RankOut, RankedResult } from "./ws-types";
 
 export type EndReason = "complete" | "resign" | "afk" | "abandon";
 
@@ -29,6 +30,8 @@ export function nextLastTurn(prev: TurnMark | null, by: Player, edge: number): T
 export interface GameResult {
   winner: Player | null;
   reason: EndReason;
+  /** Trận xếp hạng: điểm hạng/thưởng theo ghế (docs/07); null nếu server không chốt được. */
+  ranked?: RankedResult | null;
 }
 
 /** Ảnh chụp bất biến của ván đấu — mỗi thay đổi tạo object mới (hợp với useSyncExternalStore). */
@@ -52,9 +55,13 @@ export interface GameSession {
 
 export interface OnlineInfo {
   roomId: string;
+  mode: "casual" | "ranked" | "private";
   status: "connecting" | "waiting" | "playing" | "over";
   /** Tên theo ghế 0/1 (null khi ghế trống). */
   names: [string | null, string | null];
+  avatars: [string | null, string | null];
+  /** Hạng hiển thị lúc vào trận (chỉ xếp hạng; null = đang phân hạng / không có). */
+  ranks: [RankOut | null, RankOut | null];
   turnSeconds: number | null;
   /** Hạn lượt hiện tại, epoch ms theo giờ server. */
   deadline: number | null;

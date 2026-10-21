@@ -21,6 +21,7 @@ import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { EditProfileForm } from "@/components/auth/edit-profile-form";
 import { CheckinStrip } from "@/components/economy/checkin-strip";
 import { QuestsList } from "@/components/economy/quests-list";
+import { RankTab } from "@/components/ranked/rank-tab";
 import { WalletChips } from "@/components/economy/wallet-chips";
 import { type ProfileTab, useAuth } from "@/stores/auth";
 
@@ -29,6 +30,7 @@ import { type ProfileTab, useAuth } from "@/stores/auth";
 export function ProfileDialog() {
   const t = useTranslations("Auth");
   const te = useTranslations("Economy");
+  const tr = useTranslations("Ranked");
   const format = useFormatter();
   const user = useAuth((s) => s.user);
   const progress = useAuth((s) => s.progress);
@@ -122,7 +124,7 @@ export function ProfileDialog() {
                     lazyMount
                   >
                     <Tabs.List gap={2} justifyContent="center" flexWrap="wrap">
-                      {(["overview", "quests", "account"] as const).map((key) => (
+                      {(["overview", "rank", "quests", "account"] as const).map((key) => (
                         <Tabs.Trigger
                           key={key}
                           value={key}
@@ -135,7 +137,7 @@ export function ProfileDialog() {
                           fontWeight="600"
                           fontFamily="hand"
                         >
-                          {key === "quests" ? te("quests") : t(key)}
+                          {key === "quests" ? te("quests") : key === "rank" ? tr("tab") : t(key)}
                         </Tabs.Trigger>
                       ))}
                     </Tabs.List>
@@ -156,6 +158,9 @@ export function ProfileDialog() {
                           <Text fontSize="sm">{t("overviewSoon")}</Text>
                         </Box>
                       </Stack>
+                    </Tabs.Content>
+                    <Tabs.Content value="rank" pt={4}>
+                      <RankTab />
                     </Tabs.Content>
                     <Tabs.Content value="quests" pt={4}>
                       {progress ? (

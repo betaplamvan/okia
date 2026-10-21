@@ -1,4 +1,4 @@
-"""Trận đấu đã kết thúc (docs/05 — Xếp hạng & trận đấu). season_id tham chiếu bảng seasons ở 2A."""
+"""Trận đấu đã kết thúc (docs/05 — Xếp hạng & trận đấu). Trận xếp hạng có season_id và delta."""
 
 import uuid
 from datetime import datetime
@@ -20,7 +20,9 @@ class Match(Base, CreatedAtMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     mode: Mapped[str] = mapped_column(String(16), nullable=False)  # casual | ranked | private
     board: Mapped[str] = mapped_column(String(32), nullable=False)  # id map (app/game/maps.json)
-    season_id: Mapped[int | None] = mapped_column(Integer)
+    season_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("seasons.id", ondelete="SET NULL")
+    )
     player0: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
@@ -32,6 +34,7 @@ class Match(Base, CreatedAtMixin):
     scores: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False)
     winner: Mapped[int | None] = mapped_column(SmallInteger)  # 0 | 1 | NULL (hòa)
     end_reason: Mapped[str] = mapped_column(String(16), nullable=False)  # complete|resign|afk
-    rating_delta: Mapped[list[float] | None] = mapped_column(ARRAY(Float))
+    rating_delta: Mapped[list[float] | None] = mapped_column(ARRAY(Float))  # mmr ẩn, theo ghế
+    points_delta: Mapped[list[int] | None] = mapped_column(ARRAY(Integer))  # điểm hạng, theo ghế
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

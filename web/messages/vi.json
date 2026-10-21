@@ -25,8 +25,7 @@
     "privateRoom": "Phòng riêng",
     "privateRoomSub": "Tạo phòng, gửi link cho bạn bè",
     "leaderboard": "Bảng xếp hạng",
-    "leaderboardSub": "Xem ai đang đứng đầu mùa này",
-    "comingSoon": "Sắp có"
+    "leaderboardSub": "Xem ai đang đứng đầu mùa này"
   },
   "Rules": {
     "title": "Luật chơi trong 30 giây",
@@ -146,7 +145,6 @@
     "verifiedBadge": "Tài khoản Google",
     "overview": "Tổng quan",
     "account": "Tài khoản",
-    "overviewSoon": "Cấp độ và thành tựu sẽ xuất hiện ở đây.",
     "linkIntro": "Đăng nhập Google để giữ dữ liệu, chơi trên nhiều thiết bị, điểm danh và nhận Ruột chì. Không cần mật khẩu.",
     "google": "Tiếp tục với Google",
     "email": "Email",
@@ -169,7 +167,8 @@
       "OAUTH_EMAIL_UNVERIFIED": "Email Google của bạn chưa được xác minh.",
       "GOOGLE_DISABLED": "Đăng nhập Google chưa được bật trên máy chủ này."
     },
-    "switchedWarn": "Nếu Google này đã có tài khoản Ô Kìa, bạn sẽ chuyển sang tài khoản đó và tài khoản khách hiện tại bị bỏ."
+    "switchedWarn": "Nếu Google này đã có tài khoản Ô Kìa, bạn sẽ chuyển sang tài khoản đó và tài khoản khách hiện tại bị bỏ.",
+    "overviewSoon": "Cấp độ và thành tựu sẽ xuất hiện ở đây."
   },
   "Room": {
     "title": "Phòng riêng",
@@ -213,7 +212,9 @@
     "inviteDescription": "Vào phòng {code} để chơi trò ăn ô trên giấy ô li cùng bạn bè, miễn phí.",
     "shareText": "Vào chơi ăn ô với mình nhé! Mã phòng: {code}",
     "errorBack": "Về sảnh phòng",
-    "noConnection": "Không kết nối được máy chủ."
+    "noConnection": "Không kết nối được máy chủ.",
+    "backRanked": "Tìm trận mới",
+    "rankedCode": "Trận xếp hạng"
   },
   "Maps": {
     "board": "Bàn chơi",
@@ -271,5 +272,76 @@
       "w_win_online3": "Thắng 3 ván online trong tuần",
       "w_daily5": "Nhận thưởng 5 nhiệm vụ ngày trong tuần"
     }
+  },
+  "Ranked": {
+    "title": "Xếp hạng",
+    "tab": "Hạng",
+    "intro": "Ghép với người cùng trình độ, bàn ngẫu nhiên, 30 giây mỗi lượt. Thắng được +Ruột chì và leo hạng.",
+    "find": "Tìm trận",
+    "searching": "Đang tìm đối thủ…",
+    "cancel": "Hủy tìm",
+    "waited": "Đã chờ {s} giây",
+    "waiting": "{n} người đang chờ · {online} người online",
+    "widened": "Đang mở rộng phạm vi ghép. Trận lệch trình độ chỉ cộng/trừ rất ít điểm (có thể chỉ ±1).",
+    "widenHint": "Chờ càng lâu, phạm vi ghép càng rộng.",
+    "inGame": "Bạn đang dở một trận, đang đưa bạn vào lại…",
+    "guestTitle": "Cần tài khoản Google",
+    "guestBody": "Xếp hạng chỉ dành cho tài khoản thật để hạng và Ruột chì không mất khi đổi máy. Khách vẫn chơi được với máy và phòng riêng.",
+    "signIn": "Đăng nhập Google",
+    "placing": "Đang phân hạng",
+    "placement": "Còn {n} trận phân hạng",
+    "placementDone": "Đã xong phân hạng",
+    "points": "{n} điểm",
+    "pointsShort": "điểm",
+    "season": "Mùa {name}",
+    "endsAt": "Kết thúc {date}",
+    "record": "{wins} thắng · {losses} thua",
+    "streak": "Chuỗi thắng {n}",
+    "bestStreak": "Kỷ lục {n}",
+    "position": "Hạng #{n} trên BXH",
+    "noPosition": "Chưa có thứ hạng trên BXH",
+    "nextDivision": "Còn {n} điểm lên bậc tiếp",
+    "topTier": "Thủ khoa — đỉnh bảng rồi!",
+    "tier": {
+      "scratch": "Giấy nháp",
+      "notebook": "Vở ô li",
+      "good": "Học sinh khá",
+      "honor": "Học sinh giỏi",
+      "valedictorian": "Thủ khoa"
+    },
+    "history": "Trận gần đây",
+    "noHistory": "Chưa có trận xếp hạng nào mùa này.",
+    "win": "Thắng",
+    "lose": "Thua",
+    "draw": "Hòa",
+    "unknownOpponent": "Người chơi",
+    "rankedMatch": "Trận xếp hạng",
+    "findAgain": "Tìm trận mới",
+    "deltaTitle": "Điểm hạng",
+    "rewardLead": "+{n} Ruột chì",
+    "noReward": "Không có Ruột chì (bỏ lượt hoặc đầu hàng quá sớm)",
+    "notSettled": "Không chốt được điểm trận này. Hạng của bạn không đổi.",
+    "tierUp": "Lên hạng!",
+    "tierDown": "Rớt hạng",
+    "leaderboardLink": "Bảng xếp hạng",
+    "howTitle": "Điểm hạng tính thế nào?",
+    "how1": "Trận cân sức: thắng +24, thua −16. Điểm không bao giờ âm.",
+    "how2": "Ghép trận dựa trên điểm đánh giá ẩn. Khi vắng người, hệ thống chấp nhận ghép lệch trình độ nhưng giảm điểm cược: người mạnh thắng chỉ +1, người yếu thua chỉ −1.",
+    "how3": "5 trận đầu mùa là phân hạng, chưa hiện hạng. Mỗi hạng có 3 bậc (III → I), mỗi bậc 100 điểm. Thủ khoa từ 1200 điểm.",
+    "how4": "Mùa kéo dài 8 tuần; sang mùa mới điểm giảm một nửa.",
+    "loadError": "Không tải được dữ liệu xếp hạng."
+  },
+  "Leaderboard": {
+    "title": "Bảng xếp hạng",
+    "intro": "Top 100 người chơi mùa này, tính theo điểm hạng.",
+    "endsAt": "Mùa kết thúc {date}",
+    "empty": "Chưa ai qua {n} trận phân hạng mùa này. Hãy là người đầu tiên!",
+    "me": "Vị trí của bạn",
+    "games": "{n} trận",
+    "wins": "{n} thắng",
+    "you": "Bạn",
+    "loading": "Đang tải…",
+    "refresh": "Tải lại",
+    "play": "Đấu xếp hạng"
   }
 }

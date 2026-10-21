@@ -1,4 +1,4 @@
-import { Flex, HStack, Text } from "@chakra-ui/react";
+import { Flex, HStack, Stack, Text } from "@chakra-ui/react";
 
 // Chip người chơi trong HUD (dùng chung màn chơi với máy và phòng online).
 export type PlayerChipProps = {
@@ -8,9 +8,11 @@ export type PlayerChipProps = {
   tone: string;
   active: boolean;
   reverse?: boolean;
+  /** Dòng phụ dưới tên (huy hiệu hạng ở trận xếp hạng). */
+  sub?: React.ReactNode;
 };
 
-export function PlayerChip({ icon, name, score, tone, active, reverse }: PlayerChipProps) {
+export function PlayerChip({ icon, name, score, tone, active, reverse, sub }: PlayerChipProps) {
   return (
     <HStack
       flexDirection={reverse ? "row-reverse" : "row"}
@@ -40,9 +42,12 @@ export function PlayerChip({ icon, name, score, tone, active, reverse }: PlayerC
       >
         {icon}
       </Flex>
-      <Text fontWeight="600" truncate minW={0} title={name}>
-        {name}
-      </Text>
+      <Stack gap={0} minW={0} align={reverse ? "flex-end" : "flex-start"}>
+        <Text fontWeight="600" truncate maxW="full" title={name} lineHeight="1.2">
+          {name}
+        </Text>
+        {sub}
+      </Stack>
       <Text fontWeight="700" fontSize="xl" px={2} minW="8" textAlign="center">
         {score}
       </Text>

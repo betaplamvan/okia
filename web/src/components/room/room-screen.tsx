@@ -20,6 +20,8 @@ import { GameLayout } from "@/components/play/game-layout";
 import { useMapName } from "@/components/play/map-picker";
 import { PlayerChip } from "@/components/play/player-chip";
 import { useGameSounds } from "@/components/play/use-game-sounds";
+import { RewardChips } from "@/components/economy/wallet-chips";
+import { TierBadge } from "@/components/ranked/tier-badge";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
 import type { GameResult } from "@/game/controller";
@@ -27,11 +29,15 @@ import { NetworkController, type NetworkEvent } from "@/game/network-controller"
 import type { RendererEvent } from "@/game/renderer/board-renderer";
 import { Link, useRouter } from "@/i18n/navigation";
 import { serverNow, useConnection, wsClient } from "@/net/ws-client";
+import { TIERS } from "@/lib/api";
+import { useAuth } from "@/stores/auth";
 
-// Màn phòng riêng /r/[code] (P1-19, P1-20): chờ bạn (mã + link mời) → chơi online (timer, trạng thái
+// Màn phòng online /r/[code] (P1-19, P1-20, P2-08): phòng riêng (chờ bạn với mã + link mời) hoặc
+// trận xếp hạng (vào thẳng, có huy hiệu hạng và điểm hạng ± sau trận) → chơi (timer, trạng thái
 // đối thủ) → kết quả. Một NetworkController cho mỗi lần mount; WS client là singleton của tab.
 export function RoomScreen({ code }: { code: string }) {
   const t = useTranslations("Room");
+  const tr = useTranslations("Ranked");
   const tp = useTranslations("Play");
   const tm = useTranslations("Maps");
   const mapName = useMapName();
@@ -87,11 +93,19 @@ export function RoomScreen({ code }: { code: string }) {
     const id = setTimeout(() => setSettled(result), 4000);
     return () => clearTimeout(id);
   }, [result]);
+  const ranked = online?.mode === "ranked";
+  // Trận xếp hạng xong → ví (Ruột chì) và hạng trong store đã cũ → tải lại.
+  useEffect(() => {
+    if (!result || !ranked) return;
+    const s = useAuth.getState();
+    void s.loadProgress();
+    void s.loadRank();
+  }, [result, ranked]);
 
-  // Rời phòng đang chờ → về sảnh.
+  // Rời phòng → về sảnh phòng riêng hoặc màn xếp hạng.
   const leave = () => {
     controller.leave();
-    router.push("/room");
+    router.push(ranked ? "/ranked" : "/room");
   };
 
   if (fatal) {
@@ -129,6 +143,14 @@ export function RoomScreen({ code }: { code: string }) {
     : "";
   const resultTone = result?.winner === human ? "mint" : result?.winner === null ? "sun" : "coral";
   const loserName = result?.winner === null ? "" : result?.winner === human ? theirName : myName;
+  const rk = result?.ranked ?? null;
+  const myDelta = rk ? rk.pointsDelta[human] : 0;
+  const myRankAfter = rk ? rk.ranks[human] : null;
+  const myRankBefore = online.ranks[human];
+  const tierShift =
+    myRankAfter && myRankBefore
+      ? TIERS.indexOf(myRankAfter.tier) - TIERS.indexOf(myRankBefore.tier)
+      : 0;
 
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
@@ -140,6 +162,7 @@ export function RoomScreen({ code }: { code: string }) {
             score={numberFormat.format(state.scores[human])}
             tone={human === 0 ? "pen.blue" : "pen.red"}
             active={yourTurn}
+            sub={ranked ? <TierBadge rank={online.ranks[human]} size="sm" /> : undefined}
           />
         }
         opponent={
@@ -150,6 +173,7 @@ export function RoomScreen({ code }: { code: string }) {
             tone={bot === 0 ? "pen.blue" : "pen.red"}
             active={!yourTurn && !result}
             reverse
+            sub={ranked ? <TierBadge rank={online.ranks[bot]} size="sm" /> : undefined}
           />
         }
         status={
@@ -216,7 +240,13 @@ export function RoomScreen({ code }: { code: string }) {
               {tm("current", { name: mapName(session.mapId) })}
             </Text>
             <Text textAlign="center" color="cream" opacity={0.7} fontSize="sm">
-              {t("codeLabel")}: <b>{code}</b>
+              {ranked ? (
+                t("rankedCode")
+              ) : (
+                <>
+                  {t("codeLabel")}: <b>{code}</b>
+                </>
+              )}
             </Text>
           </Stack>
         }
@@ -285,13 +315,72 @@ export function RoomScreen({ code }: { code: string }) {
                 <Text mt={2} opacity={0.8}>
                   {result ? t(`reason.${result.reason}`, { name: loserName }) : ""}
                 </Text>
+                {ranked ? (
+                  <Stack
+                    mt={4}
+                    gap={2}
+                    align="center"
+                    bg="cream"
+                    border="2px solid"
+                    borderColor="ink"
+                    borderRadius="lg"
+                    p={3}
+                    data-testid="ranked-result"
+                  >
+                    {rk ? (
+                      <>
+                        <Text fontSize="sm" fontWeight="700" opacity={0.8}>
+                          {tr("deltaTitle")}
+                        </Text>
+                        <Text
+                          fontSize="4xl"
+                          fontWeight="700"
+                          lineHeight="1"
+                          color={myDelta >= 0 ? "ink" : "pen.red"}
+                          data-testid="points-delta"
+                        >
+                          {myDelta >= 0 ? "+" : ""}
+                          {numberFormat.format(myDelta)}
+                        </Text>
+                        <HStack gap={2} flexWrap="wrap" justify="center">
+                          <TierBadge rank={myRankAfter} size="md" showPoints />
+                          {tierShift > 0 ? (
+                            <Text as="span" fontWeight="700" color="pen.blue">
+                              ↑ {tr("tierUp")}
+                            </Text>
+                          ) : tierShift < 0 ? (
+                            <Text as="span" fontWeight="700" color="pen.red">
+                              ↓ {tr("tierDown")}
+                            </Text>
+                          ) : null}
+                        </HStack>
+                        {!myRankAfter ? (
+                          <Text fontSize="sm">
+                            {tr("placement", { n: String(rk.placementLeft[human]) })}
+                          </Text>
+                        ) : null}
+                        {result?.winner === human ? (
+                          (rk.rewards[human]?.lead ?? 0) > 0 ? (
+                            <RewardChips reward={rk.rewards[human]} />
+                          ) : (
+                            <Text fontSize="sm" opacity={0.8}>
+                              {tr("noReward")}
+                            </Text>
+                          )
+                        ) : null}
+                      </>
+                    ) : (
+                      <Text fontSize="sm">{tr("notSettled")}</Text>
+                    )}
+                  </Stack>
+                ) : null}
               </Dialog.Body>
               <Dialog.Footer pb={5} gap={3} justifyContent="center">
                 <Button asChild variant="sticker">
                   <Link href="/">{t("backHome")}</Link>
                 </Button>
                 <Button variant="sticker" bg="mint" onClick={leave}>
-                  {t("backLobby")}
+                  {ranked ? t("backRanked") : t("backLobby")}
                 </Button>
               </Dialog.Footer>
             </Dialog.Content>

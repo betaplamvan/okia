@@ -15,7 +15,7 @@ Quyết định: [ADR-0005](adr/0005-mot-tien-te-donate.md) (không thanh toán,
 
 | Nguồn | Số lượng | Lặp lại? |
 |---|---|---|
-| **Thắng trận xếp hạng** | 30 | Có — nguồn lặp lại duy nhất |
+| **Thắng trận xếp hạng** (đã làm: `rating.service.settle`, không thưởng afk / đầu hàng trước nước 10) | 30 | Có — nguồn lặp lại duy nhất |
 | Thắng 5 trận phân hạng đầu mùa | 30 mỗi trận | Mỗi mùa |
 | **Thành tựu** (xem bảng dưới) | 10–100 mỗi cấp | **Không** — mỗi cấp nhận đúng một lần |
 | Thưởng cuối mùa theo `peak_tier` | Giấy nháp 100 · Vở ô li 200 · Học sinh khá 350 · Học sinh giỏi 500 · Thủ khoa 800 | Mỗi mùa |

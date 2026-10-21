@@ -10,6 +10,7 @@ import {
   api,
   ApiError,
   type ApiInit,
+  type MyRankOut,
   type ProgressOut,
   type Reward,
   type RewardOut,
@@ -20,7 +21,7 @@ import {
 const DEVICE_KEY = "okia:device";
 const SKEW_MS = 30_000;
 
-export type ProfileTab = "overview" | "quests" | "account";
+export type ProfileTab = "overview" | "rank" | "quests" | "account";
 
 type AuthState = {
   status: "idle" | "loading" | "ready" | "offline";
@@ -32,6 +33,8 @@ type AuthState = {
   profileTab: ProfileTab;
   /** Ví + điểm danh + nhiệm vụ (GET /me/progress); null khi chưa tải. */
   progress: ProgressOut | null;
+  /** Hạng mùa này + lịch sử trận xếp hạng (GET /me/rank); null khi chưa tải. */
+  rank: MyRankOut | null;
 
   boot(locale: string): Promise<void>;
   /** Gọi API kèm Bearer; hết hạn thì refresh trước, 401 thì refresh rồi thử lại một lần. */
@@ -47,6 +50,7 @@ type AuthState = {
   openProfile(tab?: ProfileTab): void;
   closeProfile(): void;
   loadProgress(): Promise<ProgressOut | null>;
+  loadRank(): Promise<MyRankOut | null>;
   checkin(): Promise<Reward>;
   claimQuest(id: string): Promise<Reward>;
   /** Ván với máy xong → nuôi nhiệm vụ (bỏ qua với khách). */
@@ -88,13 +92,17 @@ export const useAuth = create<AuthState>()((set, get) => ({
   profileOpen: false,
   profileTab: "overview",
   progress: null,
+  rank: null,
 
   applyToken(tok) {
+    const prev = get().user;
     set({
       user: tok.user,
       accessToken: tok.accessToken,
       expiresAt: Date.now() + tok.expiresIn * 1000,
       status: "ready",
+      // Đổi người (khách → tài khoản, đăng xuất) → dữ liệu hạng/tiến trình cũ không còn đúng.
+      ...(prev && prev.id !== tok.user.id ? { rank: null, progress: null } : {}),
     });
   },
 
@@ -188,6 +196,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   openProfile(tab) {
     set({ profileOpen: true, profileTab: tab ?? get().profileTab });
     void get().loadProgress();
+    void get().loadRank();
   },
   closeProfile() {
     set({ profileOpen: false });
@@ -200,6 +209,17 @@ export const useAuth = create<AuthState>()((set, get) => ({
       const progress = await get().authed<ProgressOut>("/me/progress");
       set({ progress, user: { ...u, wallet: progress.wallet } });
       return progress;
+    } catch {
+      return null;
+    }
+  },
+
+  async loadRank() {
+    if (!get().user) return null;
+    try {
+      const rank = await get().authed<MyRankOut>("/me/rank");
+      set({ rank });
+      return rank;
     } catch {
       return null;
     }

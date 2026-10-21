@@ -60,6 +60,7 @@
           "moved": "#/definitions/Moved",
           "opponent_status": "#/definitions/OpponentStatus",
           "pong": "#/definitions/Pong",
+          "queue_status": "#/definitions/QueueStatus",
           "queued": "#/definitions/Queued",
           "room_state": "#/definitions/RoomState",
           "welcome": "#/definitions/Welcome"
@@ -72,6 +73,9 @@
         },
         {
           "$ref": "#/definitions/Queued"
+        },
+        {
+          "$ref": "#/definitions/QueueStatus"
         },
         {
           "$ref": "#/definitions/Matched"
@@ -279,35 +283,16 @@
           "title": "Reason",
           "type": "string"
         },
-        "ratingDelta": {
+        "ranked": {
           "anyOf": [
             {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
+              "$ref": "#/definitions/RankedResult"
             },
             {
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Ratingdelta"
-        },
-        "rewards": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "type": "integer"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Rewards"
+          "default": null
         }
       },
       "required": [
@@ -426,6 +411,11 @@
         },
         "roomId": {
           "title": "Roomid",
+          "type": "string"
+        },
+        "mode": {
+          "default": "ranked",
+          "title": "Mode",
           "type": "string"
         }
       },
@@ -611,7 +601,7 @@
           "title": "Isbot",
           "type": "boolean"
         },
-        "tier": {
+        "avatarUrl": {
           "anyOf": [
             {
               "type": "string"
@@ -621,7 +611,18 @@
             }
           ],
           "default": null,
-          "title": "Tier"
+          "title": "Avatarurl"
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RankOut"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "online": {
           "default": true,
@@ -694,6 +695,46 @@
       "title": "QueueCancel",
       "type": "object"
     },
+    "QueueStatus": {
+      "description": "Worker ghép trận gửi mỗi giây cho người đang chờ: số người chờ, số online, đã chờ bao lâu.",
+      "properties": {
+        "t": {
+          "const": "queue_status",
+          "default": "queue_status",
+          "title": "T",
+          "type": "string"
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "waiting": {
+          "title": "Waiting",
+          "type": "integer"
+        },
+        "online": {
+          "title": "Online",
+          "type": "integer"
+        },
+        "since": {
+          "title": "Since",
+          "type": "integer"
+        },
+        "widened": {
+          "default": false,
+          "title": "Widened",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "mode",
+        "waiting",
+        "online",
+        "since"
+      ],
+      "title": "QueueStatus",
+      "type": "object"
+    },
     "Queued": {
       "properties": {
         "t": {
@@ -724,6 +765,103 @@
         "since"
       ],
       "title": "Queued",
+      "type": "object"
+    },
+    "RankOut": {
+      "description": "Hạng hiển thị (docs/07): tier + bậc (3 = III … 1 = I, None với Thủ khoa) + điểm.",
+      "properties": {
+        "tier": {
+          "enum": [
+            "scratch",
+            "notebook",
+            "good",
+            "honor",
+            "valedictorian"
+          ],
+          "title": "Tier",
+          "type": "string"
+        },
+        "division": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Division"
+        },
+        "points": {
+          "title": "Points",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tier",
+        "points"
+      ],
+      "title": "RankOut",
+      "type": "object"
+    },
+    "RankedResult": {
+      "description": "Kết quả xếp hạng theo ghế (docs/07): điểm hạng mới, thay đổi, hạng, thưởng Ruột chì.",
+      "properties": {
+        "points": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Points",
+          "type": "array"
+        },
+        "pointsDelta": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Pointsdelta",
+          "type": "array"
+        },
+        "ranks": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/RankOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Ranks",
+          "type": "array"
+        },
+        "rewards": {
+          "items": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "title": "Rewards",
+          "type": "array"
+        },
+        "placementLeft": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Placementleft",
+          "type": "array"
+        }
+      },
+      "required": [
+        "points",
+        "pointsDelta",
+        "ranks",
+        "rewards",
+        "placementLeft"
+      ],
+      "title": "RankedResult",
       "type": "object"
     },
     "Resign": {

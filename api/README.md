@@ -18,6 +18,10 @@ uv run ruff check . && uv run ruff format .
 Endpoint: `/auth/guest`, `/auth/refresh`, `/auth/logout`, `/auth/logout-all`, `/auth/google/start`,
 `/auth/google/callback`, `/auth/dev-login` (ngoài production), `/me` (GET/PATCH/DELETE). Không có mật khẩu (ADR-0011). Xem `/docs` khi server chạy.
 
+## Xếp hạng (docs/07, ADR-0012)
+
+`GET /seasons/current`, `GET /leaderboard`, `GET /me/rank`; ghép trận qua WS `queue`/`queue_cancel` → `matched`. Worker nền `app/matchmaking/worker.py` (khóa `lock:mm`) chạy trong lifespan cùng timer. Mùa tự mở khi hết (8 tuần), không cần job.
+
 Cấu hình cần làm một lần:
 
 - **Resend:** tạo API key tại https://resend.com/api-keys → `RESEND_API_KEY`. Chưa có tên miền thì giữ

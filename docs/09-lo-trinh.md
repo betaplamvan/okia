@@ -14,7 +14,7 @@
 |---|---|---|
 | [0. Prototype offline](#giai-đoạn-0--prototype-offline) | Chơi được với bot trên trình duyệt, hai ngôn ngữ, mọi kích thước màn hình | ~20 buổi (~5 tuần) |
 | [1. Online phòng riêng](#giai-đoạn-1--online-phòng-riêng) | Hai người ở hai nơi chơi với nhau qua link; tài khoản email/Google | ~23 buổi (~6 tuần) |
-| [2A. Ghép trận & xếp hạng](#giai-đoạn-2a--ghép-trận--xếp-hạng) | Người lạ ghép trận, có hạng và BXH | ~14 buổi (~3,5 tuần) |
+| [2A. Ghép trận & xếp hạng](#giai-đoạn-2a--ghép-trận--xếp-hạng) | Người lạ ghép trận, có hạng và BXH — **xong phần xếp hạng (M2.1, M2.2, M2.4)**; còn bot server (M2.3) | ~14 buổi (~3,5 tuần) |
 | [2B. Kinh tế & skin](#giai-đoạn-2b--kinh-tế--skin) | Ruột chì từ xếp hạng + thành tựu, EXP/cấp độ, rương sưu tầm, tủ trưng bày, shop → **Beta công khai** | ~26 buổi (~6,5 tuần) |
 | [3. Lan truyền & vận hành](#giai-đoạn-3--lan-truyền--vận-hành) | Bảo mật tài khoản nâng cao, sự kiện, admin, bot có cá tính | liên tục |
 | [4. Donate & duy trì](#giai-đoạn-4--donate--duy-trì) | Trang ủng hộ, minh bạch chi phí | ~3 buổi, sau beta |
@@ -136,24 +136,24 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ## Giai đoạn 2A — Ghép trận & xếp hạng
 
-### M2.1 Hệ thống điểm
-- [ ] **P2-01** Model + migration `seasons` (tên `{vi, en}`), `ratings`; `glicko2.py` + test với ví dụ của Glickman
-- [ ] **P2-02** Tính hạng/bậc từ điểm hiển thị, trận phân hạng; cập nhật rating khi `game_over` (trong transaction)
+### M2.1 Hệ thống điểm ([ADR-0012](adr/0012-diem-hang-hien-thi-tach-rating-an.md))
+- [x] **P2-01** Model + migration `seasons` (tên `{vi, en}`, tự mở mùa 8 tuần), `ratings`; `glicko2.py` + test với ví dụ của Glickman
+- [x] **P2-02** Điểm hạng hiển thị tách khỏi rating ẩn (`points.py`: +24/−16 trận cân, cược giảm theo chênh lệch → ±1 khi lệch), hạng/bậc từ điểm, 5 trận phân hạng; `rating.service.settle` khi `game_over` (một transaction: rating + `matches` + Ruột chì)
 
 ### M2.2 Ghép trận
-- [ ] **P2-03** `queue` / `queue_cancel`, hàng chờ sorted set, worker ghép trận với cửa sổ MMR nới dần
-- [ ] **P2-04** Tách casual / ranked, chặn tài khoản khách khỏi ranked, chống ghép lại đối thủ vừa gặp; test
+- [x] **P2-03** `queue` / `queue_cancel`, hàng chờ `mm:ranked` + worker 1 giây (`lock:mm`) với cửa sổ rating nới dần, sau 90 giây ghép bất kỳ ai; `queue_status`, `matched` qua kênh `user:{id}`
+- [x] **P2-04** Chỉ ranked (casual vẫn `UNSUPPORTED` tới P2-06), chặn khách / chưa xác minh, chống ghép lại đối thủ vừa gặp, rớt mạng → rời hàng chờ; `tests/test_ranked.py`
 
 ### M2.3 Bot phía server
 - [ ] **P2-05** Port bot sang `bot.py` (dùng chung fixtures tình huống của bot); tự điều chỉnh `strength` theo MMR và chuỗi thắng/thua
 - [ ] **P2-06** "Chơi với máy" chuyển sang chạy qua phòng ở server (có thưởng); `bot.ts` chỉ còn là dự phòng khi mất mạng; đề nghị chơi với bot sau 30 giây chờ ở casual
 
 ### M2.4 Giao diện xếp hạng
-- [ ] **P2-07** Màn hình chờ ghép (thời gian chờ, số người online), huy hiệu hạng
-- [ ] **P2-08** Hiện thay đổi điểm/hạng sau trận (có animation lên hạng)
-- [ ] **P2-09** Trang BXH (SSR, cache Redis), trang hồ sơ + lịch sử trận
+- [x] **P2-07** `/ranked`: thẻ hạng của tôi, "Tìm trận", hộp chờ (thời gian, số người chờ/online, báo khi mở rộng phạm vi), khách → mời đăng nhập Google; huy hiệu hạng (`TierBadge`) trên chip người chơi
+- [x] **P2-08** Hộp kết quả trận xếp hạng: ± điểm hạng, huy hiệu mới, "Lên hạng!/Rớt hạng", +30 Ruột chì, số trận phân hạng còn lại; "Tìm trận mới". *Còn:* animation lên hạng cầu kỳ hơn
+- [x] **P2-09** `/leaderboard` (top 100, cache Redis 30 giây, dòng của tôi ghim cuối), tab **Hạng** trong hồ sơ (thẻ hạng + 10 trận gần nhất); smoke `pnpm smoke:ranked` (hai trình duyệt ghép nhau, chơi hết ván map ngẫu nhiên)
 
-✅ *Demo: hai tài khoản bấm "Xếp hạng" và được ghép với nhau; BXH cập nhật sau trận.*
+✅ *Demo: hai tài khoản bấm "Xếp hạng" và được ghép với nhau; BXH cập nhật sau trận.* **Đã đạt 2026-10-21.**
 
 ---
 
@@ -166,7 +166,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [x] **P2-11c** Ảnh đại diện tự tải: cắt ở client (react-easy-crop), server WebP 256px lưu Postgres, `GET /avatars/{id}.webp?v=N`
 
 ### M2.6 Thưởng
-- [ ] **P2-12** Thưởng thắng trận xếp hạng khi `game_over` (cùng transaction với rating); không thưởng casual/bot/phòng riêng/afk/đầu hàng sớm; thông báo rõ ở màn hình chọn chế độ rằng chỉ xếp hạng mới cho Ruột chì
+- [x] **P2-12** Thưởng 30 Ruột chì cho người thắng trận xếp hạng khi `game_over` (cùng transaction với rating, `rating.service.settle`); không thưởng afk/đầu hàng trước nước 10; casual/bot/phòng riêng không có dòng ledger. *Còn:* ghi rõ ở màn chọn chế độ rằng chỉ xếp hạng mới cho Ruột chì
 - [ ] **P2-13** Phát hiện dàn xếp kết quả: bảng `match_flags`, quy tắc cặp tài khoản gặp nhau bất thường, giữ thưởng/rating của trận bị cờ; test
 
 ### M2.7 Vật phẩm & trang bị

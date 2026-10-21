@@ -6,6 +6,7 @@ export interface OkiaWs {
   server:
     | Welcome
     | Queued
+    | QueueStatus
     | Matched
     | RoomState
     | Moved
@@ -72,9 +73,21 @@ export interface Queued {
   board: string;
   since: number;
 }
+/**
+ * Worker ghép trận gửi mỗi giây cho người đang chờ: số người chờ, số online, đã chờ bao lâu.
+ */
+export interface QueueStatus {
+  t: "queue_status";
+  mode: string;
+  waiting: number;
+  online: number;
+  since: number;
+  widened?: boolean;
+}
 export interface Matched {
   t: "matched";
   roomId: string;
+  mode?: string;
 }
 export interface RoomState {
   t: "room_state";
@@ -100,8 +113,17 @@ export interface PlayerOut {
   name: string;
   seat: 0 | 1;
   isBot?: boolean;
-  tier?: string | null;
+  avatarUrl?: string | null;
+  rank?: RankOut | null;
   online?: boolean;
+}
+/**
+ * Hạng hiển thị (docs/07): tier + bậc (3 = III … 1 = I, None với Thủ khoa) + điểm.
+ */
+export interface RankOut {
+  tier: "scratch" | "notebook" | "good" | "honor" | "valedictorian";
+  division?: number | null;
+  points: number;
 }
 export interface GameStateOut {
   rows: number;
@@ -119,10 +141,19 @@ export interface GameOver {
   winner: (0 | 1) | null;
   scores: number[];
   reason: "complete" | "resign" | "afk" | "abandon";
-  ratingDelta?: number[] | null;
-  rewards?: {
+  ranked?: RankedResult | null;
+}
+/**
+ * Kết quả xếp hạng theo ghế (docs/07): điểm hạng mới, thay đổi, hạng, thưởng Ruột chì.
+ */
+export interface RankedResult {
+  points: number[];
+  pointsDelta: number[];
+  ranks: (RankOut | null)[];
+  rewards: {
     [k: string]: number;
-  } | null;
+  }[];
+  placementLeft: number[];
 }
 export interface Moved {
   t: "moved";

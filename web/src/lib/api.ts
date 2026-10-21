@@ -71,7 +71,7 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
 
 // ---------- Kiểu dữ liệu khớp api/app/auth/schemas.py ----------
 
-export type Identity = { provider: "password" | "google"; subject: string | null };
+export type Identity = { provider: "google" };
 
 export type Wallet = { lead: number; flower: number };
 export type Currency = keyof Wallet;
@@ -127,4 +127,66 @@ export type TokenOut = {
   expiresIn: number;
   user: User;
   switched: boolean;
+};
+
+// ---------- Xếp hạng (api/app/rating/router.py, docs/07) ----------
+
+export type Tier = "scratch" | "notebook" | "good" | "honor" | "valedictorian";
+export const TIERS: Tier[] = ["scratch", "notebook", "good", "honor", "valedictorian"];
+/** Mỗi hạng 300 điểm, 3 bậc × 100 (api/app/rating/points.py). */
+export const TIER_SIZE = 300;
+export const DIVISION_SIZE = 100;
+
+export type RankOut = { tier: Tier; division?: number | null; points: number };
+
+export type SeasonOut = {
+  id: number;
+  name: { vi: string; en: string };
+  startsAt: string;
+  endsAt: string;
+};
+
+export type LeaderboardEntry = {
+  position: number;
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  rank: RankOut;
+  games: number;
+  wins: number;
+};
+
+export type LeaderboardOut = {
+  season: SeasonOut;
+  placementGames: number;
+  entries: LeaderboardEntry[];
+  me: LeaderboardEntry | null;
+};
+
+export type HistoryOut = {
+  id: string;
+  opponentName: string | null;
+  opponentAvatarUrl: string | null;
+  won: boolean | null;
+  scores: [number, number];
+  pointsDelta: number;
+  reason: "complete" | "resign" | "afk" | "abandon";
+  endedAt: string;
+};
+
+export type MyRankOut = {
+  season: SeasonOut;
+  eligible: boolean;
+  rank: RankOut | null;
+  points: number;
+  peakPoints: number;
+  games: number;
+  wins: number;
+  losses: number;
+  streak: number;
+  bestStreak: number;
+  placementGames: number;
+  placementLeft: number;
+  position: number | null;
+  history: HistoryOut[];
 };

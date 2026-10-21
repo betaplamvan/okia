@@ -7,10 +7,9 @@ import { PlayerPill } from "@/components/player-pill";
 import { ModeCard } from "@/components/sticker-card";
 import logoDark from "../../../public/brand/logo-dark.svg";
 
-// Trang chủ theo docs/14. Thẻ chế độ được nối vào route ở P0-07+ / giai đoạn 1–2.
+// Trang chủ theo docs/14: bốn thẻ chế độ (máy, xếp hạng, phòng riêng, BXH) đều đã có route.
 export default function Home() {
   const t = useTranslations("Home");
-  const soon = t("comingSoon");
 
   return (
     <Container maxW="4xl" px={4} py={{ base: 4, md: 6 }} flex="1">
@@ -71,7 +70,7 @@ export default function Home() {
             icon={<LuSwords />}
             title={t("ranked")}
             description={t("rankedSub")}
-            badge={soon}
+            href="/ranked"
           />
           <ModeCard
             tone="pink"
@@ -85,7 +84,7 @@ export default function Home() {
             icon={<LuTrophy />}
             title={t("leaderboard")}
             description={t("leaderboardSub")}
-            badge={soon}
+            href="/leaderboard"
           />
         </SimpleGrid>
 

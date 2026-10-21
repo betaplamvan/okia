@@ -25,8 +25,7 @@
     "privateRoom": "Private Room",
     "privateRoomSub": "Create a room, send the link to friends",
     "leaderboard": "Leaderboard",
-    "leaderboardSub": "See who leads this season",
-    "comingSoon": "Soon"
+    "leaderboardSub": "See who leads this season"
   },
   "Rules": {
     "title": "The rules in 30 seconds",
@@ -146,7 +145,6 @@
     "verifiedBadge": "Google account",
     "overview": "Overview",
     "account": "Account",
-    "overviewSoon": "Level and achievements will show up here.",
     "linkIntro": "Sign in with Google to keep your data, play on any device, check in daily and earn Lead. No password needed.",
     "google": "Continue with Google",
     "email": "Email",
@@ -169,7 +167,8 @@
       "OAUTH_EMAIL_UNVERIFIED": "Your Google email is not verified.",
       "GOOGLE_DISABLED": "Google sign-in is not enabled on this server."
     },
-    "switchedWarn": "If this Google account already has an Ô Kìa account, you will switch to it and the current guest account is dropped."
+    "switchedWarn": "If this Google account already has an Ô Kìa account, you will switch to it and the current guest account is dropped.",
+    "overviewSoon": "Level and achievements will show up here."
   },
   "Room": {
     "title": "Private room",
@@ -213,7 +212,9 @@
     "inviteDescription": "Join room {code} to play Dots & Boxes with friends, free.",
     "shareText": "Come play Dots & Boxes with me! Room code: {code}",
     "errorBack": "Back to rooms",
-    "noConnection": "Cannot reach the server."
+    "noConnection": "Cannot reach the server.",
+    "backRanked": "Find another",
+    "rankedCode": "Ranked game"
   },
   "Maps": {
     "board": "Board",
@@ -271,5 +272,76 @@
       "w_win_online3": "Win 3 online games this week",
       "w_daily5": "Claim 5 daily quests this week"
     }
+  },
+  "Ranked": {
+    "title": "Ranked",
+    "tab": "Rank",
+    "intro": "Matched with players at your level, random board, 30 seconds per turn. Win to earn Lead and climb.",
+    "find": "Find a match",
+    "searching": "Looking for an opponent…",
+    "cancel": "Cancel",
+    "waited": "Waiting for {s}s",
+    "waiting": "{n} in queue · {online} online",
+    "widened": "Search range widened. A mismatched game moves very few points (maybe just ±1).",
+    "widenHint": "The longer you wait, the wider the search.",
+    "inGame": "You have a game in progress, taking you back…",
+    "guestTitle": "Google account required",
+    "guestBody": "Ranked is for real accounts so your rank and Lead survive a device change. Guests can still play the bot and private rooms.",
+    "signIn": "Sign in with Google",
+    "placing": "Placement",
+    "placement": "{n} placement games left",
+    "placementDone": "Placement complete",
+    "points": "{n} pts",
+    "pointsShort": "pts",
+    "season": "Season: {name}",
+    "endsAt": "Ends {date}",
+    "record": "{wins} W · {losses} L",
+    "streak": "Win streak {n}",
+    "bestStreak": "Best {n}",
+    "position": "#{n} on the leaderboard",
+    "noPosition": "Not on the leaderboard yet",
+    "nextDivision": "{n} pts to the next division",
+    "topTier": "Valedictorian — top of the class!",
+    "tier": {
+      "scratch": "Scratch Paper",
+      "notebook": "Notebook",
+      "good": "Good Student",
+      "honor": "Honor Student",
+      "valedictorian": "Valedictorian"
+    },
+    "history": "Recent games",
+    "noHistory": "No ranked games this season yet.",
+    "win": "Win",
+    "lose": "Loss",
+    "draw": "Draw",
+    "unknownOpponent": "Player",
+    "rankedMatch": "Ranked game",
+    "findAgain": "Find another",
+    "deltaTitle": "Rank points",
+    "rewardLead": "+{n} Lead",
+    "noReward": "No Lead (missed turns or resigned too early)",
+    "notSettled": "This game could not be scored. Your rank is unchanged.",
+    "tierUp": "Promoted!",
+    "tierDown": "Demoted",
+    "leaderboardLink": "Leaderboard",
+    "howTitle": "How are points calculated?",
+    "how1": "Even game: win +24, lose −16. Points never go below zero.",
+    "how2": "Matchmaking uses a hidden skill rating. When few players are online it accepts a skill gap but lowers the stakes: the favorite gains just +1 for a win, the underdog loses just −1.",
+    "how3": "Your first 5 games each season are placement games with no rank shown. Each tier has 3 divisions (III → I) of 100 points. Valedictorian starts at 1200.",
+    "how4": "A season lasts 8 weeks; points are halved when a new season starts.",
+    "loadError": "Could not load ranked data."
+  },
+  "Leaderboard": {
+    "title": "Leaderboard",
+    "intro": "Top 100 players this season, by rank points.",
+    "endsAt": "Season ends {date}",
+    "empty": "Nobody has finished {n} placement games this season. Be the first!",
+    "me": "Your position",
+    "games": "{n} games",
+    "wins": "{n} wins",
+    "you": "You",
+    "loading": "Loading…",
+    "refresh": "Refresh",
+    "play": "Play ranked"
   }
 }

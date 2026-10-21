@@ -95,12 +95,22 @@ class GameStateOut(Msg):
     finished: bool
 
 
+class RankOut(Msg):
+    """Hạng hiển thị (docs/07): tier + bậc (3 = III … 1 = I, None với Thủ khoa) + điểm."""
+
+    tier: Literal["scratch", "notebook", "good", "honor", "valedictorian"]
+    division: int | None = None
+    points: int
+
+
 class PlayerOut(Msg):
     user_id: str
     name: str
     seat: Seat
     is_bot: bool = False
-    tier: str | None = None
+    avatar_url: str | None = None
+    # Chỉ ở phòng xếp hạng; None khi còn phân hạng.
+    rank: RankOut | None = None
     online: bool = True
 
 
@@ -118,9 +128,22 @@ class Queued(Msg):
     since: int
 
 
+class QueueStatus(Msg):
+    """Worker ghép trận gửi mỗi giây cho người đang chờ: số người chờ, số online, đã chờ bao lâu."""
+
+    t: Literal["queue_status"] = "queue_status"
+    mode: str
+    waiting: int
+    online: int
+    since: int
+    # Cửa sổ ghép đã mở hết (sau UNLIMITED_AFTER giây) → điểm cược có thể chỉ ±1.
+    widened: bool = False
+
+
 class Matched(Msg):
     t: Literal["matched"] = "matched"
     room_id: str
+    mode: str = "ranked"
 
 
 class RoomState(Msg):
@@ -152,14 +175,24 @@ class Moved(Msg):
     reason: Literal["player", "timeout"] = "player"
 
 
+class RankedResult(Msg):
+    """Kết quả xếp hạng theo ghế (docs/07): điểm hạng mới, thay đổi, hạng, thưởng Ruột chì."""
+
+    points: list[int]
+    points_delta: list[int]
+    ranks: list[RankOut | None]
+    rewards: list[dict[str, int]]
+    placement_left: list[int]
+
+
 class GameOver(Msg):
     t: Literal["game_over"] = "game_over"
     room_id: str
     winner: Seat | None
     scores: list[int]
     reason: Literal["complete", "resign", "afk", "abandon"]
-    rating_delta: list[float] | None = None
-    rewards: dict[str, int] | None = None
+    # Chỉ ở trận xếp hạng (None nếu không chốt được — đã ghi log).
+    ranked: RankedResult | None = None
 
 
 class OpponentStatus(Msg):
@@ -203,6 +236,7 @@ class Pong(Msg):
 ServerMsg = Annotated[
     Welcome
     | Queued
+    | QueueStatus
     | Matched
     | RoomState
     | Moved

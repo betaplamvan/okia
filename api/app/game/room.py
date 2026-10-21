@@ -12,7 +12,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from redis.asyncio import Redis
 
@@ -23,11 +23,15 @@ from app.game import maps, rules
 from app.models import Match
 from app.ws import messages as m
 
+if TYPE_CHECKING:
+    from app.matchmaking.queue import Entry
+
 ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # bỏ I/O/0/1 cho dễ đọc
 ROOM_TTL_WAITING = 2 * 3600
 ROOM_TTL_PLAYING = 24 * 3600
 ROOM_TTL_OVER = 10 * 60
 MAX_TIMEOUTS = 3
+RANKED_TURN_SECONDS = 30
 DEADLINES_KEY = "deadlines"
 
 Status = Literal["waiting", "playing", "over"]
@@ -43,6 +47,8 @@ class Player:
     name: str
     seat: int
     timeouts: int = 0  # số lần hết giờ liên tiếp
+    avatar_url: str | None = None
+    rank: dict[str, Any] | None = None  # hạng hiển thị lúc vào trận (chỉ phòng xếp hạng)
 
     def to_dict(self) -> dict[str, Any]:
         return self.__dict__.copy()
@@ -261,6 +267,36 @@ async def join(redis: Redis, *, user_id: str, name: str, room_id: str) -> JoinRe
         return JoinResult(room, True)
 
 
+async def create_ranked(redis: Redis, a: "Entry", b: "Entry") -> Room:
+    """Phòng xếp hạng do worker ghép trận tạo (docs/07): map ngẫu nhiên, 30 giây/lượt, bắt đầu
+    ngay (không có trạng thái chờ)."""
+    game_map = pick_map(maps.RANDOM_MAP)
+    for _ in range(10):
+        rid = "".join(secrets.choice(ROOM_ALPHABET) for _ in range(6))
+        if not await redis.exists(key(rid)):
+            break
+    else:  # pragma: no cover
+        raise AppError("INTERNAL", 500)
+    seat_a = random.randint(0, 1)
+    room = Room(
+        id=rid,
+        mode="ranked",
+        board=game_map.id,
+        turn_seconds=RANKED_TURN_SECONDS,
+        host_id=a.user_id,
+        status="playing",
+        players=[
+            Player(a.user_id, a.name, seat_a, avatar_url=a.avatar_url, rank=a.rank),
+            Player(b.user_id, b.name, 1 - seat_a, avatar_url=b.avatar_url, rank=b.rank),
+        ],
+        state=maps.create_game(game_map),
+        started_at=now_ms(),
+    )
+    room.deadline = room.next_deadline()
+    await save(redis, room)
+    return room
+
+
 @dataclass
 class MoveOutcome:
     room: Room
@@ -376,8 +412,11 @@ async def _finish(
         scores=list(room.state.scores),
         reason=reason,
     )
+    if room.mode == "ranked":
+        over.ranked = await _settle_ranked(room, over)
+    else:
+        await _record_match(room, over)
     room.result = over.model_dump(by_alias=True)
-    await _record_match(room, over)
     await _record_progress(room, over)
     return over
 
@@ -417,6 +456,43 @@ async def _record_progress(room: Room, over: m.GameOver) -> None:
         import logging
 
         logging.getLogger("okia.room").exception("không ghi được tiến trình %s", room.id)
+
+
+async def _settle_ranked(room: Room, over: m.GameOver) -> m.RankedResult | None:
+    """Trận xếp hạng: rating + `matches` + thưởng trong MỘT transaction (docs/05). Lỗi → None + log;
+    ván vẫn kết thúc (không chốt được thì không ai mất/được điểm)."""
+    from app.rating import service as rating
+
+    p0 = room.player_at(0)
+    p1 = room.player_at(1)
+    if p0 is None or p1 is None:  # pragma: no cover
+        return None
+    try:
+        async with get_session_factory()() as db:
+            st = await rating.settle(
+                db,
+                match_id=uuid.uuid4(),
+                board=room.board,
+                user_ids=[uuid.UUID(p0.user_id), uuid.UUID(p1.user_id)],
+                winner=over.winner,
+                reason=over.reason,
+                moves=room.moves,
+                scores=list(room.state.scores),
+                started_at=datetime.fromtimestamp((room.started_at or now_ms()) / 1000, UTC),
+            )
+            await db.commit()
+        return m.RankedResult(
+            points=st.points,
+            points_delta=st.points_delta,
+            ranks=[m.RankOut(**r.to_dict()) if r else None for r in st.ranks],  # type: ignore[arg-type]
+            rewards=st.rewards,
+            placement_left=st.placement_left,
+        )
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger("okia.room").exception("không chốt được trận xếp hạng %s", room.id)
+        return None
 
 
 async def _record_match(room: Room, over: m.GameOver) -> None:
@@ -483,6 +559,8 @@ def room_state_msg(room: Room, online: dict[str, bool]) -> m.RoomState:
                 user_id=p.user_id,
                 name=p.name,
                 seat=p.seat,  # type: ignore[arg-type]
+                avatar_url=p.avatar_url,
+                rank=m.RankOut(**p.rank) if p.rank else None,  # type: ignore[arg-type]
                 online=online.get(p.user_id, False),
             )
             for p in sorted(room.players, key=lambda p: p.seat)

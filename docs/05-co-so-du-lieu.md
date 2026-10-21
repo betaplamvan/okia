@@ -66,25 +66,33 @@ Tài khoản thật có đúng một identity `google`. Khách nâng cấp → g
 ### Xếp hạng & trận đấu
 
 ```sql
+-- ĐÃ LÀM (ADR-0012): api/app/models/rating.py + migration b2262e36017a. Mùa tự mở khi mùa trước
+-- hết (8 tuần); một dòng rating mỗi người mỗi mùa (không tách theo bàn — xếp hạng bốc map ngẫu nhiên).
 CREATE TABLE seasons (
   id         SERIAL PRIMARY KEY,
-  name       JSONB NOT NULL CHECK (name ? 'vi' AND name ? 'en'),
+  name       JSONB NOT NULL,            -- {"vi": "Học kỳ 1", "en": "Semester 1"}
   starts_at  TIMESTAMPTZ NOT NULL,
   ends_at    TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE ratings (
-  user_id    UUID REFERENCES users,
-  season_id  INT  REFERENCES seasons,
-  board      TEXT NOT NULL DEFAULT '5x5',
-  mmr        REAL NOT NULL DEFAULT 1500,
-  rd         REAL NOT NULL DEFAULT 350,
-  vol        REAL NOT NULL DEFAULT 0.06,
-  games      INT  NOT NULL DEFAULT 0,
-  wins       INT  NOT NULL DEFAULT 0,
-  peak_tier  TEXT,
-  PRIMARY KEY (user_id, season_id, board)
+  user_id        UUID REFERENCES users ON DELETE CASCADE,
+  season_id      INT  REFERENCES seasons ON DELETE CASCADE,
+  mmr            FLOAT NOT NULL DEFAULT 1500,  -- rating ẩn Glicko-2 (không gửi client)
+  rd             FLOAT NOT NULL DEFAULT 350,
+  vol            FLOAT NOT NULL DEFAULT 0.06,
+  points         INT NOT NULL DEFAULT 0,       -- điểm hạng hiển thị (≥ 0) → hạng/bậc
+  peak_points    INT NOT NULL DEFAULT 0,
+  games          INT NOT NULL DEFAULT 0,
+  wins           INT NOT NULL DEFAULT 0,
+  losses         INT NOT NULL DEFAULT 0,
+  streak         INT NOT NULL DEFAULT 0,       -- thắng liên tiếp hiện tại
+  best_streak    INT NOT NULL DEFAULT 0,
+  peak_tier      TEXT,                         -- cho thưởng cuối mùa (P3-03)
+  last_played_at TIMESTAMPTZ,                  -- rd tăng theo số ngày nghỉ
+  PRIMARY KEY (user_id, season_id)
 );
+CREATE INDEX ON ratings (season_id, points);
 
 CREATE TABLE matches (
   id           UUID PRIMARY KEY,
@@ -98,7 +106,8 @@ CREATE TABLE matches (
   scores       INT[] NOT NULL,
   winner       SMALLINT,                -- 0 | 1 | NULL (hòa)
   end_reason   TEXT NOT NULL,           -- complete | resign | afk
-  rating_delta REAL[],
+  rating_delta REAL[],                 -- đổi rating ẩn theo ghế (xếp hạng)
+  points_delta INT[],                  -- đổi điểm hạng theo ghế (xếp hạng)
   started_at   TIMESTAMPTZ NOT NULL,
   ended_at     TIMESTAMPTZ NOT NULL
 );
@@ -268,15 +277,18 @@ Trận có cờ `pending`/`confirmed` không trả thưởng Ruột chì và kh�
 | `room:{id}:lock` | String | 2 giây | Khóa khi xử lý nước đi |
 | kênh `room:{id}` | Pub/Sub | — | Phát `moved`, `game_over`, `opponent_status` |
 | `user:{id}:room` | String | theo trận | Phòng đang chơi, để kết nối lại |
-| `mm:{mode}:{board}` | Sorted set | — | Hàng chờ, score = MMR |
-| `mm:joined:{userId}` | String | 10 phút | Thời điểm vào hàng chờ |
+| `mm:ranked` | Sorted set | — | Hàng chờ xếp hạng, score = rating ẩn |
+| `mm:ranked:info` | Hash | — | `userId` → JSON (tên, mmr, rd, hạng, thời điểm vào, đối thủ vừa gặp) |
+| `mm:last:{userId}` | String | 1 giờ | Đối thủ xếp hạng gần nhất (tránh ghép lại ngay) |
+| `online` | Sorted set | — | `userId` → lần cuối thấy (ms); đếm người online 60 giây gần nhất |
+| kênh `user:{id}` | Pub/Sub | — | Tin riêng cho một người: `matched`, `queue_status` |
 | `deadlines` | Sorted set | — | `roomId` với score = hạn giờ lượt (epoch ms) |
 | `lock:mm`, `lock:timer` | String | 5 giây | Đảm bảo chỉ một worker nền chạy |
 | `rl:{userId}:{action}` | String | 1–60 giây | Rate limit trong game |
 | `rl:login:{email}`, `rl:login:{ip}` | String | 15 phút | Đếm đăng nhập sai |
 | `rl:email:{email}:{purpose}` | String | 1 giờ | Giới hạn gửi lại email xác minh / đặt lại |
 | `token:used:{jti}` | String | theo hạn token | Link xác minh / đặt lại đã dùng |
-| `lb:{season}:{board}` | Sorted set | — | Cache bảng xếp hạng |
+| `lb:{season}` | String (JSON) | 30 giây | Cache top 100 bảng xếp hạng |
 | `bot:{userId}:streak` | String | 7 ngày | Chuỗi thắng/thua với bot (điều chỉnh `strength`) |
 | `chest:{userId}:{chestId}:{date}` | String | 1 ngày | Số lần mua rương có `daily_price_step` trong ngày |
 

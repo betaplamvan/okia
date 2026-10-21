@@ -2,6 +2,7 @@
 
 Mỗi tiến trình giữ map room_id → các kết nối đang xem phòng đó; sự kiện phòng được publish lên
 kênh `room:{id}` và mọi tiến trình đang psubscribe `room:*` đẩy tới kết nối của mình.
+Kênh `user:{id}` gửi riêng cho một người (ghép trận: `matched`, `queue_status`).
 """
 
 import asyncio
@@ -36,6 +37,7 @@ class Hub:
     def __init__(self, redis: Redis) -> None:
         self.redis = redis
         self.by_room: dict[str, set[Connection]] = defaultdict(set)
+        self.by_user: dict[str, set[Connection]] = defaultdict(set)
         self.conns: set[Connection] = set()
         self._task: asyncio.Task[None] | None = None
 
@@ -52,15 +54,16 @@ class Hub:
 
     async def _listen(self) -> None:
         pubsub = self.redis.pubsub()
-        await pubsub.psubscribe("room:*")
+        await pubsub.psubscribe("room:*", "user:*")
         try:
             async for item in pubsub.listen():
                 if item.get("type") != "pmessage":
                     continue
                 channel = item["channel"]
-                room_id = channel.split(":", 1)[1]
+                kind, target = channel.split(":", 1)
                 data = item["data"]
-                for conn in list(self.by_room.get(room_id, ())):
+                targets = self.by_room if kind == "room" else self.by_user
+                for conn in list(targets.get(target, ())):
                     try:
                         await conn.ws.send_text(data)
                     except Exception:  # noqa: BLE001
@@ -77,9 +80,15 @@ class Hub:
 
     def add(self, conn: Connection) -> None:
         self.conns.add(conn)
+        self.by_user[conn.user_id].add(conn)
 
     def remove(self, conn: Connection) -> None:
         self.conns.discard(conn)
+        s = self.by_user.get(conn.user_id)
+        if s:
+            s.discard(conn)
+            if not s:
+                del self.by_user[conn.user_id]
         for rid in list(conn.rooms):
             self.unwatch(conn, rid)
 
@@ -97,3 +106,6 @@ class Hub:
 
     async def publish(self, room_id: str, msg: m.Msg) -> None:
         await self.redis.publish(f"room:{room_id}", m.dump(msg))
+
+    async def publish_user(self, user_id: str, msg: m.Msg) -> None:
+        await self.redis.publish(f"user:{user_id}", m.dump(msg))

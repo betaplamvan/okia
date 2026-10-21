@@ -1,52 +1,85 @@
 # 07 — Xếp hạng & ghép trận
 
-## Glicko-2
+Quyết định: [ADR-0012](adr/0012-diem-hang-hien-thi-tach-rating-an.md) — **hai con số tách biệt**: rating ẩn để ghép trận, điểm hạng hiển thị để leo. Code: `api/app/rating/` (Glicko-2, điểm hạng, mùa, chốt trận, REST), `api/app/matchmaking/` (hàng chờ, worker). **Đã làm 2026-10-21** (P2-01 → P2-04, P2-07 → P2-09, P2-12).
 
-- Mỗi người chơi có `mmr` (khởi điểm 1500), `rd` (độ không chắc chắn, 350), `vol` (0.06). Hằng số hệ thống `τ = 0.5`.
-- Cập nhật **sau mỗi trận** (coi mỗi trận là một kỳ đánh giá). Kết quả: thắng 1, hòa 0.5, thua 0.
-- Chỉ chế độ **xếp hạng** cập nhật `ratings`. Chế độ thường dùng MMR ẩn riêng (`casual`) để ghép trận, không hiển thị.
-- `rd` tăng dần khi không chơi (áp dụng lúc người chơi quay lại), nên người nghỉ lâu sẽ dịch chuyển hạng nhanh hơn.
-- Code: `api/app/rating/glicko2.py`, kèm test so với ví dụ trong paper gốc của Glickman.
+## Rating ẩn (Glicko-2)
 
-## Hạng hiển thị
+- Mỗi người chơi mỗi mùa có `mmr` (khởi điểm 1500), `rd` (độ không chắc chắn, 350), `vol` (0.06). Hằng số hệ thống `τ = 0.5`. **Không bao giờ gửi cho client** — chỉ dùng để ghép trận và tính kỳ vọng thắng.
+- Cập nhật **sau mỗi trận xếp hạng** (mỗi trận là một kỳ đánh giá). Kết quả: thắng 1, hòa 0.5, thua 0.
+- `rd` tăng khi không chơi: trước khi tính trận mới, mỗi ngày nghỉ cộng `vol²` vào `φ²` (trần 350), nên người nghỉ lâu dịch chuyển nhanh hơn.
+- Code: `api/app/rating/glicko2.py`, test so với ví dụ trong paper của Glickman (`tests/test_glicko2.py`).
 
-Hạng tính từ **điểm hiển thị** `display = mmr - 2 × rd`. Như vậy người mới (rd lớn) bắt đầu ở hạng thấp và "leo" lên dần khi hệ thống chắc chắn hơn.
+## Điểm hạng hiển thị
 
-| Hạng | Điểm hiển thị | Bậc |
+Thứ người chơi nhìn thấy và leo (`ratings.points`, ≥ 0). Code: `api/app/rating/points.py`.
+
+| Tình huống | Thắng | Thua |
 |---|---|---|
-| Giấy nháp | < 1100 | III, II, I |
-| Vở ô li | 1100 – 1350 | III, II, I |
-| Học sinh khá | 1350 – 1600 | III, II, I |
-| Học sinh giỏi | 1600 – 1850 | III, II, I |
-| Thủ khoa | ≥ 1850 | — (hiện thứ hạng trên BXH) |
+| Trận cân sức (kỳ vọng 50/50, chênh rating ẩn ≤ 150) | **+24** | **−16** |
+| Người được kỳ vọng thắng (E cao) | ít hơn, tối thiểu +1 | nhiều hơn, tối đa −30 |
+| Người bị kỳ vọng thua (E thấp) | nhiều hơn, tối đa +40 | ít hơn, tối thiểu −1 |
+| **Trận lệch trình độ** (ghép khi vắng người / chờ lâu) | tiền cược giảm: chênh ≥ 500 chỉ còn 10 % → người mạnh thắng **+1**, người yếu thua **−1** | |
 
-Tên tiếng Anh: xem [bảng thuật ngữ](11-responsive-i18n.md#bảng-thuật-ngữ). Mỗi bậc chia đều khoảng điểm của hạng. **5 trận phân hạng** đầu mùa chưa hiện hạng. *Ngưỡng là giá trị khởi điểm, chỉnh theo phân phối thực tế.*
+Công thức: `thắng = round(24 × 2 × (1 − E) × s)`, `thua = −round(16 × 2 × E × s)`, với `E` = kỳ vọng thắng từ Glicko-2 và `s` = tiền cược: `1` khi chênh ≤ 150, giảm tuyến tính tới `0.1` khi chênh ≥ 500. Luôn ≥ 1 điểm về trị tuyệt đối; điểm không âm. Trận cân có lợi cho người thắng (+24/−16) để leo hạng có cảm giác tiến lên; trận lệch gần như không đổi điểm nên ghép lệch "chấp nhận được" mà không ai bị ép thua oan hay cày người yếu.
+
+### Hạng & bậc
+
+Tính thẳng từ điểm: mỗi hạng **300 điểm**, chia 3 bậc **III → II → I** (100 điểm mỗi bậc); Thủ khoa không có bậc.
+
+| Hạng | Điểm | Màu huy hiệu |
+|---|---|---|
+| Giấy nháp | 0 – 299 | paper |
+| Vở ô li | 300 – 599 | mint |
+| Học sinh khá | 600 – 899 | sun |
+| Học sinh giỏi | 900 – 1199 | pink |
+| Thủ khoa | ≥ 1200 (hiện thứ hạng trên BXH) | coral |
+
+Tên tiếng Anh: xem [bảng thuật ngữ](11-responsive-i18n.md#bảng-thuật-ngữ). **5 trận phân hạng** đầu mùa chưa hiện hạng (huy hiệu "Đang phân hạng", viền đứt); BXH chỉ tính người đã qua phân hạng. *Các con số là giá trị khởi điểm, chỉnh theo phân phối thực tế.*
 
 ## Mùa giải
 
-- Dài 6–8 tuần, tên theo chủ đề trường học (Học kỳ I, Thi giữa kỳ, Mùa hè…).
-- **Reset mềm:** `mmr_mới = 1500 + (mmr_cũ - 1500) × 0.5`, `rd_mới = max(rd_cũ, 150)`.
-- Thưởng cuối mùa theo `peak_tier`: vật phẩm `reward` độc quyền (khung, dấu ô) + Ruột chì theo bảng ở [06](06-kinh-te.md#nguồn-giá-trị-khởi-điểm).
+- Dài **8 tuần**, tự mở khi mùa trước hết (`rating.service.current_season`, khóa advisory để không mở trùng); tên `Học kỳ n` / `Semester n`. Không cần job thủ công.
+- **Reset mềm** khi người chơi vào mùa mới (tạo dòng rating lười từ mùa gần nhất): `mmr = 1500 + (mmr_cũ − 1500) × 0.5`, `rd = max(rd_cũ, 150)`, `điểm = điểm_cũ ÷ 2`.
+- Thưởng cuối mùa theo `peak_tier` (vật phẩm `reward` + Ruột chì theo bảng ở [06](06-kinh-te.md#nguồn-giá-trị-khởi-điểm)): **chưa làm** (P3-03) — `ratings.peak_tier` đã được ghi để sau này phát.
 
 ## Ghép trận
 
-Worker nền `matchmaking` (một bản duy nhất nhờ `lock:mm`) chạy mỗi **1 giây** với từng hàng chờ `mm:{mode}:{board}`:
+Chỉ có xếp hạng (ghép trận thường là P2-06). Khách và tài khoản chưa xác minh bị từ chối ở `queue` (`GUEST_NOT_ALLOWED`, `EMAIL_NOT_VERIFIED`).
+
+Worker nền (`api/app/matchmaking/worker.py`, một bản duy nhất nhờ `lock:mm`) chạy mỗi **1 giây** trên hàng chờ `mm:ranked` (zset score = rating ẩn) + `mm:ranked:info`:
 
 1. Duyệt người chơi theo thời gian chờ giảm dần.
-2. Cửa sổ MMR: `window = 50 + 25 × floor(chờ_giây / 5)`, tối đa **400**.
-3. Ghép với người gần MMR nhất nằm trong cả cửa sổ của mình **và** cửa sổ của họ.
-4. Không ghép hai người vừa gặp nhau ở trận liền trước (trừ khi chờ > 60 giây).
-5. Ghép xong: xóa cả hai khỏi hàng chờ (`ZREM` trong transaction), tạo `room:{id}`, gửi `matched`.
+2. Cửa sổ rating ẩn: `window = 50 + 25 × ⌊chờ_giây / 5⌋`, tối đa **400** (đạt sau 70 giây); **sau 90 giây** ghép bất kỳ ai (vắng người thì vẫn có trận — điểm cược đã giảm theo bảng trên).
+3. Ghép với người gần rating nhất nằm trong cửa sổ của mình **và** cửa sổ của họ.
+4. Không ghép hai người vừa gặp nhau ở trận liền trước (`mm:last:{uid}`, 1 giờ) trừ khi đã chờ > 60 giây.
+5. Ghép xong: xóa cả hai khỏi hàng chờ, tạo `room:{id}` (`mode = ranked`, map ngẫu nhiên trong bể, 30 giây/lượt, bắt đầu ngay), gửi `matched` qua kênh `user:{id}`; người còn chờ nhận `queue_status` mỗi giây (số người chờ, số online, đã mở rộng hay chưa).
+
+Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự gửi `queue` lại khi nối lại. Không bao giờ dùng bot ở xếp hạng.
 
 ### Khi vắng người
 
-| Chế độ | Chờ > 30 giây |
+| Chế độ | Chờ lâu |
 |---|---|
-| Ghép trận thường | Hỏi "Chơi với máy trong lúc chờ?" — bot tự chỉnh độ mạnh theo MMR (xem [03 — Bot](03-luat-choi.md#bot)), **ghi rõ là máy** |
-| Xếp hạng | Tiếp tục chờ, hiện số người đang online; **không bao giờ dùng bot** |
+| Ghép trận thường (P2-06) | Hỏi "Chơi với máy trong lúc chờ?" — bot tự chỉnh độ mạnh theo rating ẩn (xem [03 — Bot](03-luat-choi.md#bot)), **ghi rõ là máy** |
+| Xếp hạng | Tiếp tục chờ, hiện số người online; sau 90 giây chấp nhận lệch trình độ, báo cho người chơi "trận lệch chỉ ±1 điểm" |
+
+## Chốt trận (`rating.service.settle`)
+
+Khi `game_over` của phòng xếp hạng, **một transaction Postgres**: khóa hai dòng `ratings` (theo thứ tự `user_id` cố định) → Glicko-2 + điểm hạng + thống kê (games/wins/losses/streak/peak) → cộng **30 Ruột chì** cho người thắng (idempotency `match:{id}:{uid}`; không thưởng khi `afk` hoặc đầu hàng trước nước 10, nhưng rating/điểm vẫn tính) → ghi `matches` với `season_id`, `rating_delta`, `points_delta`. Kết quả gửi trong `game_over.ranked` (điểm mới, ±, hạng, thưởng, số trận phân hạng còn lại). Lỗi DB → `ranked = null`, ván vẫn kết thúc, không ai mất/được điểm (ghi log).
+
+## REST
+
+| Endpoint | Trả về |
+|---|---|
+| `GET /seasons/current` | Mùa đang diễn ra |
+| `GET /leaderboard?limit=100` | Top 100 theo điểm (cache Redis `lb:{season}` 30 giây) + dòng của tôi nếu có Bearer |
+| `GET /me/rank` | Hạng, điểm, thống kê, vị trí BXH, 10 trận xếp hạng gần nhất |
+
+Giao diện: `/ranked` (thẻ hạng + tìm trận, trạng thái chờ), `/leaderboard`, tab **Hạng** trong hồ sơ, huy hiệu hạng trên chip người chơi và hộp kết quả (± điểm, lên/rớt hạng, +Ruột chì). Smoke: `pnpm smoke:ranked`.
 
 ### Chống gian lận
 - Server kiểm tra mọi nước đi (xem [03](03-luat-choi.md)).
 - Rate limit `move` (tối đa 5 tin/giây).
-- Phát hiện **dàn xếp kết quả**: cặp tài khoản gặp nhau > 5 trận xếp hạng/ngày với kết quả một chiều → đánh dấu để xem xét.
-- Tài khoản khách **không được chơi xếp hạng**; tài khoản email phải **đã xác minh** (`EMAIL_NOT_VERIFIED`). Xem [13](13-xac-thuc.md).
+- Không ghép lại đối thủ vừa gặp; trận lệch gần như không đổi điểm → cày tài khoản phụ không lời.
+- Phát hiện **dàn xếp kết quả** (`match_flags`, P2-13): cặp tài khoản gặp nhau > 5 trận xếp hạng/ngày với kết quả một chiều → đánh dấu để xem xét — **chưa làm**.
+- Tài khoản khách **không được chơi xếp hạng**; tài khoản phải **đã xác minh** (Google, [13](13-xac-thuc.md)).
