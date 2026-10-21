@@ -5,7 +5,7 @@ import { GuideArticle } from "@/components/guide-article";
 import { HomeActions } from "@/components/home-actions";
 import { PlayerPill } from "@/components/player-pill";
 import { ModeCard } from "@/components/sticker-card";
-import logoDark from "../../../public/brand/logo-dark.svg";
+import logoHero from "../../../public/brand/logo-hero.svg";
 
 // Trang chủ theo docs/14: bốn thẻ chế độ (máy, xếp hạng, phòng riêng, BXH) đều đã có route.
 export default function Home() {
@@ -14,10 +14,11 @@ export default function Home() {
   return (
     <Container maxW="4xl" px={4} py={{ base: 4, md: 6 }} flex="1">
       <Stack gap={{ base: 6, md: 8 }}>
+        {/* Bảng hiệu kiểu bảng đen (học noitu.fun): nền xanh đậm, viền + bóng sticker, tên kèm tên miền. */}
         <Box
           layerStyle="sticker"
           position="relative"
-          bg="rgba(26, 40, 38, 0.35)"
+          bg="board.deep"
           color="cream"
           textAlign="center"
           px={5}
@@ -43,9 +44,14 @@ export default function Home() {
           />
           {/* Logo thay chữ; vẫn là h1 với alt "Ô Kìa" cho SEO/đọc màn hình. */}
           <Heading as="h1" lineHeight="1" display="flex" justifyContent="center">
-            <Image src={logoDark.src} alt="Ô Kìa" h={{ base: "84px", md: "120px" }} w="auto" />
+            <Image
+              src={logoHero.src}
+              alt="Ô Kìa — okia.io.vn"
+              h={{ base: "72px", md: "110px" }}
+              w="auto"
+            />
           </Heading>
-          <Text mt={3} fontSize={{ base: "lg", md: "xl" }} opacity={0.9}>
+          <Text mt={4} fontSize={{ base: "md", md: "xl" }} opacity={0.9}>
             {t("tagline")}
           </Text>
         </Box>

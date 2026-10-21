@@ -23,6 +23,7 @@ const FONT_URL =
 const INK = "#1a2826";
 const PAPER = "#fffcf2";
 const MINT = "#7cf5c5";
+const CORAL = "#ff6b6b";
 const GREEN = "#35544a";
 
 // ---- Mark (viewBox 0 0 100 100) ---------------------------------------------------------------
@@ -109,6 +110,25 @@ function logo(font, color) {
   return svg(`0 0 ${w} 100`, body);
 }
 
+/**
+ * Bảng hiệu trang chủ (học cách noitu.fun làm 2026-10-21): mark giấy + "kìa" san hô + ".io.vn" mint
+ * nhỏ hơn, cùng baseline — tên miền nằm ngay trong tên.
+ */
+function logoHero(font) {
+  const name = textPaths(font, "kìa", 62, CORAL);
+  const domain = textPaths(font, ".io.vn", 30, MINT);
+  const tx = 86;
+  const ty = 89;
+  const dx = tx + name.width + 6;
+  const w = Math.ceil(dx + domain.width + 2);
+  const body = [
+    markBody({ stroke: PAPER }),
+    `<g transform="translate(${tx} ${ty})">${name.paths}</g>`,
+    `<g transform="translate(${r2(dx)} ${ty})">${domain.paths}</g>`,
+  ].join("\n  ");
+  return svg(`0 0 ${w} 100`, body);
+}
+
 /** Wordmark "ô kìa" thuần chữ. */
 function wordmark(font, fill) {
   const text = textPaths(font, "ô kìa", 80, fill);
@@ -168,6 +188,7 @@ async function main() {
     [path.join(brand, "mark-dark.svg")]: svg("0 0 100 100", markBody({ stroke: PAPER })),
     [path.join(brand, "logo.svg")]: logo(font, INK),
     [path.join(brand, "logo-dark.svg")]: logo(font, PAPER),
+    [path.join(brand, "logo-hero.svg")]: logoHero(font),
     [path.join(brand, "wordmark.svg")]: wordmark(font, INK),
     [path.join(brand, "wordmark-dark.svg")]: wordmark(font, PAPER),
     // Favicon SVG (hiện ở 16–32px): nét dày, tô mint cho đỡ rỗng.

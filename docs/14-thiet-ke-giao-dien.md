@@ -71,7 +71,8 @@ mint và nét dày hơn cho đỡ rỗng; icon app/PWA là nét mực trên nề
 | File | Dùng ở |
 |---|---|
 | `web/public/brand/mark.svg`, `mark-dark.svg` | mark đơn (nét ink cho nền sáng / nét giấy cho nền tối) |
-| `web/public/brand/logo.svg`, `logo-dark.svg` | logo ngang (header, hero trang chủ dùng bản dark) |
+| `web/public/brand/logo.svg`, `logo-dark.svg` | logo ngang (header dùng bản dark) |
+| `web/public/brand/logo-hero.svg` | bảng hiệu trang chủ (học noitu.fun, 2026-10-21): mark giấy + "kìa" san hô + ".io.vn" mint, đặt trên thẻ nền `board.deep` viền sticker; tagline bắt đầu bằng "Okia.io.vn –" |
 | `web/public/brand/wordmark.svg`, `wordmark-dark.svg` | chữ "ô kìa" thuần, khi cần đặt cạnh mark lớn |
 | `web/public/brand/logo-email.png` | logo trong thư (client mail không hiện SVG) |
 | `web/src/app/icon.svg`, `favicon.ico` (16 lược, 32, 48), `apple-icon.png` | favicon theo quy ước file của Next |
