@@ -409,5 +409,9 @@
     "loadError": "Không tải được cửa hàng.",
     "filterAll": "Tất cả",
     "onlyOwned": "Của tôi"
+  },
+  "Nav": {
+    "back": "Quay lại",
+    "breadcrumb": "Vị trí trang"
   }
 }

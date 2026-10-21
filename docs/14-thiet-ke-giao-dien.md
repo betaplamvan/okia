@@ -60,7 +60,22 @@ Chuyển động: chỉ `transform`/`box-shadow` khi nhấn (120 ms), tôn trọ
 └──────────────────────────────┘
 ```
 
-Màn chơi (`/play`): không header; bàn đấu là một panel paper vuông ở giữa; HUD hai bên/trên dưới theo [11](11-responsive-i18n.md#bố-cục-màn-chơi); timer ring mint; nút đầu hàng coral.
+## Trang con (học noitu, 2026-10-21)
+
+```
+┌──────────────────────────────┐
+│  Ô Kìa › Xếp hạng   (♪)[EN]● │  header: breadcrumb logo › tên trang
+│ [← Quay lại]                 │  < xl: một hàng trên nội dung; xl+: nổi sát mép trái
+│          Xếp hạng            │
+└──────────────────────────────┘
+```
+
+- `web/src/components/page-nav.tsx`: tên trang lấy từ tiêu đề sẵn có (`Play.title`, `Ranked.title`…,
+  `/r/{code}` → `Room.title`); trang chủ không có breadcrumb lẫn nút Quay lại.
+- "Quay lại": đã chuyển trang trong app thì lùi lịch sử; vào thẳng bằng link (mời phòng, chia sẻ, quay
+  về từ Google) thì về trang chủ.
+
+Màn chơi (`/play`): header như trang con; bàn đấu là một panel paper vuông ở giữa; HUD hai bên/trên dưới theo [11](11-responsive-i18n.md#bố-cục-màn-chơi); timer ring mint; nút đầu hàng coral.
 
 ## Nhận diện (logo, favicon)
 

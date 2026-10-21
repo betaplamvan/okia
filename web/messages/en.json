@@ -409,5 +409,9 @@
     "loadError": "Could not load the shop.",
     "filterAll": "All",
     "onlyOwned": "Mine"
+  },
+  "Nav": {
+    "back": "Back",
+    "breadcrumb": "Breadcrumb"
   }
 }
