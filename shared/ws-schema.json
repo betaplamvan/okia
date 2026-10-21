@@ -776,7 +776,8 @@
             "notebook",
             "good",
             "honor",
-            "valedictorian"
+            "valedictorian",
+            "topscholar"
           ],
           "title": "Tier",
           "type": "string"

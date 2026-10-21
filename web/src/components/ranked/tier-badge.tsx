@@ -2,7 +2,7 @@
 
 import { HStack, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
-import { LuGraduationCap } from "react-icons/lu";
+import { LuCrown, LuGraduationCap } from "react-icons/lu";
 import type { RankOut, Tier } from "@/lib/api";
 
 // Màu huy hiệu theo hạng (docs/07, docs/14): leo dần từ giấy → mint → sun → pink → coral.
@@ -12,6 +12,7 @@ export const TIER_TONE: Record<Tier, string> = {
   good: "sun",
   honor: "pink",
   valedictorian: "coral",
+  topscholar: "sun",
 };
 
 const ROMAN = ["", "I", "II", "III"];
@@ -58,6 +59,7 @@ export function TierBadge({ rank, size = "md", showPoints }: Props) {
       data-testid="tier-badge"
     >
       {rank?.tier === "valedictorian" ? <LuGraduationCap /> : null}
+      {rank?.tier === "topscholar" ? <LuCrown /> : null}
       <Text as="span">{label(rank)}</Text>
       {showPoints && rank ? (
         <Text as="span" fontWeight="600" opacity={0.8}>

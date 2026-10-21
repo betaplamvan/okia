@@ -121,7 +121,7 @@ export interface PlayerOut {
  * Hạng hiển thị (docs/07): tier + bậc (3 = III … 1 = I, None với Thủ khoa) + điểm.
  */
 export interface RankOut {
-  tier: "scratch" | "notebook" | "good" | "honor" | "valedictorian";
+  tier: "scratch" | "notebook" | "good" | "honor" | "valedictorian" | "topscholar";
   division?: number | null;
   points: number;
 }

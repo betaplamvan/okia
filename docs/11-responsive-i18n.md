@@ -123,6 +123,7 @@ Các trường hiển thị cho người chơi lưu dạng JSONB có đủ hai n
 | Học sinh khá | Good Student |
 | Học sinh giỏi | Honor Student |
 | Thủ khoa | Valedictorian |
+| Trạng nguyên (danh hiệu top 100 Thủ khoa) | Top Scholar |
 | Điểm hạng | Rank points |
 | Phân hạng (5 trận đầu mùa) | Placement |
 | Tìm trận | Find a match |

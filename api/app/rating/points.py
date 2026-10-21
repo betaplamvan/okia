@@ -12,6 +12,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 TIERS: tuple[str, ...] = ("scratch", "notebook", "good", "honor", "valedictorian")
+# Danh hiệu trên Thủ khoa: TOP_TITLE_LIMIT Thủ khoa nhiều điểm nhất trên BXH (tính theo vị trí,
+# không theo điểm) — "Trạng nguyên". Không phải hạng theo điểm; gán khi trả kết quả.
+TOP_TITLE = "topscholar"
+TOP_TITLE_LIMIT = 100
 TIER_SIZE = 300
 DIVISION_SIZE = 100
 PLACEMENT_GAMES = 5
@@ -44,7 +48,18 @@ def rank_of(points: int) -> Rank:
 
 
 def tier_floor(tier: str) -> int:
+    if tier == TOP_TITLE:
+        return len(TIERS) * TIER_SIZE
     return TIERS.index(tier) * TIER_SIZE
+
+
+def with_top_title(rank: Rank | None, position: int | None) -> Rank | None:
+    """Thủ khoa đứng trong top TOP_TITLE_LIMIT của BXH → danh hiệu Trạng nguyên."""
+    if rank is None or rank.tier != "valedictorian" or position is None:
+        return rank
+    if position <= TOP_TITLE_LIMIT:
+        return Rank(TOP_TITLE, None, rank.points)
+    return rank
 
 
 def stake(gap: float) -> float:

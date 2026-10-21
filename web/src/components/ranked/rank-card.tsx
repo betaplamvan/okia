@@ -12,7 +12,7 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
   const format = useFormatter();
   const seasonName = locale === "en" ? rank.season.name.en : rank.season.name.vi;
   const placing = rank.rank === null;
-  const top = rank.rank?.tier === "valedictorian";
+  const top = rank.rank?.tier === "valedictorian" || rank.rank?.tier === "topscholar";
   // Tiến độ trong bậc hiện tại (100 điểm mỗi bậc); Thủ khoa không có bậc.
   const within = top ? DIVISION_SIZE : rank.points % DIVISION_SIZE;
   const toNext = DIVISION_SIZE - within;
@@ -59,7 +59,11 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
       ) : (
         <Stack gap={1}>
           <Text fontSize="sm" fontWeight="600">
-            {top ? t("topTier") : t("nextDivision", { n: String(toNext) })}
+            {rank.rank?.tier === "topscholar"
+              ? t("topScholar")
+              : top
+                ? t("topTier")
+                : t("nextDivision", { n: String(toNext) })}
           </Text>
           <Progress.Root value={within} max={DIVISION_SIZE} size="sm">
             <Progress.Track bg="paper" border="2px solid" borderColor="ink" borderRadius="full">

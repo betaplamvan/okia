@@ -20,7 +20,7 @@ Thứ người chơi nhìn thấy và leo (`ratings.points`, ≥ 0). Code: `api/
 | Người bị kỳ vọng thua (E thấp) | nhiều hơn, tối đa +40 | ít hơn, tối thiểu −1 |
 | **Trận lệch trình độ** (ghép khi vắng người / chờ lâu) | tiền cược giảm: chênh ≥ 500 chỉ còn 10 % → người mạnh thắng **+1**, người yếu thua **−1** | |
 
-Công thức: `thắng = round(24 × 2 × (1 − E) × s)`, `thua = −round(16 × 2 × E × s)`, với `E` = kỳ vọng thắng từ Glicko-2 và `s` = tiền cược: `1` khi chênh ≤ 150, giảm tuyến tính tới `0.1` khi chênh ≥ 500. Luôn ≥ 1 điểm về trị tuyệt đối; điểm không âm. Trận cân có lợi cho người thắng (+24/−16) để leo hạng có cảm giác tiến lên; trận lệch gần như không đổi điểm nên ghép lệch "chấp nhận được" mà không ai bị ép thua oan hay cày người yếu.
+**Không công bố công thức cho người chơi** (màn `/ranked` chỉ nói định tính: trận cân cộng nhiều hơn trừ; chênh lệch càng lớn điểm đổi càng ít). Công thức nội bộ: `thắng = round(24 × 2 × (1 − E) × s)`, `thua = −round(16 × 2 × E × s)`, với `E` = kỳ vọng thắng từ Glicko-2 và `s` = tiền cược: `1` khi chênh ≤ 150, giảm tuyến tính tới `0.1` khi chênh ≥ 500. Luôn ≥ 1 điểm về trị tuyệt đối; điểm không âm. Trận cân có lợi cho người thắng (+24/−16) để leo hạng có cảm giác tiến lên; trận lệch gần như không đổi điểm nên ghép lệch "chấp nhận được" mà không ai bị ép thua oan hay cày người yếu.
 
 ### Hạng & bậc
 
@@ -33,6 +33,7 @@ Tính thẳng từ điểm: mỗi hạng **300 điểm**, chia 3 bậc **III →
 | Học sinh khá | 600 – 899 | sun |
 | Học sinh giỏi | 900 – 1199 | pink |
 | Thủ khoa | ≥ 1200 (hiện thứ hạng trên BXH) | coral |
+| **Trạng nguyên** (danh hiệu) | Thủ khoa đứng **top 100** BXH — gán theo vị trí lúc trả kết quả (`points.with_top_title`), không phải ngưỡng điểm; rớt khỏi top 100 là mất | sun + vương miện |
 
 Tên tiếng Anh: xem [bảng thuật ngữ](11-responsive-i18n.md#bảng-thuật-ngữ). **5 trận phân hạng** đầu mùa chưa hiện hạng (huy hiệu "Đang phân hạng", viền đứt); BXH chỉ tính người đã qua phân hạng. *Các con số là giá trị khởi điểm, chỉnh theo phân phối thực tế.*
 

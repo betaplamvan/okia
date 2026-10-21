@@ -45,7 +45,8 @@
     "notebook": "Notebook",
     "good": "Good Student",
     "honor": "Honor Student",
-    "valedictorian": "Valedictorian"
+    "valedictorian": "Valedictorian",
+    "topscholar": "Top Scholar"
   },
   "emails": {
     "footer": "This email was sent automatically by Ô Kìa (okia.io.vn) because you just signed in with Google. If this wasn't you, open the game, go to Profile → Account → Sign out everywhere.",

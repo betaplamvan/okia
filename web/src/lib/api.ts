@@ -143,8 +143,16 @@ export type MySkinsOut = {
 
 // ---------- Xếp hạng (api/app/rating/router.py, docs/07) ----------
 
-export type Tier = "scratch" | "notebook" | "good" | "honor" | "valedictorian";
-export const TIERS: Tier[] = ["scratch", "notebook", "good", "honor", "valedictorian"];
+/** "topscholar" = danh hiệu Trạng nguyên: Thủ khoa trong top 100 BXH (theo vị trí, server gán). */
+export type Tier = "scratch" | "notebook" | "good" | "honor" | "valedictorian" | "topscholar";
+export const TIERS: Tier[] = [
+  "scratch",
+  "notebook",
+  "good",
+  "honor",
+  "valedictorian",
+  "topscholar",
+];
 /** Mỗi hạng 300 điểm, 3 bậc × 100 (api/app/rating/points.py). */
 export const TIER_SIZE = 300;
 export const DIVISION_SIZE = 100;

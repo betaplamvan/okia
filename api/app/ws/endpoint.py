@@ -219,7 +219,7 @@ async def _ranked_entry(redis, user_id: str) -> mmq.Entry:
         season = await rating.current_season(db)
         r = await rating.get_or_create_rating(db, user.id, season)
         await db.commit()
-        rank = rating.visible_rank(r)
+        rank = await rating.titled_rank(db, r)
         entry = mmq.Entry(
             user_id=user_id,
             name=user.display_name,

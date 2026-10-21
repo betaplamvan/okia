@@ -124,6 +124,15 @@ def placement_left(r: Rating | None) -> int:
     return max(0, PLACEMENT_GAMES - (r.games if r else 0))
 
 
+async def titled_rank(db: AsyncSession, r: Rating | None) -> Rank | None:
+    """Hạng hiển thị kèm danh hiệu Trạng nguyên (Thủ khoa trong top 100 BXH). Chỉ truy vấn vị trí
+    khi là Thủ khoa."""
+    rank = visible_rank(r)
+    if rank is None or rank.tier != "valedictorian" or r is None:
+        return rank
+    return points.with_top_title(rank, await position_of(db, r))
+
+
 # ---------- Chốt trận ----------
 
 
@@ -214,7 +223,7 @@ async def settle(
         match_id=match_id,
         points=[r0.points, r1.points],
         points_delta=[d0, d1],
-        ranks=[visible_rank(r0), visible_rank(r1)],
+        ranks=[await titled_rank(db, r0), await titled_rank(db, r1)],
         rewards=rewards,
         placement_left=[placement_left(r0), placement_left(r1)],
     )

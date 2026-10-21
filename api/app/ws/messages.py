@@ -98,7 +98,8 @@ class GameStateOut(Msg):
 class RankOut(Msg):
     """Hạng hiển thị (docs/07): tier + bậc (3 = III … 1 = I, None với Thủ khoa) + điểm."""
 
-    tier: Literal["scratch", "notebook", "good", "honor", "valedictorian"]
+    # "topscholar" = danh hiệu Trạng nguyên (Thủ khoa top 100 BXH), gán theo vị trí.
+    tier: Literal["scratch", "notebook", "good", "honor", "valedictorian", "topscholar"]
     division: int | None = None
     points: int
 

@@ -18,7 +18,7 @@ from app.db import get_db
 from app.economy.router import avatar_url_for
 from app.models import Season, User
 from app.rating import service
-from app.rating.points import PLACEMENT_GAMES, Rank
+from app.rating.points import PLACEMENT_GAMES, Rank, with_top_title
 
 router = APIRouter(tags=["ranked"])
 Db = Annotated[AsyncSession, Depends(get_db)]
@@ -106,7 +106,10 @@ def entry_out(row: service.LeaderboardRow) -> LeaderboardEntry:
         user_id=row.user.id,
         name=row.user.display_name,
         avatar_url=avatar_url_for(row.user),
-        rank=rank_out(service.visible_rank(row.rating) or Rank("scratch", 3, row.rating.points)),
+        rank=rank_out(
+            with_top_title(service.visible_rank(row.rating), row.position)
+            or Rank("scratch", 3, row.rating.points)
+        ),
         games=row.rating.games,
         wins=row.rating.wins,
     )
@@ -157,7 +160,7 @@ async def me_rank(db: Db, user: Annotated[User, Depends(current_user)]) -> MyRan
     s = await service.current_season(db)
     r = await service.get_rating(db, user.id, s.id)
     await db.commit()
-    rank = service.visible_rank(r)
+    rank = await service.titled_rank(db, r)
     hist = await service.history(db, user.id, s.id) if r else []
     return MyRankOut(
         season=season_out(s),

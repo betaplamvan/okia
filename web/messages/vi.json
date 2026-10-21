@@ -302,13 +302,14 @@
     "position": "Hạng #{n} trên BXH",
     "noPosition": "Chưa có thứ hạng trên BXH",
     "nextDivision": "Còn {n} điểm lên bậc tiếp",
-    "topTier": "Thủ khoa — đỉnh bảng rồi!",
+    "topTier": "Thủ khoa — còn top 100 để thành Trạng nguyên!",
     "tier": {
       "scratch": "Giấy nháp",
       "notebook": "Vở ô li",
       "good": "Học sinh khá",
       "honor": "Học sinh giỏi",
-      "valedictorian": "Thủ khoa"
+      "valedictorian": "Thủ khoa",
+      "topscholar": "Trạng nguyên"
     },
     "history": "Trận gần đây",
     "noHistory": "Chưa có trận xếp hạng nào mùa này.",
@@ -326,11 +327,12 @@
     "tierDown": "Rớt hạng",
     "leaderboardLink": "Bảng xếp hạng",
     "howTitle": "Điểm hạng tính thế nào?",
-    "how1": "Trận cân sức: thắng +24, thua −16. Điểm không bao giờ âm.",
-    "how2": "Ghép trận dựa trên điểm đánh giá ẩn. Khi vắng người, hệ thống chấp nhận ghép lệch trình độ nhưng giảm điểm cược: người mạnh thắng chỉ +1, người yếu thua chỉ −1.",
-    "how3": "5 trận đầu mùa là phân hạng, chưa hiện hạng. Mỗi hạng có 3 bậc (III → I), mỗi bậc 100 điểm. Thủ khoa từ 1200 điểm.",
-    "how4": "Mùa kéo dài 8 tuần; sang mùa mới điểm giảm một nửa.",
-    "loadError": "Không tải được dữ liệu xếp hạng."
+    "how1": "Thắng được cộng điểm, thua bị trừ; điểm không bao giờ âm. Trận cân sức cộng nhiều hơn trừ, nên chơi đều là leo được.",
+    "how2": "Ghép trận theo trình độ thật (điểm đánh giá ẩn). Khi vắng người, hệ thống chấp nhận ghép lệch trình độ, nhưng chênh lệch càng lớn thì điểm được cộng hay bị trừ càng ít.",
+    "how3": "5 trận đầu mùa là phân hạng, chưa hiện hạng. Mỗi hạng có 3 bậc (III → I). Thủ khoa là hạng cao nhất; 100 Thủ khoa nhiều điểm nhất mang danh hiệu Trạng nguyên.",
+    "how4": "Mùa kéo dài 8 tuần; sang mùa mới hạng được đặt lại một phần để ai cũng có cơ hội.",
+    "loadError": "Không tải được dữ liệu xếp hạng.",
+    "topScholar": "Trạng nguyên — top 100 toàn trường!"
   },
   "Leaderboard": {
     "title": "Bảng xếp hạng",

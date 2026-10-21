@@ -359,6 +359,27 @@ async def test_settle_tran_lech_cuoc_nho_va_khong_thuong_khi_afk() -> None:
     await dispose_engine()
 
 
+async def test_trang_nguyen_top_100_thu_khoa() -> None:
+    """Thủ khoa (≥ 1200 điểm) trong top 100 BXH mang danh hiệu Trạng nguyên; ngoài top thì vẫn
+    là Thủ khoa; dưới 1200 không bao giờ có danh hiệu."""
+    from app.rating.points import TOP_TITLE, rank_of, with_top_title
+
+    assert with_top_title(rank_of(1300), 1).tier == TOP_TITLE  # type: ignore[union-attr]
+    assert with_top_title(rank_of(1300), 100).tier == TOP_TITLE  # type: ignore[union-attr]
+    assert with_top_title(rank_of(1300), 101).tier == "valedictorian"  # type: ignore[union-attr]
+    assert with_top_title(rank_of(1199), 1).tier == "honor"  # type: ignore[union-attr]
+    assert with_top_title(None, 1) is None
+    async with get_session_factory()() as db:
+        s = await service.current_season(db)
+        uid = await _seed_user(db, "top@example.com")
+        r = await service.get_or_create_rating(db, uid, s)
+        r.points, r.games, r.mmr = 1250, PLACEMENT_GAMES, 2000.0
+        await db.commit()
+        titled = await service.titled_rank(db, r)
+        assert titled is not None and titled.tier == TOP_TITLE and titled.points == 1250
+    await dispose_engine()
+
+
 async def test_mua_moi_reset_mem_va_bxh() -> None:
     async with get_session_factory()() as db:
         s1 = await service.current_season(db)

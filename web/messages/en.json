@@ -302,13 +302,14 @@
     "position": "#{n} on the leaderboard",
     "noPosition": "Not on the leaderboard yet",
     "nextDivision": "{n} pts to the next division",
-    "topTier": "Valedictorian — top of the class!",
+    "topTier": "Valedictorian — reach the top 100 for Top Scholar!",
     "tier": {
       "scratch": "Scratch Paper",
       "notebook": "Notebook",
       "good": "Good Student",
       "honor": "Honor Student",
-      "valedictorian": "Valedictorian"
+      "valedictorian": "Valedictorian",
+      "topscholar": "Top Scholar"
     },
     "history": "Recent games",
     "noHistory": "No ranked games this season yet.",
@@ -326,11 +327,12 @@
     "tierDown": "Demoted",
     "leaderboardLink": "Leaderboard",
     "howTitle": "How are points calculated?",
-    "how1": "Even game: win +24, lose −16. Points never go below zero.",
-    "how2": "Matchmaking uses a hidden skill rating. When few players are online it accepts a skill gap but lowers the stakes: the favorite gains just +1 for a win, the underdog loses just −1.",
-    "how3": "Your first 5 games each season are placement games with no rank shown. Each tier has 3 divisions (III → I) of 100 points. Valedictorian starts at 1200.",
-    "how4": "A season lasts 8 weeks; points are halved when a new season starts.",
-    "loadError": "Could not load ranked data."
+    "how1": "Wins add points, losses take some away; points never go below zero. Even games add more than they take, so steady play climbs.",
+    "how2": "Matchmaking uses a hidden skill rating. When few players are online it accepts a skill gap, but the bigger the gap, the fewer points change hands.",
+    "how3": "Your first 5 games each season are placement games with no rank shown. Each tier has 3 divisions (III → I). Valedictorian is the top tier; its 100 highest scorers hold the Top Scholar title.",
+    "how4": "A season lasts 8 weeks; a new season partly resets ranks so everyone gets a fresh shot.",
+    "loadError": "Could not load ranked data.",
+    "topScholar": "Top Scholar — top 100 of the whole school!"
   },
   "Leaderboard": {
     "title": "Leaderboard",
