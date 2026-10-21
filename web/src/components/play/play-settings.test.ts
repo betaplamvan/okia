@@ -8,14 +8,14 @@ describe("adaptAfterResult", () => {
     s = adaptAfterResult(s, true);
     expect(s.streak).toBe(2);
     s = adaptAfterResult(s, true);
-    expect(s.strength).toBeCloseTo(0.75);
+    expect(s.strength).toBeCloseTo(0.9);
     expect(s.streak).toBe(0);
   });
 
   it("giảm 0.1 sau 3 ván thua liên tiếp, không dưới 0.2", () => {
-    let s = { ...DEFAULT_SETTINGS, strength: 0.25 };
+    let s = { ...DEFAULT_SETTINGS, strength: 0.45 };
     for (let i = 0; i < 3; i++) s = adaptAfterResult(s, false);
-    expect(s.strength).toBeCloseTo(0.2);
+    expect(s.strength).toBeCloseTo(0.4);
   });
 
   it("thắng rồi thua thì chuỗi đổi chiều; hòa thì reset", () => {

@@ -16,10 +16,12 @@ export interface PlaySettings {
 }
 
 const KEY = "okia-play";
+/** Sàn độ mạnh: dưới mức này bot "quên" quá nhiều, thắng không còn vui (docs/03). */
+export const MIN_STRENGTH = 0.4;
 export const DEFAULT_SETTINGS: PlaySettings = {
   mapId: DEFAULT_MAP_ID,
   showLastMove: true,
-  strength: 0.65,
+  strength: 0.8,
   streak: 0,
 };
 
@@ -40,7 +42,7 @@ function sanitize(raw: unknown): PlaySettings {
     showLastMove: typeof p.showLastMove === "boolean" ? p.showLastMove : true,
     strength:
       typeof p.strength === "number"
-        ? Math.min(1, Math.max(0.2, p.strength))
+        ? Math.min(1, Math.max(MIN_STRENGTH, p.strength))
         : DEFAULT_SETTINGS.strength,
     streak: typeof p.streak === "number" ? p.streak : 0,
   };
@@ -81,6 +83,6 @@ export function adaptAfterResult(s: PlaySettings, humanWon: boolean | null): Pla
   if (humanWon === null) return { ...s, streak: 0 };
   const streak = humanWon ? Math.max(1, s.streak + 1) : Math.min(-1, s.streak - 1);
   if (streak >= 3) return { ...s, strength: Math.min(1, s.strength + 0.1), streak: 0 };
-  if (streak <= -3) return { ...s, strength: Math.max(0.2, s.strength - 0.1), streak: 0 };
+  if (streak <= -3) return { ...s, strength: Math.max(MIN_STRENGTH, s.strength - 0.1), streak: 0 };
   return { ...s, streak };
 }

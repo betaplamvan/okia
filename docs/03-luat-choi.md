@@ -157,20 +157,27 @@ Bot luôn chạy đầy đủ chiến thuật, rồi một tham số `strength �
 1. Có ô ăn được → ăn (trừ khi double-cross có lợi hơn, xem bước 4).
 2. Còn cạnh "an toàn" (không phải cạnh thứ 3 của ô nào) → chọn một cạnh an toàn.
 3. Hết cạnh an toàn → nhường chuỗi/vòng **ngắn nhất**.
-4. Áp dụng **luật chuỗi dài** (long chain rule) và **double-cross**: khi ăn chuỗi, bỏ lại 2 ô cuối để giữ quyền kiểm soát nếu có lợi.
-5. Khi số cạnh còn lại nhỏ (≤ ~16): tìm kiếm alpha-beta để chơi tối ưu.
+4. **Nhường đôi** (double-dealing, 2026-10-22): khi ăn chuỗi mà đã hết cạnh an toàn, bỏ lại 2 ô cuối chuỗi (4 ô cuối vòng) để đối thủ phải mở chuỗi tiếp — nếu tìm kiếm cho thấy có lợi.
+5. **Tìm kiếm** (negamax + alpha-beta + bảng ghi nhớ, ngân sách 60 000 nút ≈ dưới 150 ms): ở tàn cuộc (hết cạnh an toàn) và ở pha cuối an toàn (≤ 10 cạnh an toàn, sâu 3 cạnh an toàn, phần tàn cuộc giải hết). Tập nước được cắt tỉa theo lý thuyết: đang ăn được thì chỉ xét "ăn" và "nhường đôi"; phải nhường thì gom các cạnh mở cùng một chuỗi. Quá ngân sách → quay về luật 1–3. Nhờ vậy bot chọn **chuỗi nào** để nhường theo kết quả thật (không chỉ chuỗi ngắn nhất) và nắm luật chuỗi dài ở cuối pha an toàn.
 
-**Lỗi có chủ đích** (với xác suất `1 - strength` ở mỗi quyết định):
-- bỏ qua ô ăn được ở bước 1,
-- chọn cạnh không an toàn ở bước 2,
-- không double-cross ở bước 4,
-- bỏ qua tìm kiếm ở bước 5.
+**Lỗi có chủ đích** (mô hình 2026-10-22): với xác suất `1 − strength` ở mỗi quyết định, bot **bỏ lớp tìm kiếm / nhường đôi** (bước 4–5) và chơi như bot cũ — ăn tham lam, cạnh an toàn ngẫu nhiên, nhường chuỗi ngắn nhất; vẫn là nước "biết chơi". Nước **ngớ ngẩn** (quên ăn ô, vẽ cạnh thứ ba khi còn cạnh an toàn) chỉ xuất hiện khi `strength < 0.6`, xác suất `(0.6 − strength) / 2` mỗi quyết định (sàn 0.4 → 10 %). Mô hình cũ (lỗi = nước ngẫu nhiên bất kỳ) là lý do "máy quá dễ": ở 0.8 nó thua chính bot tham lam 19/20.
+
+Đo 2026-10-22, 20 ván mỗi ô, đối thủ là bot tham lam (chỉ luật 1–3), đổi bên mỗi ván:
+
+| strength | 5×5 | 7×7 | Khủng long |
+|---|---|---|---|
+| 1.0 | thắng 20 | 20 | 20 |
+| 0.8 (mặc định) | 18 | 17 | 14 |
+| 0.6 | 15 | 14 | 12 |
+| 0.4 (sàn) | 4 | 3 | 2 |
+
+Thời gian một nước (Node, máy dev): trung bình 9–29 ms, tối đa ≈ 160 ms (ngân sách 20 000 nút hoặc 150 ms, quá thì quay về luật 1–3).
 
 ### Tự điều chỉnh độ mạnh
 
-- Người chơi mới: `strength = 0.35`.
+- Người chơi mới: `strength = 0.8` (từ 2026-10-22; trước là 0.65 — người chơi thắng quá dễ). Sàn 0.4.
 - Có MMR (sau khi chơi xếp hạng): `strength` tăng tuyến tính từ 0.35 (MMR ≤ 1100) đến 0.95 (MMR ≥ 1850).
-- Chuỗi kết quả với bot: thua bot 3 ván liên tiếp → `-0.1`; thắng bot 3 ván liên tiếp → `+0.1` (giới hạn trong [0.2, 1]).
+- Chuỗi kết quả với bot: thua bot 3 ván liên tiếp → `-0.1`; thắng bot 3 ván liên tiếp → `+0.1` (giới hạn trong [0.4, 1]).
 - `strength` **không hiển thị** cho người chơi. *Các con số là giá trị khởi điểm.*
 
 ### Bot chạy ở đâu

@@ -63,7 +63,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 
 ### M0.7 Bot
 - [x] **P0-17** `bot.ts` theo [03 — Bot](03-luat-choi.md#bot): ăn ô, cạnh an toàn, nhường chuỗi ngắn nhất; tham số `strength` + lỗi có chủ đích; fixtures tình huống cho bot
-- [ ] **P0-18** Luật chuỗi dài, double-cross, tìm kiếm alpha-beta cuối ván — *có thể để sau giai đoạn 1 nếu tốn thời gian*
+- [x] **P0-18** Nhường đôi (double-dealing), tìm kiếm alpha-beta + bảng ghi nhớ cho tàn cuộc và pha cuối an toàn, chọn chuỗi nhường theo tìm kiếm (2026-10-22; luật chuỗi dài đầu ván vẫn chỉ qua tìm kiếm cuối pha an toàn)
 
 ### M0.8 Hoàn thiện & cho bạn bè thử
 - [ ] **P0-19** Hoàn thiện trang chủ/menu; kiểm tra trên iOS Safari + Chrome Android thật, đủ các kích thước ở [11](11-responsive-i18n.md#kiểm-thử), cả hai ngôn ngữ
