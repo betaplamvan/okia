@@ -76,146 +76,68 @@ export function ProfileDialog() {
             border={{ base: "none", md: "sticker" }}
           >
             <Dialog.Title srOnly>{t("profile")}</Dialog.Title>
-            {/* Dải xanh bảng; avatar to chồng lên mép dưới. */}
-            <Box
-              bg="board.base"
-              h="88px"
-              flexShrink={0}
-              borderBottom="sticker"
-              bgImage="linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)"
-              bgSize="24px 24px"
-            />
-            <Dialog.Body color="ink" pt={0} pb={5} overflow="visible">
-              {!user ? (
-                <Text pt={4}>{t("loading")}</Text>
-              ) : (
-                <Stack gap={4}>
-                  <Stack gap={2} align="center" mt="-52px">
-                    <Avatar.Root
-                      size="2xl"
-                      w="104px"
-                      h="104px"
-                      border="sticker"
-                      boxShadow="stickerSm"
-                      bg="sun"
-                      color="ink"
-                      fontSize="3xl"
-                    >
-                      <Avatar.Fallback name={user.displayName} fontWeight="700" />
-                      {user.avatarUrl ? <Avatar.Image src={user.avatarUrl} /> : null}
-                    </Avatar.Root>
-                    <Text
-                      fontSize="2xl"
-                      fontWeight="700"
-                      lineHeight="1.1"
-                      textAlign="center"
-                      truncate
-                      maxW="full"
-                    >
-                      {user.displayName}
-                    </Text>
-                    <HStack gap={2} flexWrap="wrap" justify="center">
-                      {ranked ? <TierBadge rank={ranked.rank} size="sm" /> : null}
-                      {ranked?.position ? (
-                        <Pill tone="sun">
-                          <LuCrown /> {t("positionSeason", { n: format.number(ranked.position) })}
-                        </Pill>
-                      ) : null}
-                      <Pill tone="paper">
-                        <LuCalendar /> {format.dateTime(new Date(user.createdAt), "short")}
-                      </Pill>
-                      {user.isGuest ? (
-                        <Pill tone="paper">{t("guestBadge")}</Pill>
-                      ) : (
-                        <Pill tone="mint">{t("verifiedBadge")}</Pill>
-                      )}
-                    </HStack>
-                  </Stack>
-
-                  {editing ? (
-                    <Stack gap={3}>
-                      <EditProfileForm onDone={() => setEditing(false)} />
-                      <Box bg="cream" border="2px solid" borderColor="ink" borderRadius="lg" p={3}>
-                        <Text fontWeight="700" mb={2}>
-                          {te("avatar")}
-                        </Text>
-                        <AvatarUpload />
-                      </Box>
-                    </Stack>
-                  ) : (
-                    <HStack gap={2} justify="center" flexWrap="wrap">
-                      <Button variant="sticker" size="sm" bg="sun" onClick={() => setEditing(true)}>
-                        <LuPencilLine /> {t("editProfile")}
-                      </Button>
-                      {/* Ví: một nút Ruột chì ‖ Hoa điểm tốt dẫn tới cửa hàng (như trang chủ). */}
-                      <Button
-                        asChild
-                        variant="sticker"
-                        size="sm"
-                        onClick={closeProfile}
-                        aria-label={`${te("wallet")} — ${tc("shop")}`}
+            {/* Thân hộp cuộn (scrollBehavior="inside"). Dải xanh nằm TRONG thân để avatar chồng lên
+                mép dưới của dải mà không vượt ra ngoài vùng cuộn — đặt dải ngoài thân thì phải để
+                thân overflow visible, và khi đó nội dung dài (lịch sử trận) bị cắt, không cuộn được. */}
+            <Dialog.Body color="ink" p={0} overflowY="auto">
+              <Box
+                bg="board.base"
+                h="88px"
+                flexShrink={0}
+                borderBottom="sticker"
+                bgImage="linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)"
+                bgSize="24px 24px"
+              />
+              <Box px={6} pb={5} flexShrink={0}>
+                {!user ? (
+                  <Text pt={4}>{t("loading")}</Text>
+                ) : (
+                  <Stack gap={4}>
+                    <Stack gap={2} align="center" mt="-52px">
+                      <Avatar.Root
+                        size="2xl"
+                        w="104px"
+                        h="104px"
+                        border="sticker"
+                        boxShadow="stickerSm"
+                        bg="sun"
+                        color="ink"
+                        fontSize="3xl"
                       >
-                        <Link href="/shop">
-                          <HStack gap={1} title={te("lead")}>
-                            <Text as="span">{format.number(user.wallet?.lead ?? 0)}</Text>
-                            <LuPencil />
-                          </HStack>
-                          <Box w="2px" h="4" bg="ink" opacity={0.5} borderRadius="full" />
-                          <HStack gap={1} title={te("flower")}>
-                            <Text as="span">{format.number(user.wallet?.flower ?? 0)}</Text>
-                            <LuFlower />
-                          </HStack>
-                        </Link>
-                      </Button>
-                    </HStack>
-                  )}
+                        <Avatar.Fallback name={user.displayName} fontWeight="700" />
+                        {user.avatarUrl ? <Avatar.Image src={user.avatarUrl} /> : null}
+                      </Avatar.Root>
+                      <Text
+                        fontSize="2xl"
+                        fontWeight="700"
+                        lineHeight="1.1"
+                        textAlign="center"
+                        truncate
+                        maxW="full"
+                      >
+                        {user.displayName}
+                      </Text>
+                      <HStack gap={2} flexWrap="wrap" justify="center">
+                        {ranked ? <TierBadge rank={ranked.rank} size="sm" /> : null}
+                        {ranked?.position ? (
+                          <Pill tone="sun">
+                            <LuCrown /> {t("positionSeason", { n: format.number(ranked.position) })}
+                          </Pill>
+                        ) : null}
+                        <Pill tone="paper">
+                          <LuCalendar /> {format.dateTime(new Date(user.createdAt), "short")}
+                        </Pill>
+                        {user.isGuest ? (
+                          <Pill tone="paper">{t("guestBadge")}</Pill>
+                        ) : (
+                          <Pill tone="mint">{t("verifiedBadge")}</Pill>
+                        )}
+                      </HStack>
+                    </Stack>
 
-                  {/* Tủ trưng bày: bút + dấu ăn đang trang bị, huy hiệu hạng mùa này. */}
-                  <Stack gap={2}>
-                    <Text fontWeight="700">{t("showcase")}</Text>
-                    <SimpleGrid columns={3} gap={3}>
-                      <ShowcaseSlot label={t("showcasePen")} href="/shop">
-                        {pen ? <SkinPreview skin={pen} /> : null}
-                      </ShowcaseSlot>
-                      <ShowcaseSlot label={t("showcaseBox")} href="/shop">
-                        {box ? <SkinPreview skin={box} /> : null}
-                      </ShowcaseSlot>
-                      <ShowcaseSlot label={tr("tab")} onClick={() => openProfile("rank")}>
-                        <RankEmblem
-                          rank={ranked?.rank ?? null}
-                          size={64}
-                          position={ranked?.position ?? null}
-                        />
-                      </ShowcaseSlot>
-                    </SimpleGrid>
-                  </Stack>
-
-                  <Tabs.Root
-                    value={tab}
-                    onValueChange={(e) => openProfile(e.value as ProfileTab)}
-                    variant="plain"
-                    lazyMount
-                  >
-                    <Tabs.List gap={2} justifyContent="center" flexWrap="wrap">
-                      {(["overview", "rank", "account"] as const).map((key) => (
-                        <Tabs.Trigger
-                          key={key}
-                          value={key}
-                          bg={tab === key ? "mint" : "paper"}
-                          color="ink"
-                          border="sticker"
-                          borderRadius="full"
-                          boxShadow={tab === key ? "stickerSm" : "sticker"}
-                          px={4}
-                          fontWeight="600"
-                          fontFamily="hand"
-                        >
-                          {key === "rank" ? tr("tab") : t(key)}
-                        </Tabs.Trigger>
-                      ))}
-                    </Tabs.List>
-                    <Tabs.Content value="overview" pt={4}>
+                    {editing ? (
                       <Stack gap={3}>
+                        <EditProfileForm onDone={() => setEditing(false)} />
                         <Box
                           bg="cream"
                           border="2px solid"
@@ -224,35 +146,131 @@ export function ProfileDialog() {
                           p={3}
                         >
                           <Text fontWeight="700" mb={2}>
-                            {t("stats")}
+                            {te("avatar")}
                           </Text>
-                          <SimpleGrid columns={2} gap={2}>
-                            <Stat label={t("statGames")} value={ranked?.games ?? 0} />
-                            <Stat label={t("statWins")} value={ranked?.wins ?? 0} />
-                            <Stat label={t("statStreak")} value={progress?.checkin.streak ?? 0} />
-                            <Stat label={t("statBest")} value={progress?.checkin.bestStreak ?? 0} />
-                          </SimpleGrid>
-                        </Box>
-                        <Box
-                          bg="cream"
-                          border="2px dashed"
-                          borderColor="ink"
-                          borderRadius="lg"
-                          p={3}
-                        >
-                          <Text fontSize="sm">{t("overviewSoon")}</Text>
+                          <AvatarUpload />
                         </Box>
                       </Stack>
-                    </Tabs.Content>
-                    <Tabs.Content value="rank" pt={4}>
-                      <RankTab />
-                    </Tabs.Content>
-                    <Tabs.Content value="account" pt={4}>
-                      <AccountTab />
-                    </Tabs.Content>
-                  </Tabs.Root>
-                </Stack>
-              )}
+                    ) : (
+                      <HStack gap={2} justify="center" flexWrap="wrap">
+                        <Button
+                          variant="sticker"
+                          size="sm"
+                          bg="sun"
+                          onClick={() => setEditing(true)}
+                        >
+                          <LuPencilLine /> {t("editProfile")}
+                        </Button>
+                        {/* Ví: một nút Ruột chì ‖ Hoa điểm tốt dẫn tới cửa hàng (như trang chủ). */}
+                        <Button
+                          asChild
+                          variant="sticker"
+                          size="sm"
+                          onClick={closeProfile}
+                          aria-label={`${te("wallet")} — ${tc("shop")}`}
+                        >
+                          <Link href="/shop">
+                            <HStack gap={1} title={te("lead")}>
+                              <Text as="span">{format.number(user.wallet?.lead ?? 0)}</Text>
+                              <LuPencil />
+                            </HStack>
+                            <Box w="2px" h="4" bg="ink" opacity={0.5} borderRadius="full" />
+                            <HStack gap={1} title={te("flower")}>
+                              <Text as="span">{format.number(user.wallet?.flower ?? 0)}</Text>
+                              <LuFlower />
+                            </HStack>
+                          </Link>
+                        </Button>
+                      </HStack>
+                    )}
+
+                    {/* Tủ trưng bày: bút + dấu ăn đang trang bị, huy hiệu hạng mùa này. */}
+                    <Stack gap={2}>
+                      <Text fontWeight="700">{t("showcase")}</Text>
+                      <SimpleGrid columns={3} gap={3}>
+                        <ShowcaseSlot label={t("showcasePen")} href="/shop">
+                          {pen ? <SkinPreview skin={pen} /> : null}
+                        </ShowcaseSlot>
+                        <ShowcaseSlot label={t("showcaseBox")} href="/shop">
+                          {box ? <SkinPreview skin={box} /> : null}
+                        </ShowcaseSlot>
+                        <ShowcaseSlot label={tr("tab")} onClick={() => openProfile("rank")}>
+                          <RankEmblem
+                            rank={ranked?.rank ?? null}
+                            size={64}
+                            position={ranked?.position ?? null}
+                          />
+                        </ShowcaseSlot>
+                      </SimpleGrid>
+                    </Stack>
+
+                    <Tabs.Root
+                      value={tab}
+                      onValueChange={(e) => openProfile(e.value as ProfileTab)}
+                      variant="plain"
+                      lazyMount
+                    >
+                      <Tabs.List gap={2} justifyContent="center" flexWrap="wrap">
+                        {(["overview", "rank", "account"] as const).map((key) => (
+                          <Tabs.Trigger
+                            key={key}
+                            value={key}
+                            bg={tab === key ? "mint" : "paper"}
+                            color="ink"
+                            border="sticker"
+                            borderRadius="full"
+                            boxShadow={tab === key ? "stickerSm" : "sticker"}
+                            px={4}
+                            fontWeight="600"
+                            fontFamily="hand"
+                          >
+                            {key === "rank" ? tr("tab") : t(key)}
+                          </Tabs.Trigger>
+                        ))}
+                      </Tabs.List>
+                      <Tabs.Content value="overview" pt={4}>
+                        <Stack gap={3}>
+                          <Box
+                            bg="cream"
+                            border="2px solid"
+                            borderColor="ink"
+                            borderRadius="lg"
+                            p={3}
+                          >
+                            <Text fontWeight="700" mb={2}>
+                              {t("stats")}
+                            </Text>
+                            <SimpleGrid columns={2} gap={2}>
+                              <Stat label={t("statGames")} value={ranked?.games ?? 0} />
+                              <Stat label={t("statWins")} value={ranked?.wins ?? 0} />
+                              <Stat label={t("statStreak")} value={progress?.checkin.streak ?? 0} />
+                              <Stat
+                                label={t("statBest")}
+                                value={progress?.checkin.bestStreak ?? 0}
+                              />
+                            </SimpleGrid>
+                          </Box>
+                          <Box
+                            bg="cream"
+                            border="2px dashed"
+                            borderColor="ink"
+                            borderRadius="lg"
+                            p={3}
+                          >
+                            <Text fontSize="sm">{t("overviewSoon")}</Text>
+                          </Box>
+                        </Stack>
+                      </Tabs.Content>
+                      <Tabs.Content value="rank" pt={4}>
+                        <RankTab />
+                      </Tabs.Content>
+                      <Tabs.Content value="account" pt={4}>
+                        <AccountTab />
+                      </Tabs.Content>
+                    </Tabs.Root>
+                  </Stack>
+                )}
+              </Box>
             </Dialog.Body>
             <Dialog.CloseTrigger asChild>
               <CloseButton size="sm" bg="paper" border="sticker" borderRadius="full" />
