@@ -19,6 +19,19 @@
 | [3. Lan truyền & vận hành](#giai-đoạn-3--lan-truyền--vận-hành) | Bảo mật tài khoản nâng cao, sự kiện, admin, bot có cá tính | liên tục |
 | [4. Donate & duy trì](#giai-đoạn-4--donate--duy-trì) | Trang ủng hộ, minh bạch chi phí | ~3 buổi, sau beta |
 
+### Tóm tắt tiến độ (2026-10-22)
+
+| Giai đoạn | Việc xong / tổng | Còn lại |
+|---|---|---|
+| 0. Prototype offline | 18 / 20 | P0-19 (kiểm tra iOS/Android thật), P0-20 (gửi 5–10 người chơi thử, ghi phản hồi) |
+| 1. Online phòng riêng | 24 / 26 | P1-22 (backup `pg_dump`, Sentry; trang quyền riêng tư đã có), P1-23 (test ảnh chụp Playwright — mới có smoke) |
+| 2A. Ghép trận & xếp hạng | 7 / 9 | P2-05, P2-06 (bot server, ván máy có thưởng) |
+| 2B. Kinh tế & skin | 12 / 20 | P2-13 (dàn xếp), P2-20/21 (pipeline asset, 3 bộ sưu tập), P2-22…26 (thành tựu, EXP, rương, tủ đồ, vật phẩm tiêu hao) |
+| 3. Lan truyền & vận hành | 0 / 13 | — |
+| 4. Donate | 0 / 3 | — |
+
+**Đã làm ngoài kế hoạch** (không có mã việc): chấp nhận trận kiểu LoL (vòng đếm ngược 20 giây), huy hiệu hạng dạng khiên + danh hiệu Trạng nguyên top 100, skin bút hai hình thái (mình / đối thủ) + dấu ăn v2, hộp "Quà mỗi ngày" riêng, trang chủ ba nút + bảng hiệu tên miền, hồ sơ theo bố cục noitu (tủ trưng bày tạm = bút, dấu ăn, hạng), tiếng bấm chung cho mọi nút, đo tải thật trên minisforum + bỏ trần fd / 2 worker / cache đường nối WS / giới hạn chống lạm dụng ([02](02-kien-truc.md#triển-khai)).
+
 ---
 
 ## Giai đoạn 0 — Prototype offline
@@ -126,8 +139,8 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [x] **P1-27** Renderer: giấy theo hình (viền, lỗ, ô li cắt theo hình), chấm/cạnh chỉ trong bàn, quầng đánh dấu nước đối thủ vừa đi; bộ chọn map có hình thu nhỏ + "Ngẫu nhiên" ở chơi với máy và phòng riêng
 
 ### M1.8 Triển khai
-- [ ] **P1-21** VPS + Docker Compose production (container `api` chạy `alembic upgrade head` khi khởi động), Caddy, Cloudflare, tên miền; cấu hình SPF/DKIM cho email
-- [ ] **P1-22** Backup `pg_dump` → R2, Sentry cho web và api, trang chính sách quyền riêng tư (vi/en)
+- [x] **P1-21** ~~VPS + Docker Compose~~ → triển khai trên minisforum qua GitHub Actions + GHCR ([ADR-0008](adr/0008-ci-cd-minisforum.md)); Cloudflare Tunnel, tên miền okia.io.vn, API tự `alembic upgrade head` — *(gốc:* VPS + Docker Compose production (container `api` chạy `alembic upgrade head` khi khởi động), Caddy, Cloudflare, tên miền; cấu hình SPF/DKIM cho email*)*
+- [ ] **P1-22** Backup `pg_dump` → R2, Sentry cho web và api — *trang chính sách quyền riêng tư + điều khoản (vi/en) đã có (`/privacy`, `/terms`)*
 - [ ] **P1-23** Test ảnh chụp màn hình Playwright: 3 kích thước × 2 ngôn ngữ cho trang chủ, đăng nhập, màn chơi, màn kết thúc
 
 **🏁 Tiêu chí hoàn thành giai đoạn 1:** hai điện thoại ở hai mạng khác nhau chơi hết ván qua link mời; tắt mạng 20 giây rồi bật lại vẫn chơi tiếp được; mỗi người thấy giao diện theo ngôn ngữ của mình; đăng nhập Google trên production nhận được thư chào mừng.
