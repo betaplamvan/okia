@@ -27,10 +27,10 @@
 | 1. Online phòng riêng | 24 / 26 | P1-22 (backup `pg_dump`, Sentry; trang quyền riêng tư đã có), P1-23 (test ảnh chụp Playwright — mới có smoke) |
 | 2A. Ghép trận & xếp hạng | 8 / 9 | P2-06 ("Chơi với máy" qua phòng server có thưởng) |
 | 2B. Kinh tế & skin | 12 / 20 | P2-13 (dàn xếp), P2-20/21 (pipeline asset, 3 bộ sưu tập), P2-22…26 (thành tựu, EXP, rương, tủ đồ, vật phẩm tiêu hao) |
-| 3. Lan truyền & vận hành | 0 / 13 | — |
+| 3. Lan truyền & vận hành | 0 / 12 | — |
 | 4. Donate | 0 / 3 | — |
 
-**Đã làm ngoài kế hoạch** (không có mã việc): chấp nhận trận kiểu LoL (vòng đếm ngược 20 giây), huy hiệu hạng dạng khiên + danh hiệu Trạng nguyên top 100, skin bút hai hình thái (mình / đối thủ) + dấu ăn v2, hộp "Quà mỗi ngày" riêng, trang chủ ba nút + bảng hiệu tên miền, hồ sơ theo bố cục noitu (tủ trưng bày tạm = bút, dấu ăn, hạng), tiếng bấm chung cho mọi nút, đo tải thật trên minisforum + bỏ trần fd / 2 worker / cache đường nối WS / giới hạn chống lạm dụng ([02](02-kien-truc.md#triển-khai)).
+**Đã làm ngoài kế hoạch** (không có mã việc): chấp nhận trận kiểu LoL (vòng đếm ngược 20 giây), huy hiệu hạng dạng khiên + danh hiệu Trạng nguyên top 100, skin bút hai hình thái (mình / đối thủ) + dấu ăn v2, hộp "Quà mỗi ngày" riêng, trang chủ ba nút + bảng hiệu tên miền, hồ sơ theo bố cục noitu (tủ trưng bày tạm = bút, dấu ăn, hạng), tiếng bấm chung cho mọi nút, đo tải thật trên minisforum + bỏ trần fd / 2 worker / cache đường nối WS / giới hạn chống lạm dụng ([02](02-kien-truc.md#triển-khai)); ghép máy khi chờ lâu (độ mạnh theo rating ẩn, điểm hạng ½) và bot alpha-beta khó hơn; trang quản trị `/admin` (thống kê, người chơi, skin, thông số); catalog skin trong DB; lọc mục "ma" trong hàng chờ; sửa combo online cộng đôi; tiếng "ready check" khi ghép trận.
 
 ---
 
