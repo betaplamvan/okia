@@ -31,6 +31,13 @@ export function AdminDonations() {
     void load();
   }, [load]);
 
+  // Xóa hẳn (bản ghi test / gửi thử): người ủng hộ không còn giao dịch nào → mất Trống Đồng.
+  async function remove(d: AdminDonation) {
+    if (!window.confirm(t("donations.confirmDelete"))) return;
+    await adminCall(`/admin/donations/${d.id}`, { method: "DELETE" });
+    toaster.success({ title: t("saved") });
+    await load();
+  }
   async function patch(d: AdminDonation, body: { donorName?: string; hidden?: boolean }) {
     await adminCall<AdminDonation>(`/admin/donations/${d.id}`, { method: "PATCH", body });
     toaster.success({ title: t("saved") });
@@ -158,6 +165,15 @@ export function AdminDonations() {
                   onClick={() => void patch(d, { hidden: !d.hidden })}
                 >
                   {d.hidden ? t("donations.show") : t("donations.hide")}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="sticker"
+                  ms={1}
+                  onClick={() => void remove(d)}
+                  data-testid="donation-delete"
+                >
+                  {t("donations.delete")}
                 </Button>
               </Table.Cell>
             </Table.Row>

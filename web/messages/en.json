@@ -571,7 +571,9 @@
       "linked": "has account",
       "rename": "Set name",
       "hide": "Hide",
-      "show": "Show"
+      "show": "Show",
+      "delete": "Delete",
+      "confirmDelete": "Delete this transaction permanently? If the supporter has no other transactions, the Bronze Drum and ad-free status are revoked too."
     }
   },
   "Donate": {

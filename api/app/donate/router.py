@@ -2,7 +2,7 @@
 
 - GET  /donate                 public: tài khoản nhận (ngân hàng), bảng cảm ơn (tên, tháng)
 - POST /donate/webhook/sepay   SePay (header `Authorization: Apikey <SEPAY_API_KEY>`), chỉ tiền vào
-- GET  /admin/donations · PATCH /admin/donations/{id}   (admin: đặt tên hiện / ẩn)
+- GET  /admin/donations · PATCH /admin/donations/{id} (đặt tên hiện / ẩn) · DELETE (xóa hẳn)
 """
 
 from __future__ import annotations
@@ -232,3 +232,27 @@ async def admin_patch(donation_id: uuid.UUID, body: DonationPatch, db: Db) -> Ad
         d.hidden = body.hidden
     await db.commit()
     return _out(d)
+
+
+@router.delete("/admin/donations/{donation_id}", dependencies=[Depends(admin_user)])
+async def admin_delete(donation_id: uuid.UUID, db: Db) -> dict[str, bool]:
+    """Xóa hẳn một giao dịch (bản ghi test, webhook gửi thử). Người ủng hộ không còn giao dịch nào
+    khác → thu hồi Trống Đồng / không quảng cáo (`users.ad_free_at` về NULL)."""
+    d = await db.get(Donation, donation_id)
+    if d is None:
+        raise AppError("NOT_FOUND", 404)
+    uid = d.user_id
+    await db.delete(d)
+    await db.flush()
+    if uid is not None:
+        left = (
+            await db.execute(
+                select(func.count()).select_from(Donation).where(Donation.user_id == uid)
+            )
+        ).scalar_one()
+        if not left:
+            u = await db.get(User, uid)
+            if u is not None:
+                u.ad_free_at = None
+    await db.commit()
+    return {"ok": True}

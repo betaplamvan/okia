@@ -571,7 +571,9 @@
       "linked": "có tài khoản",
       "rename": "Đặt tên",
       "hide": "Ẩn",
-      "show": "Hiện"
+      "show": "Hiện",
+      "delete": "Xóa",
+      "confirmDelete": "Xóa hẳn giao dịch này? Nếu người ủng hộ không còn giao dịch nào khác, Trống Đồng và quyền không quảng cáo cũng bị thu hồi."
     }
   },
   "Donate": {

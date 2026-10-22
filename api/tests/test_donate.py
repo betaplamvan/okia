@@ -131,3 +131,13 @@ async def test_admin_dat_ten_va_an(client: AsyncClient) -> None:
     assert r.json()["hidden"] is True
     pub = (await client.get("/donate")).json()
     assert pub["supporters"] == [] and pub["count"] == 0
+    # Xóa hẳn: bản ghi test biến mất; người ủng hộ không còn giao dịch → mất Trống Đồng / không QC.
+    assert (await client.get("/me", headers={"Authorization": f"Bearer {tok}"})).json()["adFree"]
+    r = await client.delete(f"/admin/donations/{alice['id']}", headers=admin)
+    assert r.status_code == 200 and r.json() == {"ok": True}
+    r = await client.delete(f"/admin/donations/{alice['id']}", headers=admin)
+    assert r.status_code == 404
+    assert (await client.get("/admin/donations", headers=admin)).json()["total"] == 1
+    assert not (await client.get("/me", headers={"Authorization": f"Bearer {tok}"})).json()[
+        "adFree"
+    ]
