@@ -3,14 +3,15 @@
 import { Avatar, Box, Button, HStack, IconButton, Text } from "@chakra-ui/react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect } from "react";
-import { LuFlower, LuGift, LuPencil } from "react-icons/lu";
+import { LuFlower, LuGift, LuPencil, LuShieldCheck } from "react-icons/lu";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/stores/auth";
 
 // Hàng nút dưới bảng hiệu (học noitu.fun, docs/14): ba nút sticker rời nhau —
 //  1. hồ sơ: avatar + tên → mở hộp hồ sơ;
 //  2. ví: Ruột chì | Hoa điểm tốt trên một nút vàng → cửa hàng (nơi tiêu tiền);
-//  3. quà mỗi ngày: hộp quà → hộp "Quà mỗi ngày" riêng (điểm danh / nhiệm vụ), chấm đỏ khi còn thưởng.
+//  3. quà mỗi ngày: hộp quà → hộp "Quà mỗi ngày" riêng (điểm danh / nhiệm vụ), chấm đỏ khi còn thưởng;
+//  4. (chỉ admin) khiên → /admin (docs/13).
 // Dữ liệu từ store xác thực (/me); chưa tải xong thì hiện "Khách".
 export function PlayerPill() {
   const t = useTranslations("Common");
@@ -109,6 +110,21 @@ export function PlayerPill() {
           />
         ) : null}
       </Box>
+      {user?.isAdmin ? (
+        <IconButton
+          asChild
+          variant="sticker"
+          bg="ink"
+          color="paper"
+          size="lg"
+          aria-label={ta("adminLink")}
+          data-testid="admin-home-link"
+        >
+          <Link href="/admin">
+            <LuShieldCheck />
+          </Link>
+        </IconButton>
+      ) : null}
     </HStack>
   );
 }
