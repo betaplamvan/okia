@@ -15,7 +15,7 @@ export function SiteFooter() {
 
   return (
     <Container as="footer" maxW="4xl" px={4} py={5}>
-      <HStack as="nav" gap={1} wrap="wrap" justify="center" color="cream">
+      <HStack as="nav" gap={{ base: 2, md: 4 }} wrap="wrap" justify="center" color="cream">
         {links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
@@ -24,7 +24,7 @@ export function SiteFooter() {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              padding: "8px 14px",
+              padding: "8px 18px",
               borderRadius: 999,
               fontWeight: 600,
               transition: "background 0.15s, color 0.15s",
