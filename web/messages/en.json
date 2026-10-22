@@ -559,7 +559,7 @@
     "cancel": "Cancel",
     "donations": {
       "summary": "{n} transactions · total {sum}đ (VND)",
-      "hint": "Transactions arrive via SePay (bank) and Ko-fi webhooks. The public board shows names only; rows without a name are anonymous — set a name if the supporter asks. Hide removes a row from the board.",
+      "hint": "Transactions arrive via SePay (bank balance notifications) webhook. The public board shows names only; rows without a name are anonymous — set a name if the supporter asks. Hide removes a row from the board.",
       "time": "Time",
       "source": "Source",
       "amount": "Amount",
@@ -586,7 +586,6 @@
     "amount": "Amount",
     "noteHint": "Scan with a Vietnamese banking app to get amount and note pre-filled. Keep OKIA at the start of the note so your name appears within minutes.",
     "noBank": "The support page is not configured yet.",
-    "kofi": "Support via Ko-fi (international cards)",
     "legal": "Contributions are voluntary gifts to the developer, used to cover running costs. Nothing is granted in return and nothing is refunded.",
     "thanksTitle": "Thank you",
     "thanksCount": "{n} gifts",

@@ -1,4 +1,4 @@
-"""Ủng hộ (docs/10 — Donate): webhook SePay / Ko-fi ghi giao dịch, bóc tên hoặc mã tài khoản từ nội
+"""Ủng hộ (docs/10 — Donate): webhook SePay ghi giao dịch, bóc tên hoặc mã tài khoản từ nội
 dung, bỏ qua tiền ra / trùng / sai key; GET /donate chỉ trả tên + tháng (không số tiền); admin
 đặt tên / ẩn."""
 
@@ -84,30 +84,11 @@ async def test_webhook_sepay_va_bang_cam_on(client: AsyncClient) -> None:
     assert pub["myCode"] is None and not any(t["mine"] for t in pub["thanks"])
 
 
-async def test_webhook_kofi_va_admin(client: AsyncClient) -> None:
-    kofi = {
-        "verification_token": "test-kofi-token",
-        "message_id": "m1",
-        "timestamp": "2026-10-23T03:00:00Z",
-        "type": "Donation",
-        "from_name": "Alice",
-        "message": "go go",
-        "amount": "3.00",
-        "currency": "USD",
-        "is_public": True,
-        "kofi_transaction_id": "k-1",
-    }
-    import json
-
+async def test_admin_dat_ten_va_an(client: AsyncClient) -> None:
+    r = await client.post("/donate/webhook/sepay", json=sepay_tx(11, "OKIA Alice"), headers=SEPAY)
+    assert r.status_code == 200
     r = await client.post(
-        "/donate/webhook/kofi", data={"data": json.dumps({**kofi, "verification_token": "x"})}
-    )
-    assert r.status_code == 403
-    r = await client.post("/donate/webhook/kofi", data={"data": json.dumps(kofi)})
-    assert r.status_code == 200 and r.json() == {"success": True}
-    r = await client.post(
-        "/donate/webhook/kofi",
-        data={"data": json.dumps({**kofi, "kofi_transaction_id": "k-2", "is_public": False})},
+        "/donate/webhook/sepay", json=sepay_tx(12, "chuyen khoan", 30000), headers=SEPAY
     )
     assert r.status_code == 200
     pub = (await client.get("/donate")).json()
@@ -119,9 +100,9 @@ async def test_webhook_kofi_va_admin(client: AsyncClient) -> None:
     client.cookies.clear()
     assert (await client.get("/admin/donations")).status_code == 401
     page = (await client.get("/admin/donations", headers=admin)).json()
-    assert page["total"] == 2 and page["sumVnd"] == 0
+    assert page["total"] == 2 and page["sumVnd"] == 50000
     anon = next(i for i in page["items"] if i["donorName"] is None)
-    assert anon["amount"] == 300 and anon["currency"] == "USD"
+    assert anon["amount"] == 30000 and anon["currency"] == "VND"
     r = await client.patch(
         f"/admin/donations/{anon['id']}", json={"donorName": "Bob"}, headers=admin
     )

@@ -1,8 +1,7 @@
 """REST ủng hộ (docs/10 — Donate, ADR-0005).
 
-- GET  /donate                 public: tài khoản nhận (ngân hàng, Ko-fi), bảng cảm ơn (tên, tháng)
+- GET  /donate                 public: tài khoản nhận (ngân hàng), bảng cảm ơn (tên, tháng)
 - POST /donate/webhook/sepay   SePay (header `Authorization: Apikey <SEPAY_API_KEY>`), chỉ tiền vào
-- POST /donate/webhook/kofi    Ko-fi (form `data` JSON, `verification_token`)
 - GET  /admin/donations · PATCH /admin/donations/{id}   (admin: đặt tên hiện / ẩn)
 """
 
@@ -15,7 +14,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,7 +48,6 @@ class ThanksOut(CamelModel):
 
 class DonateOut(CamelModel):
     bank: BankOut | None
-    kofi_url: str | None
     # Mã gợi ý cho nội dung chuyển khoản của người đã đăng nhập (OKIA <code>).
     my_code: str | None
     thanks: list[ThanksOut]
@@ -78,7 +76,6 @@ async def donate_info(db: Db, user: Annotated[User | None, Depends(optional_user
     ).scalar_one()
     return DonateOut(
         bank=bank,
-        kofi_url=s.donate_kofi_url or None,
         my_code=service.user_code(user.id) if user and not user.is_guest else None,
         thanks=[
             ThanksOut(
@@ -96,7 +93,7 @@ async def donate_info(db: Db, user: Annotated[User | None, Depends(optional_user
 
 
 def _parse_dt(raw: str | None) -> datetime:
-    """SePay: "YYYY-MM-DD HH:MM:SS" giờ VN; Ko-fi: ISO 8601. Lỗi → giờ hiện tại."""
+    """SePay: "YYYY-MM-DD HH:MM:SS" giờ VN (hoặc ISO 8601). Lỗi → giờ hiện tại."""
     if raw:
         try:
             dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
@@ -148,46 +145,6 @@ async def webhook_sepay(request: Request, db: Db) -> dict[str, Any]:
         return {"success": True, "duplicate": True}
     await db.commit()
     log.info("ủng hộ sepay %s: %s VND, tên=%s", ext, amount, d.donor_name)
-    return {"success": True}
-
-
-@router.post("/donate/webhook/kofi")
-async def webhook_kofi(db: Db, data: Annotated[str, Form()]) -> dict[str, Any]:
-    """Ko-fi gửi form `data` = JSON {verification_token, message_id, type, from_name, message,
-    amount, currency, is_public, kofi_transaction_id, timestamp}."""
-    s = get_settings()
-    if len(data) > MAX_BODY:
-        raise AppError("BAD_REQUEST", 400)
-    try:
-        p = json.loads(data)
-    except json.JSONDecodeError as e:
-        raise AppError("BAD_REQUEST", 400) from e
-    if not s.kofi_verification_token or p.get("verification_token") != s.kofi_verification_token:
-        raise AppError("FORBIDDEN", 403)
-    try:
-        amount = int(round(float(p.get("amount") or 0) * 100))
-    except (TypeError, ValueError):
-        amount = 0
-    ext = str(p.get("kofi_transaction_id") or p.get("message_id") or "")
-    if amount <= 0 or not ext:
-        return {"success": True, "ignored": True}
-    public = bool(p.get("is_public", True))
-    d = await service.record(
-        db,
-        provider="kofi",
-        external_id=ext,
-        amount=amount,
-        currency=str(p.get("currency") or "USD"),
-        content=str(p.get("message") or ""),
-        received_at=_parse_dt(p.get("timestamp")),
-        raw=p,
-        donor_name=str(p.get("from_name") or "") if public else None,
-    )
-    if d is None:
-        return {"success": True, "duplicate": True}
-    if not public:
-        d.donor_name = None
-    await db.commit()
     return {"success": True}
 
 

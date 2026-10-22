@@ -166,7 +166,6 @@ export type AdminUserDetail = AdminUser & {
 
 export type DonateOut = {
   bank: { bin: string; name: string; accountNo: string; accountName: string } | null;
-  kofiUrl: string | null;
   myCode: string | null;
   thanks: { name: string; month: string; mine: boolean }[];
   count: number;

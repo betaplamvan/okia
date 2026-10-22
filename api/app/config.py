@@ -39,10 +39,8 @@ class Settings(BaseSettings):
     donate_bank_name: str = ""
     donate_account_no: str = ""
     donate_account_name: str = ""
-    donate_kofi_url: str = ""
-    # SePay gửi `Authorization: Apikey <key>`; Ko-fi gửi `verification_token` trong payload.
+    # SePay gửi `Authorization: Apikey <key>` cho mỗi giao dịch.
     sepay_api_key: str = ""
-    kofi_verification_token: str = ""
     # Cookie refresh: Secure chỉ khi https (production); dev trên http://localhost thì tắt.
     cookie_secure: bool = False
     cookie_domain: str | None = None

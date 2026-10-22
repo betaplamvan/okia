@@ -1,5 +1,5 @@
-"""Bảng `donations` (docs/10 — Donate, ADR-0005): mỗi giao dịch ủng hộ nhận qua webhook (SePay cho
-ngân hàng Việt Nam, Ko-fi cho nước ngoài). Không đổi lấy gì trong game; bảng cảm ơn chỉ hiện
+"""Bảng `donations` (docs/10 — Donate, ADR-0005): mỗi giao dịch ủng hộ nhận qua webhook SePay
+(biến động số dư ngân hàng). Không đổi lấy gì trong game; bảng cảm ơn chỉ hiện
 `donor_name` (người ủng hộ tự ghi trong nội dung chuyển khoản), không bao giờ hiện số tiền."""
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ class Donation(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()")
     )
-    provider: Mapped[str] = mapped_column(String(16), nullable=False)  # sepay | kofi
+    provider: Mapped[str] = mapped_column(String(16), nullable=False)  # sepay
     external_id: Mapped[str] = mapped_column(String(64), nullable=False)
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)  # đơn vị nhỏ nhất (VND / cent)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="VND")

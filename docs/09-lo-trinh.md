@@ -240,6 +240,6 @@ Theo [03 — Cá tính bot](03-luat-choi.md#cá-tính-bot-llm).
 
 Không có thanh toán, không bán gì ([ADR-0005](adr/0005-mot-tien-te-donate.md)). Làm sau beta công khai, khi đã có người chơi thật.
 
-- [x] **P4-01** (2026-10-23, VietQR sinh tại chỗ + Ko-fi; MoMo bỏ vì không có API cá nhân; bảng cảm ơn tự động qua webhook SePay / Ko-fi; admin tab Ủng hộ; smoke `pnpm smoke:donate`) Trang `/donate` (vi/en): lời cảm ơn, VietQR + MoMo + một kênh quốc tế, cấu hình trong `web/src/config/donate.ts`; ghi rõ không có quyền lợi trong game ([10](10-phap-ly.md#donate))
+- [x] **P4-01** (2026-10-23, VietQR sinh tại chỗ; MoMo / Ko-fi bỏ, chỉ SePay; bảng cảm ơn tự động qua webhook SePay; admin tab Ủng hộ; smoke `pnpm smoke:donate`) Trang `/donate` (vi/en): lời cảm ơn, VietQR + MoMo + một kênh quốc tế, cấu hình trong `web/src/config/donate.ts`; ghi rõ không có quyền lợi trong game ([10](10-phap-ly.md#donate))
 - [ ] **P4-02** Phần minh bạch chi phí vận hành hằng tháng; danh sách cảm ơn tự đăng ký (tùy chọn)
 - [ ] **P4-03** Lời mời donate ở màn hình kết thúc: tối đa một lần, sau ≥ 20 ván, tắt được

@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { LuCoffee, LuCopy, LuHeart } from "react-icons/lu";
+import { LuCopy, LuHeart } from "react-icons/lu";
 import { toaster } from "@/components/ui/toaster";
 import { api, type DonateOut } from "@/lib/api";
 import { transferNote, vietqrPayload } from "@/lib/vietqr";
@@ -25,7 +25,7 @@ const AMOUNTS = [20000, 50000, 100000, 200000];
 
 // Trang /donate (docs/10 — Donate, ADR-0005): ủng hộ tự nguyện, không đổi lấy gì trong game.
 // VietQR sinh tại chỗ (lib/vietqr) với số tiền + nội dung "OKIA <tên>" (người đã đăng nhập: mã
-// tài khoản để bảng cảm ơn tự nhận ra); Ko-fi cho nước ngoài; bảng cảm ơn chỉ tên + tháng.
+// tài khoản để bảng cảm ơn tự nhận ra); bảng cảm ơn chỉ tên + tháng.
 export function DonateScreen() {
   const t = useTranslations("Donate");
   const user = useAuth((s) => s.user);
@@ -39,7 +39,7 @@ export function DonateScreen() {
   useEffect(() => {
     api<DonateOut>("/donate", { token: accessToken })
       .then(setInfo)
-      .catch(() => setInfo({ bank: null, kofiUrl: null, myCode: null, thanks: [], count: 0 }));
+      .catch(() => setInfo({ bank: null, myCode: null, thanks: [], count: 0 }));
   }, [accessToken]);
 
   // Nội dung chuyển khoản: mã tài khoản (đã đăng nhập) hoặc tên tự ghi; luôn bắt đầu bằng OKIA.
@@ -183,13 +183,6 @@ export function DonateScreen() {
             ) : (
               <Text>{info ? t("noBank") : "…"}</Text>
             )}
-            {info?.kofiUrl ? (
-              <Button asChild variant="sticker" bg="mint" alignSelf="flex-start">
-                <a href={info.kofiUrl} target="_blank" rel="noreferrer">
-                  <LuCoffee /> {t("kofi")}
-                </a>
-              </Button>
-            ) : null}
             <Text fontSize="xs" opacity={0.75}>
               {t("legal")}
             </Text>

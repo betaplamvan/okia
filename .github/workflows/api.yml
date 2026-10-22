@@ -137,7 +137,7 @@ jobs:
             COOKIE_DOMAIN GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET EMAIL_PROVIDER RESEND_API_KEY EMAIL_FROM
             RESEND_WEBHOOK_SECRET S3_ENDPOINT_URL S3_ACCESS_KEY S3_SECRET_KEY S3_BUCKET S3_PUBLIC_URL
             ADMIN_EMAILS DONATE_BANK_BIN DONATE_BANK_NAME DONATE_ACCOUNT_NO DONATE_ACCOUNT_NAME
-            DONATE_KOFI_URL SEPAY_API_KEY KOFI_VERIFICATION_TOKEN
+            SEPAY_API_KEY
           # Bí mật → secrets; cấu hình không nhạy cảm → vars (Environment "production").
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
@@ -161,9 +161,7 @@ jobs:
           DONATE_BANK_NAME: ${{ vars.DONATE_BANK_NAME }}
           DONATE_ACCOUNT_NO: ${{ vars.DONATE_ACCOUNT_NO }}
           DONATE_ACCOUNT_NAME: ${{ vars.DONATE_ACCOUNT_NAME }}
-          DONATE_KOFI_URL: ${{ vars.DONATE_KOFI_URL }}
           SEPAY_API_KEY: ${{ secrets.SEPAY_API_KEY }}
-          KOFI_VERIFICATION_TOKEN: ${{ secrets.KOFI_VERIFICATION_TOKEN }}
           S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
           S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
         run: |

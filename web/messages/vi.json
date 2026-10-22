@@ -559,7 +559,7 @@
     "cancel": "Hủy",
     "donations": {
       "summary": "{n} giao dịch · tổng {sum}đ (VND)",
-      "hint": "Giao dịch về từ webhook SePay (ngân hàng) và Ko-fi. Bảng cảm ơn công khai chỉ hiện tên; dòng không có tên là ẩn danh — có thể đặt tên nếu người ủng hộ yêu cầu. Ẩn để gỡ khỏi bảng.",
+      "hint": "Giao dịch về từ webhook SePay (biến động số dư ngân hàng). Bảng cảm ơn công khai chỉ hiện tên; dòng không có tên là ẩn danh — có thể đặt tên nếu người ủng hộ yêu cầu. Ẩn để gỡ khỏi bảng.",
       "time": "Lúc",
       "source": "Nguồn",
       "amount": "Số tiền",
@@ -586,7 +586,6 @@
     "amount": "Số tiền",
     "noteHint": "Quét mã bằng app ngân hàng là có sẵn số tiền và nội dung. Giữ nguyên chữ OKIA ở đầu nội dung để tên lên bảng cảm ơn trong vài phút.",
     "noBank": "Trang ủng hộ chưa được cấu hình.",
-    "kofi": "Ủng hộ qua Ko-fi (thẻ quốc tế)",
     "legal": "Tiền ủng hộ là quà tặng tự nguyện cho người làm game, dùng để trang trải chi phí vận hành. Không có quyền lợi kèm theo và không hoàn lại.",
     "thanksTitle": "Cảm ơn",
     "thanksCount": "{n} lượt",
