@@ -24,3 +24,7 @@ ADR-0002 xây hai loại tiền và khóa tiền cao cấp chờ cổng thanh to
 - ➖ Không có doanh thu; dự án phụ thuộc vào donate và chi phí thấp.
 - ➖ Chỉ xếp hạng mới cho tiền → tài khoản khách và người chỉ chơi casual không có tiến trình; phải nói rõ trong giao diện và theo dõi dữ liệu beta để quyết định có thêm nguồn phụ không.
 - ➖ Dàn xếp kết quả trở thành rủi ro chính của kinh tế → phát hiện win-trading là bắt buộc trước beta công khai.
+
+## Bổ sung 2026-10-23: trang donate và nhận biết tiền vào
+
+Trang `/donate` với VietQR sinh tại client, bảng cảm ơn tự động từ webhook SePay (ngân hàng Việt Nam) và Ko-fi (quốc tế) — xem [docs/10 — Donate](../10-phap-ly.md#donate). Giữ nguyên nguyên tắc: không đổi lấy gì trong game, không hiện số tiền, tên chỉ hiện khi người ủng hộ tự ghi. Không dùng API ngân hàng không chính thức (giả lập app) và không dùng MoMo/ZaloPay Business (cần đăng ký kinh doanh).

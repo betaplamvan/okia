@@ -31,6 +31,12 @@ os.environ["WS_MSG_BURST"] = "1000"
 # Mặc định không ghép máy trong test (120 giây); test_ghep_may_khi_cho_lau tự hạ qua appconfig.
 os.environ["MM_BOT_AFTER_SECONDS"] = "120"
 os.environ["ADMIN_EMAILS"] = "admin@example.com"
+os.environ["DONATE_BANK_BIN"] = "970422"
+os.environ["DONATE_BANK_NAME"] = "MB Bank"
+os.environ["DONATE_ACCOUNT_NO"] = "0123456789"
+os.environ["DONATE_ACCOUNT_NAME"] = "NGUYEN VAN A"
+os.environ["SEPAY_API_KEY"] = "test-sepay-key"
+os.environ["KOFI_VERIFICATION_TOKEN"] = "test-kofi-token"
 os.environ["BOT_MOVE_DELAY_MS"] = "20"
 os.environ["WS_MSG_PER_SECOND"] = "500"
 os.environ["GOOGLE_CLIENT_SECRET"] = "test-secret"
@@ -45,6 +51,7 @@ from app.main import create_app  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 TABLES = [
     "app_config",
+    "donations",
     "wallet_ledger",
     "wallets",
     "checkins",

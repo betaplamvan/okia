@@ -33,6 +33,16 @@ class Settings(BaseSettings):
     bot_move_delay_ms: int = 900
     # Email (đã xác minh, Google) được quyền admin — cách nhau bởi dấu phẩy (docs/13).
     admin_emails: str = ""
+    # Ủng hộ (docs/10 — Donate): tài khoản nhận (hiện công khai trên /donate, VietQR) + webhook.
+    # BIN ngân hàng theo NAPAS (MB 970422, VCB 970436, TCB 970407, ACB 970416, BIDV 970418…).
+    donate_bank_bin: str = ""
+    donate_bank_name: str = ""
+    donate_account_no: str = ""
+    donate_account_name: str = ""
+    donate_kofi_url: str = ""
+    # SePay gửi `Authorization: Apikey <key>`; Ko-fi gửi `verification_token` trong payload.
+    sepay_api_key: str = ""
+    kofi_verification_token: str = ""
     # Cookie refresh: Secure chỉ khi https (production); dev trên http://localhost thì tắt.
     cookie_secure: bool = False
     cookie_domain: str | None = None

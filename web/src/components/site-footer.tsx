@@ -6,6 +6,7 @@ export function SiteFooter() {
   const t = useTranslations("Footer");
   const links = [
     { href: "/about", label: t("about") },
+    { href: "/donate", label: t("donate") },
     { href: "/privacy", label: t("privacy") },
     { href: "/terms", label: t("terms") },
   ] as const;

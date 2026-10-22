@@ -15,12 +15,13 @@ import {
 import { useFormatter, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { LuRefreshCw, LuSave } from "react-icons/lu";
+import { AdminDonations } from "@/components/admin/admin-donations";
 import { AdminSkins, AdminUsers } from "@/components/admin/admin-manage";
 import { toaster } from "@/components/ui/toaster";
 import { type AdminConfigOut, type AdminStats, ApiError } from "@/lib/api";
 import { useAuth } from "@/stores/auth";
 
-type AdminTab = "stats" | "users" | "skins" | "config";
+type AdminTab = "stats" | "users" | "skins" | "config" | "donations";
 
 /** Gọi API kèm Bearer qua store; lỗi → toast, ném lại để caller dừng. */
 export async function adminCall<T>(
@@ -76,7 +77,7 @@ export function AdminScreen() {
           lazyMount
         >
           <Tabs.List gap={2} flexWrap="wrap">
-            {(["stats", "users", "skins", "config"] as const).map((key) => (
+            {(["stats", "users", "skins", "config", "donations"] as const).map((key) => (
               <Tabs.Trigger
                 key={key}
                 value={key}
@@ -104,6 +105,9 @@ export function AdminScreen() {
           </Tabs.Content>
           <Tabs.Content value="config" pt={4}>
             <ConfigTab />
+          </Tabs.Content>
+          <Tabs.Content value="donations" pt={4}>
+            <AdminDonations />
           </Tabs.Content>
         </Tabs.Root>
       </Stack>

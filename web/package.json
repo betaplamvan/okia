@@ -35,6 +35,7 @@
     "smoke:admin": "node scripts/smoke-admin.mjs",
     "smoke:skin": "node scripts/smoke-skin-package.mjs",
     "smoke:skin-purge": "node scripts/smoke-skin-purge.mjs",
+    "smoke:donate": "node scripts/smoke-donate.mjs",
     "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
     "next": "16.4.2",
     "next-intl": "^4.14.9",
     "pixi.js": "^8.22.0",
+    "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-easy-crop": "^6.2.4",
@@ -57,6 +59,7 @@
     "@chakra-ui/cli": "^3.37.0",
     "@types/howler": "^2.2.13",
     "@types/node": "^20",
+    "@types/qrcode": "1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.2",

@@ -75,7 +75,8 @@
     "about": "About",
     "privacy": "Privacy",
     "terms": "Terms",
-    "tagline": "Made in Vietnam, free for everyone."
+    "tagline": "Made in Vietnam, free for everyone.",
+    "donate": "Support"
   },
   "About": {
     "title": "About Ô Kìa",
@@ -437,7 +438,8 @@
       "stats": "Stats",
       "users": "Players",
       "skins": "Skins",
-      "config": "Settings"
+      "config": "Settings",
+      "donations": "Support"
     },
     "rarity": {
       "common": "White",
@@ -554,6 +556,44 @@
       "checkinRewardsHint": "At least one currency per day.",
       "resetDefaults": "Reset to defaults"
     },
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "donations": {
+      "summary": "{n} transactions · total {sum}đ (VND)",
+      "hint": "Transactions arrive via SePay (bank) and Ko-fi webhooks. The public board shows names only; rows without a name are anonymous — set a name if the supporter asks. Hide removes a row from the board.",
+      "time": "Time",
+      "source": "Source",
+      "amount": "Amount",
+      "content": "Note",
+      "name": "Shown name",
+      "anonymous": "anonymous",
+      "linked": "has account",
+      "rename": "Set name",
+      "hide": "Hide",
+      "show": "Show"
+    }
+  },
+  "Donate": {
+    "title": "Support",
+    "intro": "Ô Kìa is free and ad-free. If you enjoy it, a cup of tea helps pay for the server. Entirely voluntary, non-refundable, and it buys nothing in the game.",
+    "bankTitle": "Bank transfer (VietQR)",
+    "customAmount": "Other",
+    "namePlaceholder": "Name to show on the thank-you board (optional)",
+    "codeHint": "The note carries your account code {code}: the thank-you board will credit you automatically.",
+    "bank": "Bank",
+    "accountNo": "Account no.",
+    "accountName": "Account holder",
+    "note": "Note",
+    "amount": "Amount",
+    "noteHint": "Scan with a Vietnamese banking app to get amount and note pre-filled. Keep OKIA at the start of the note so your name appears within minutes.",
+    "noBank": "The support page is not configured yet.",
+    "kofi": "Support via Ko-fi (international cards)",
+    "legal": "Contributions are voluntary gifts to the developer, used to cover running costs. Nothing is granted in return and nothing is refunded.",
+    "thanksTitle": "Thank you",
+    "thanksCount": "{n} gifts",
+    "thanksEmpty": "Nobody yet. You could be the first!",
+    "thanksHint": "Only names written by supporters in their transfer note are shown; amounts are never shown.",
+    "you": "you",
+    "copied": "Copied {what}.",
+    "copyFailed": "Could not copy; please select and copy manually."
   }
 }
