@@ -303,7 +303,7 @@ export function AdminUsers() {
                     <Input
                       type="number"
                       w="28"
-                      placeholder="±0"
+                      placeholder="0"
                       value={lead}
                       onChange={(e) => setLead(e.target.value)}
                     />
@@ -325,7 +325,7 @@ export function AdminUsers() {
                     <Input
                       type="number"
                       w="28"
-                      placeholder="±0"
+                      placeholder="0"
                       value={flower}
                       onChange={(e) => setFlower(e.target.value)}
                     />

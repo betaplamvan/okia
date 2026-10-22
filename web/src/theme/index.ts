@@ -31,6 +31,10 @@ const buttonRecipe = defineRecipe({
 
 const config = defineConfig({
   globalCss: {
+    // Ô nhập số: bỏ mũi tên tăng/giảm của trình duyệt (lệch phong cách sticker, docs/14).
+    'input[type="number"]': { MozAppearance: "textfield" },
+    'input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button':
+      { WebkitAppearance: "none", appearance: "none", margin: 0 },
     html: {
       height: "100%",
       // Chữ có dấu tiếng Việt cần line-height rộng hơn mặc định một chút.
