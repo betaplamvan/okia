@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { UserButton } from "@/components/auth/user-button";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { BackButton, PageBreadcrumb } from "@/components/page-nav";
+import { MatchmakingHost } from "@/components/ranked/matchmaking-host";
 import { SiteFooter } from "@/components/site-footer";
 import { SoundSettings } from "@/components/sound-settings";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,6 +26,8 @@ export function AppShell({ children }: AppShellProps) {
           cacheComponents yêu cầu giá trị runtime như vậy phải nằm trong Suspense. */}
       <Suspense fallback={null}>
         <AuthProvider />
+        {/* Tìm trận toàn cục: hộp chấp nhận, cửa sổ thu nhỏ, vào phòng khi ghép (docs/07). */}
+        <MatchmakingHost />
       </Suspense>
       <Toaster />
       <Box as="header">

@@ -130,10 +130,7 @@
       ]
     }
   },
-  "required": [
-    "client",
-    "server"
-  ],
+  "required": ["client", "server"],
   "additionalProperties": false,
   "definitions": {
     "BotSay": {
@@ -157,11 +154,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "roomId",
-        "text",
-        "event"
-      ],
+      "required": ["roomId", "text", "event"],
       "title": "BotSay",
       "type": "object"
     },
@@ -182,11 +175,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "roomId",
-        "id"
-      ],
+      "required": ["t", "roomId", "id"],
       "title": "Emote",
       "type": "object"
     },
@@ -203,10 +192,7 @@
           "type": "string"
         },
         "by": {
-          "enum": [
-            0,
-            1
-          ],
+          "enum": [0, 1],
           "title": "By",
           "type": "integer"
         },
@@ -215,11 +201,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "roomId",
-        "by",
-        "id"
-      ],
+      "required": ["roomId", "by", "id"],
       "title": "EmoteOut",
       "type": "object"
     },
@@ -252,10 +234,7 @@
           "title": "Ref"
         }
       },
-      "required": [
-        "code",
-        "message"
-      ],
+      "required": ["code", "message"],
       "title": "Error",
       "type": "object"
     },
@@ -274,10 +253,7 @@
         "winner": {
           "anyOf": [
             {
-              "enum": [
-                0,
-                1
-              ],
+              "enum": [0, 1],
               "type": "integer"
             },
             {
@@ -294,12 +270,7 @@
           "type": "array"
         },
         "reason": {
-          "enum": [
-            "complete",
-            "resign",
-            "afk",
-            "abandon"
-          ],
+          "enum": ["complete", "resign", "afk", "abandon"],
           "title": "Reason",
           "type": "string"
         },
@@ -315,12 +286,7 @@
           "default": null
         }
       },
-      "required": [
-        "roomId",
-        "winner",
-        "scores",
-        "reason"
-      ],
+      "required": ["roomId", "winner", "scores", "reason"],
       "title": "GameOver",
       "type": "object"
     },
@@ -356,10 +322,7 @@
           "type": "array"
         },
         "turn": {
-          "enum": [
-            0,
-            1
-          ],
+          "enum": [0, 1],
           "title": "Turn",
           "type": "integer"
         },
@@ -398,10 +361,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "matchId"
-      ],
+      "required": ["t", "matchId"],
       "title": "MatchAccept",
       "type": "object"
     },
@@ -419,11 +379,7 @@
           "type": "string"
         },
         "reason": {
-          "enum": [
-            "declined",
-            "timeout",
-            "left"
-          ],
+          "enum": ["declined", "timeout", "left"],
           "title": "Reason",
           "type": "string"
         },
@@ -436,12 +392,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "matchId",
-        "reason",
-        "byMe",
-        "requeued"
-      ],
+      "required": ["matchId", "reason", "byMe", "requeued"],
       "title": "MatchCancelled",
       "type": "object"
     },
@@ -457,10 +408,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "matchId"
-      ],
+      "required": ["t", "matchId"],
       "title": "MatchDecline",
       "type": "object"
     },
@@ -489,13 +437,14 @@
         "acceptSeconds": {
           "title": "Acceptseconds",
           "type": "integer"
+        },
+        "bot": {
+          "default": false,
+          "title": "Bot",
+          "type": "boolean"
         }
       },
-      "required": [
-        "matchId",
-        "expiresAt",
-        "acceptSeconds"
-      ],
+      "required": ["matchId", "expiresAt", "acceptSeconds"],
       "title": "MatchFound",
       "type": "object"
     },
@@ -528,10 +477,7 @@
           "title": "Keymove"
         }
       },
-      "required": [
-        "matchId",
-        "text"
-      ],
+      "required": ["matchId", "text"],
       "title": "MatchReview",
       "type": "object"
     },
@@ -553,10 +499,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "matchId",
-        "accepted"
-      ],
+      "required": ["matchId", "accepted"],
       "title": "MatchUpdate",
       "type": "object"
     },
@@ -578,9 +521,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "roomId"
-      ],
+      "required": ["roomId"],
       "title": "Matched",
       "type": "object"
     },
@@ -606,12 +547,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "t",
-        "roomId",
-        "edge",
-        "seq"
-      ],
+      "required": ["t", "roomId", "edge", "seq"],
       "title": "Move",
       "type": "object"
     },
@@ -628,10 +564,7 @@
           "type": "string"
         },
         "by": {
-          "enum": [
-            0,
-            1
-          ],
+          "enum": [0, 1],
           "title": "By",
           "type": "integer"
         },
@@ -654,10 +587,7 @@
           "type": "array"
         },
         "turn": {
-          "enum": [
-            0,
-            1
-          ],
+          "enum": [0, 1],
           "title": "Turn",
           "type": "integer"
         },
@@ -679,10 +609,7 @@
         },
         "reason": {
           "default": "player",
-          "enum": [
-            "player",
-            "timeout"
-          ],
+          "enum": ["player", "timeout"],
           "title": "Reason",
           "type": "string"
         }
@@ -716,10 +643,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "roomId",
-        "online"
-      ],
+      "required": ["roomId", "online"],
       "title": "OpponentStatus",
       "type": "object"
     },
@@ -731,9 +655,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t"
-      ],
+      "required": ["t"],
       "title": "Ping",
       "type": "object"
     },
@@ -748,10 +670,7 @@
           "type": "string"
         },
         "seat": {
-          "enum": [
-            0,
-            1
-          ],
+          "enum": [0, 1],
           "title": "Seat",
           "type": "integer"
         },
@@ -789,11 +708,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "userId",
-        "name",
-        "seat"
-      ],
+      "required": ["userId", "name", "seat"],
       "title": "PlayerOut",
       "type": "object"
     },
@@ -817,10 +732,7 @@
           "type": "string"
         },
         "mode": {
-          "enum": [
-            "casual",
-            "ranked"
-          ],
+          "enum": ["casual", "ranked"],
           "title": "Mode",
           "type": "string"
         },
@@ -833,10 +745,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "mode"
-      ],
+      "required": ["t", "mode"],
       "title": "Queue",
       "type": "object"
     },
@@ -848,9 +757,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t"
-      ],
+      "required": ["t"],
       "title": "QueueCancel",
       "type": "object"
     },
@@ -885,12 +792,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "mode",
-        "waiting",
-        "online",
-        "since"
-      ],
+      "required": ["mode", "waiting", "online", "since"],
       "title": "QueueStatus",
       "type": "object"
     },
@@ -918,11 +820,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "mode",
-        "board",
-        "since"
-      ],
+      "required": ["mode", "board", "since"],
       "title": "Queued",
       "type": "object"
     },
@@ -958,10 +856,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "tier",
-        "points"
-      ],
+      "required": ["tier", "points"],
       "title": "RankOut",
       "type": "object"
     },
@@ -1036,10 +931,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "roomId"
-      ],
+      "required": ["t", "roomId"],
       "title": "Resign",
       "type": "object"
     },
@@ -1061,11 +953,7 @@
         "turnSeconds": {
           "anyOf": [
             {
-              "enum": [
-                15,
-                30,
-                60
-              ],
+              "enum": [15, 30, 60],
               "type": "integer"
             },
             {
@@ -1081,9 +969,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "t"
-      ],
+      "required": ["t"],
       "title": "RoomCreate",
       "type": "object"
     },
@@ -1101,10 +987,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "roomId"
-      ],
+      "required": ["t", "roomId"],
       "title": "RoomJoin",
       "type": "object"
     },
@@ -1121,10 +1004,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "t",
-        "roomId"
-      ],
+      "required": ["t", "roomId"],
       "title": "RoomLeave",
       "type": "object"
     },
@@ -1141,11 +1021,7 @@
           "type": "string"
         },
         "mode": {
-          "enum": [
-            "casual",
-            "ranked",
-            "private"
-          ],
+          "enum": ["casual", "ranked", "private"],
           "title": "Mode",
           "type": "string"
         },
@@ -1159,11 +1035,7 @@
         "turnSeconds": {
           "anyOf": [
             {
-              "enum": [
-                15,
-                30,
-                60
-              ],
+              "enum": [15, 30, 60],
               "type": "integer"
             },
             {
@@ -1178,11 +1050,7 @@
           "type": "boolean"
         },
         "status": {
-          "enum": [
-            "waiting",
-            "playing",
-            "over"
-          ],
+          "enum": ["waiting", "playing", "over"],
           "title": "Status",
           "type": "string"
         },
@@ -1276,10 +1144,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "userId",
-        "serverTime"
-      ],
+      "required": ["userId", "serverTime"],
       "title": "Welcome",
       "type": "object"
     }

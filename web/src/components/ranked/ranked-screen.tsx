@@ -12,34 +12,17 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { LuSwords, LuTrophy, LuX } from "react-icons/lu";
-import { AcceptDialog } from "@/components/ranked/accept-dialog";
 import { RankCard } from "@/components/ranked/rank-card";
-import { toaster } from "@/components/ui/toaster";
-import { audio } from "@/game/audio/audio-manager";
-import type { ServerMsg } from "@/game/ws-types";
 import { Link, useRouter } from "@/i18n/navigation";
 import { serverNow, useConnection, wsClient } from "@/net/ws-client";
 import { useAuth } from "@/stores/auth";
+import { useMatchmaking, type Search } from "@/stores/matchmaking";
 
-type Search =
-  | { phase: "idle" }
-  | { phase: "requesting" }
-  | { phase: "searching"; since: number; waiting: number; online: number; widened: boolean }
-  /** Đã ghép, chờ cả hai chấp nhận (docs/07 — Chấp nhận trận). */
-  | {
-      phase: "found";
-      matchId: string;
-      expiresAt: number;
-      acceptSeconds: number;
-      since: number;
-      accepted: boolean;
-      others: number;
-    };
-
-// Màn xếp hạng /ranked (P2-07): thẻ hạng của tôi → "Tìm trận" → chờ (thời gian, số người chờ/online,
-// báo khi mở rộng phạm vi) → `matched` → vào phòng /r/<id> (cùng màn chơi với phòng riêng).
+// Màn xếp hạng /ranked (P2-07): thẻ hạng của tôi → "Tìm trận" → chờ (thời gian, báo khi mở rộng
+// phạm vi). Trạng thái tìm nằm trong store toàn cục (stores/matchmaking): rời trang vẫn tìm, hộp
+// chấp nhận và điều hướng vào phòng do MatchmakingHost (AppShell) lo.
 export function RankedScreen() {
   const t = useTranslations("Ranked");
   const router = useRouter();
@@ -49,11 +32,10 @@ export function RankedScreen() {
   const openProfile = useAuth((s) => s.openProfile);
   const status = useConnection((s) => s.status);
   const activeRoomId = useConnection((s) => s.activeRoomId);
-  const [search, setSearch] = useState<Search>({ phase: "idle" });
-  const searchRef = useRef(search);
-  useEffect(() => {
-    searchRef.current = search;
-  }, [search]);
+  const search = useMatchmaking((s) => s.search);
+  const find = useMatchmaking((s) => s.find);
+  const cancel = useMatchmaking((s) => s.cancel);
+  const declineMatch = useMatchmaking((s) => s.decline);
 
   // Kết nối WS sớm (để nhận welcome.activeRoomId) và tải hạng khi biết người dùng.
   useEffect(() => {
@@ -67,111 +49,6 @@ export function RankedScreen() {
   useEffect(() => {
     if (activeRoomId) router.replace(`/r/${activeRoomId}`);
   }, [activeRoomId, router]);
-
-  // Lắng nghe server trong lúc tìm; rời trang / hủy → queue_cancel. Effect chỉ phụ thuộc vào
-  // "đang tìm hay không" (không phải từng phase) để requesting → searching không gửi queue_cancel.
-  const active =
-    search.phase === "searching" || search.phase === "requesting" || search.phase === "found";
-  useEffect(() => {
-    if (!active) return;
-    const off = wsClient.subscribe((m: ServerMsg) => {
-      const cur = searchRef.current;
-      switch (m.t) {
-        case "queued":
-          setSearch({ phase: "searching", since: m.since, waiting: 1, online: 1, widened: false });
-          return;
-        case "queue_status":
-          if (cur.phase === "searching")
-            setSearch({
-              ...cur,
-              waiting: m.waiting,
-              online: m.online,
-              widened: m.widened ?? false,
-            });
-          return;
-        case "match_found":
-          audio.play("notify", { volume: 0.9 });
-          setSearch({
-            phase: "found",
-            matchId: m.matchId,
-            expiresAt: m.expiresAt,
-            acceptSeconds: m.acceptSeconds,
-            since: cur.phase === "searching" ? cur.since : serverNow(),
-            accepted: false,
-            others: 0,
-          });
-          return;
-        case "match_update":
-          if (cur.phase === "found" && cur.matchId === m.matchId)
-            setSearch({ ...cur, others: m.accepted - (cur.accepted ? 1 : 0) });
-          return;
-        case "match_cancelled":
-          // Người kia từ chối / hết giờ → server đã trả ta về hàng chờ và gửi `queued` ngay sau.
-          if (m.requeued) {
-            toaster.create({ title: m.byMe ? t("cancelTimeout") : t("cancelOther") });
-          } else {
-            audio.playUi("back");
-            setSearch({ phase: "idle" });
-            if (m.reason === "timeout") toaster.create({ title: t("cancelTimeout") });
-          }
-          return;
-        case "matched":
-          // Về idle ngay (trang này vẫn sống trong <Activity> khi sang phòng; quay lại là tìm tiếp được).
-          audio.playUi("confirm");
-          setSearch({ phase: "idle" });
-          router.push(`/r/${m.roomId}`);
-          return;
-        case "welcome":
-          // Nối lại giữa chừng: server đã bỏ ta khỏi hàng chờ khi rớt → vào lại.
-          wsClient.send({ t: "queue", mode: "ranked" });
-          return;
-        case "error":
-          if (m.ref !== "queue") return;
-          setSearch({ phase: "idle" });
-          if (m.code === "GUEST_NOT_ALLOWED" || m.code === "EMAIL_NOT_VERIFIED") {
-            openProfile("account");
-          } else if (m.code === "ALREADY_IN_GAME") {
-            toaster.create({ title: t("inGame") });
-          } else {
-            toaster.error({ title: m.message });
-          }
-          return;
-        default:
-          return;
-      }
-    });
-    return () => {
-      off();
-      // Đã được ghép thì server đã bỏ ta khỏi hàng chờ; gửi hủy lúc này vô hại. Đang có trận chờ
-      // chấp nhận thì hủy tìm = từ chối.
-      wsClient.send({ t: "queue_cancel" });
-    };
-  }, [active, router, openProfile, t]);
-
-  async function find() {
-    setSearch({ phase: "requesting" });
-    await wsClient.connect();
-    if (!wsClient.send({ t: "queue", mode: "ranked" })) {
-      setSearch({ phase: "idle" });
-      toaster.error({ title: t("loadError") });
-    }
-  }
-
-  function cancel() {
-    setSearch({ phase: "idle" });
-  }
-
-  function acceptMatch() {
-    if (search.phase !== "found") return;
-    wsClient.send({ t: "match_accept", matchId: search.matchId });
-    setSearch({ ...search, accepted: true });
-  }
-
-  function declineMatch() {
-    if (search.phase !== "found") return;
-    wsClient.send({ t: "match_decline", matchId: search.matchId });
-    setSearch({ phase: "idle" });
-  }
 
   const guest = !!user?.isGuest;
 
@@ -215,7 +92,7 @@ export function RankedScreen() {
                 bg="coral"
                 size="lg"
                 disabled={guest || status === "offline"}
-                onClick={find}
+                onClick={() => void find()}
                 data-sfx="confirm"
                 data-testid="find-match"
               >
@@ -261,20 +138,6 @@ export function RankedScreen() {
           </Stack>
         </Grid>
       </Stack>
-
-      {/* Chỉ mount khi đang có trận chờ: gỡ hẳn khỏi DOM (kể cả Portal) trước khi sang phòng, vì trang
-          này bị <Activity> ẩn khi điều hướng và animation đóng sẽ không bao giờ chạy xong. */}
-      {search.phase === "found" ? (
-        <AcceptDialog
-          open
-          expiresAt={search.expiresAt}
-          acceptSeconds={search.acceptSeconds}
-          accepted={search.accepted}
-          others={search.others}
-          onAccept={acceptMatch}
-          onDecline={declineMatch}
-        />
-      ) : null}
     </Container>
   );
 }
