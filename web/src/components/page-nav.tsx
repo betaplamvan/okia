@@ -20,6 +20,7 @@ const TITLES = {
   about: "About.title",
   privacy: "Privacy.title",
   terms: "Terms.title",
+  admin: "Admin.title",
 } as const;
 
 function useSection(): { home: boolean; title: string | null } {

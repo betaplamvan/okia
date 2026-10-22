@@ -16,7 +16,14 @@ import {
 } from "@chakra-ui/react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { LuCalendar, LuCrown, LuFlower, LuPencil, LuPencilLine } from "react-icons/lu";
+import {
+  LuCalendar,
+  LuCrown,
+  LuFlower,
+  LuPencil,
+  LuPencilLine,
+  LuShieldCheck,
+} from "react-icons/lu";
 import { AccountTab } from "@/components/auth/account-tab";
 import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { EditProfileForm } from "@/components/auth/edit-profile-form";
@@ -24,7 +31,7 @@ import { RankEmblem } from "@/components/ranked/rank-emblem";
 import { RankTab } from "@/components/ranked/rank-tab";
 import { TierBadge } from "@/components/ranked/tier-badge";
 import { SkinPreview } from "@/components/shop/skin-preview";
-import { SKIN_SOURCES } from "@/game/skins/catalog.data";
+import { getSkin } from "@/game/skins/skins";
 import { Link } from "@/i18n/navigation";
 import { type ProfileTab, useAuth } from "@/stores/auth";
 
@@ -47,8 +54,8 @@ export function ProfileDialog() {
   const closeProfile = useAuth((s) => s.closeProfile);
   const [editing, setEditing] = useState(false);
 
-  const pen = SKIN_SOURCES.find((s) => s.id === user?.loadout?.pen);
-  const box = SKIN_SOURCES.find((s) => s.id === user?.loadout?.box);
+  const pen = user?.loadout?.pen ? getSkin(user.loadout.pen) : undefined;
+  const box = user?.loadout?.box ? getSkin(user.loadout.box) : undefined;
   const ranked = rank && !user?.isGuest ? rank : null;
 
   return (
@@ -132,6 +139,20 @@ export function ProfileDialog() {
                         ) : (
                           <Pill tone="mint">{t("verifiedBadge")}</Pill>
                         )}
+                        {user.isAdmin ? (
+                          <Button
+                            asChild
+                            variant="sticker"
+                            size="xs"
+                            bg="sun"
+                            onClick={closeProfile}
+                            data-testid="admin-link"
+                          >
+                            <Link href="/admin">
+                              <LuShieldCheck /> {t("adminLink")}
+                            </Link>
+                          </Button>
+                        ) : null}
                       </HStack>
                     </Stack>
 

@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { LuCheck, LuCopy, LuFlag, LuShare2, LuUser, LuWifiOff } from "react-icons/lu";
+import { LuBot, LuCheck, LuCopy, LuFlag, LuShare2, LuUser, LuWifiOff } from "react-icons/lu";
 import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
 import { useMapName } from "@/components/play/map-picker";
@@ -176,13 +176,21 @@ export function RoomScreen({ code }: { code: string }) {
         }
         opponent={
           <PlayerChip
-            icon={<LuUser />}
+            icon={online.bots[bot] ? <LuBot /> : <LuUser />}
             name={theirName}
             score={numberFormat.format(state.scores[bot])}
             tone={bot === 0 ? "pen.blue" : "pen.red"}
             active={!yourTurn && !result}
             reverse
-            sub={ranked ? <TierBadge rank={online.ranks[bot]} size="sm" /> : undefined}
+            sub={
+              online.bots[bot] ? (
+                <Text as="span" fontSize="xs" opacity={0.8}>
+                  {t("botHint")}
+                </Text>
+              ) : ranked ? (
+                <TierBadge rank={online.ranks[bot]} size="sm" />
+              ) : undefined
+            }
           />
         }
         status={

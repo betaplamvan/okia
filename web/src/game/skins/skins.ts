@@ -100,6 +100,7 @@ export interface BoxSkin extends SkinBase {
 
 export type SkinManifest = PenSkin | BoxSkin;
 
+/** Bản biên dịch (seed). Lúc chạy, catalog thật từ API thay vào qua `registerSkins` (stores/catalog). */
 export const SKINS: readonly SkinManifest[] = SKIN_SOURCES;
 export const PENS: readonly PenSkin[] = SKINS.filter((s): s is PenSkin => s.type === "pen");
 export const BOXES: readonly BoxSkin[] = SKINS.filter((s): s is BoxSkin => s.type === "box");
@@ -108,6 +109,21 @@ const BY_ID = new Map<string, SkinManifest>(SKINS.map((s) => [s.id, s]));
 
 export const DEFAULT_PEN: PenSkin = PENS.find((p) => p.default)!;
 export const DEFAULT_BOX: BoxSkin = BOXES.find((b) => b.default)!;
+
+/**
+ * Thay bảng tra bằng catalog từ API (admin thêm/sửa/tắt skin không cần deploy web). Skin default
+ * biên dịch vẫn là dự phòng nếu danh sách thiếu. Trả false nếu danh sách không dùng được.
+ */
+export function registerSkins(list: readonly SkinManifest[]): boolean {
+  if (
+    !list.some((s) => s.type === "pen" && s.default) ||
+    !list.some((s) => s.type === "box" && s.default)
+  )
+    return false;
+  BY_ID.clear();
+  for (const s of list) BY_ID.set(s.id, s);
+  return true;
+}
 
 export interface Loadout {
   pen: string;

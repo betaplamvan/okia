@@ -16,6 +16,7 @@ from app.auth.deps import current_user, get_redis, optional_user
 from app.auth.schemas import CamelModel
 from app.db import get_db
 from app.economy.router import avatar_url_for
+from app.game import room as rooms
 from app.models import Season, User
 from app.rating import service
 from app.rating.points import PLACEMENT_GAMES, Rank, with_top_title
@@ -178,7 +179,13 @@ async def me_rank(db: Db, user: Annotated[User, Depends(current_user)]) -> MyRan
         history=[
             HistoryOut(
                 id=h.match.id,
-                opponent_name=h.opponent.display_name if h.opponent else None,
+                opponent_name=h.opponent.display_name
+                if h.opponent
+                else (
+                    rooms.BOT_NAME.get(user.locale, "Máy")
+                    if h.match.bot_strength is not None
+                    else None
+                ),
                 opponent_avatar_url=avatar_url_for(h.opponent) if h.opponent else None,
                 won=None if h.match.winner is None else h.match.winner == h.seat,
                 scores=[h.match.scores[h.seat], h.match.scores[1 - h.seat]],

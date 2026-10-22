@@ -29,7 +29,9 @@
     "smoke:economy": "node scripts/smoke-economy.mjs",
     "smoke:ranked": "node scripts/smoke-ranked.mjs",
     "gen:skins": "node scripts/gen-skins.mjs",
-    "smoke:shop": "node scripts/smoke-shop.mjs"
+    "smoke:shop": "node scripts/smoke-shop.mjs",
+    "smoke:admin": "node scripts/smoke-admin.mjs",
+    "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.37.0",

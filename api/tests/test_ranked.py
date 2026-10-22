@@ -281,6 +281,59 @@ def test_ghep_tran_va_chot_ket_qua(client: TestClient) -> None:
     asyncio.run(check_db())
 
 
+def play_vs_bot(ws: WebSocketTestSession, code: str, state: dict[str, Any], seat: int) -> dict:
+    """Người (ghế `seat`) vẽ cạnh trống đầu tiên khi tới lượt; máy đi qua task nền → `moved`."""
+    turn = state["turn"]
+    edges = list(state["edges"])
+    move_no = state["moveNo"]
+    while True:
+        if turn == seat:
+            edge = edges.index(-1)
+            send(ws, t="move", roomId=code, edge=edge, seq=move_no)
+        mv = recv(ws, "moved")
+        edges[mv["edge"]] = mv["by"]
+        move_no, turn = mv["moveNo"], mv["turn"]
+        if -1 not in edges:
+            return recv(ws, "game_over")
+
+
+def test_ghep_may_khi_cho_lau(client: TestClient) -> None:
+    """Một mình chờ quá MM_BOT_AFTER_SECONDS (2 giây ở test) → phòng với máy, chơi hết ván, chốt
+    điểm hạng một nửa, rating ẩn không đổi, lịch sử ghi đối thủ là máy."""
+    from app.admin import config as appconfig
+
+    ta, ua = account(client, "donla@example.com")
+    a = open_ws(client, ta)
+    appconfig._cache["mm_bot_after_seconds"] = 1  # thông số admin ghi đè env (worker đọc mỗi tick)
+    try:
+        send(a, t="queue", mode="ranked")
+        recv(a, "queued")
+        matched = recv(a, "matched")
+    finally:
+        appconfig._cache.pop("mm_bot_after_seconds", None)
+    code = matched["roomId"]
+    send(a, t="room_join", roomId=code)
+    rs = recv(a, "room_state")
+    bot = next(p for p in rs["players"] if p["isBot"])
+    me = next(p for p in rs["players"] if not p["isBot"])
+    assert bot["name"] == "Máy" and bot["online"] and bot["rank"] is None
+    assert rs["loadouts"][bot["userId"]]["pen"]
+    over = play_vs_bot(a, code, rs["state"], me["seat"])
+    assert over["reason"] == "complete"
+    rk = over["ranked"]
+    assert rk is not None
+    my_delta = rk["pointsDelta"][me["seat"]]
+    won = over["winner"] == me["seat"]
+    assert my_delta == (12 if won else (0 if over["winner"] is None else -8))
+    assert rk["pointsDelta"][bot["seat"]] == 0 and rk["ranks"][bot["seat"]] is None
+    r = client.get("/me/rank", headers=bearer(ta))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["games"] == 1
+    assert body["history"][0]["opponentName"] == "Máy"
+    assert body["history"][0]["pointsDelta"] == my_delta
+
+
 def test_khach_va_casual_bi_tu_choi_cancel_va_rot_mang_roi_hang_cho(client: TestClient) -> None:
     g = open_ws(client, guest(client, "device-guest-0123456789"))
     send(g, t="queue", mode="ranked")

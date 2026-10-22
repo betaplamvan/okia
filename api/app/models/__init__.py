@@ -3,6 +3,7 @@
 Import tất cả model ở đây để Alembic autogenerate nhìn thấy đủ bảng.
 """
 
+from app.models.admin import AppConfig, SkinRow
 from app.models.base import Base
 from app.models.economy import Checkin, QuestProgress, Wallet, WalletLedger
 from app.models.match import Match
@@ -11,6 +12,7 @@ from app.models.skins import Inventory, Loadout
 from app.models.user import AuthIdentity, Session, User
 
 __all__ = [
+    "AppConfig",
     "AuthIdentity",
     "Base",
     "Checkin",
@@ -21,6 +23,7 @@ __all__ = [
     "Rating",
     "Season",
     "Session",
+    "SkinRow",
     "User",
     "Wallet",
     "WalletLedger",

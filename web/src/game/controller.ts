@@ -63,6 +63,8 @@ export interface OnlineInfo {
   avatars: [string | null, string | null];
   /** Hạng hiển thị lúc vào trận (chỉ xếp hạng; null = đang phân hạng / không có). */
   ranks: [RankOut | null, RankOut | null];
+  /** Ghế là máy (ghép bot khi chờ lâu, docs/07). */
+  bots: [boolean, boolean];
   /** Skin bút / ô mỗi ghế đang trang bị (room_state.loadouts); null = mặc định. */
   loadouts: [Partial<Loadout> | null, Partial<Loadout> | null];
   turnSeconds: number | null;

@@ -33,6 +33,10 @@ async def tick(redis: Redis, hub: Hub) -> int:
         await hub.publish(out.room.id, out.moved)
         if out.over:
             await hub.publish(out.room.id, out.over)
+        else:
+            from app.game import botplay
+
+            botplay.schedule(redis, hub, out.room)
     return n
 
 

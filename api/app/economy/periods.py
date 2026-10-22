@@ -14,6 +14,12 @@ def today_vn(now: datetime | None = None) -> date:
     return now_vn(now).date()
 
 
+def day_start_vn(now: datetime | None = None) -> datetime:
+    """00:00 hôm nay theo giờ VN, trả về aware UTC (lọc 'hôm nay' trong DB)."""
+    d = today_vn(now)
+    return datetime(d.year, d.month, d.day, tzinfo=TZ).astimezone(UTC)
+
+
 def daily_key(now: datetime | None = None) -> str:
     return today_vn(now).isoformat()
 

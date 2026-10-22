@@ -10,6 +10,8 @@ import logging
 
 from redis.asyncio import Redis
 
+from app.config import get_settings
+from app.game import bot, botplay
 from app.game import room as rooms
 from app.matchmaking import pending as pd
 from app.matchmaking import queue as q
@@ -48,6 +50,22 @@ async def tick(redis: Redis, hub: Hub) -> int:
                 ),
             )
         n += 1
+    # Chờ quá lâu mà không có ai hợp → ghép với máy (docs/07): mở phòng ngay, không qua vòng chấp
+    # nhận (máy luôn sẵn sàng); điểm hạng cược một nửa.
+    from app.admin import config as appconfig
+
+    cfg_after = appconfig.get("mm_bot_after_seconds")
+    bot_after = cfg_after if isinstance(cfg_after, int) else get_settings().mm_bot_after_seconds
+    if bot_after > 0:
+        for e in await q.entries(redis):
+            if e.waited_s(now) < bot_after:
+                continue
+            if not await q.dequeue(redis, e.user_id):
+                continue
+            room = await rooms.create_vs_bot(redis, e, bot.strength_for_rating(e.mmr, e.rd))
+            await hub.publish_user(e.user_id, m.Matched(room_id=room.id))
+            botplay.schedule(redis, hub, room)
+            n += 1
     # Trận chờ quá hạn: ai chưa chấp nhận coi như từ chối.
     for p in await pd.expired(redis, now):
         laggards = [u for u in p.users if not p.accepted.get(u)]

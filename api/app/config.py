@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     ws_msg_burst: int = 40
     ws_max_msg_bytes: int = 16 * 1024
     refresh_token_ttl_days: int = 30
+    # Ghép trận (docs/07): chờ quá số giây này thì ghép với máy (0 = tắt).
+    mm_bot_after_seconds: int = 45
+    # Máy "suy nghĩ" trung bình bao lâu trước mỗi nước (ms, dao động ±40 %).
+    bot_move_delay_ms: int = 900
+    # Email (đã xác minh, Google) được quyền admin — cách nhau bởi dấu phẩy (docs/13).
+    admin_emails: str = ""
     # Cookie refresh: Secure chỉ khi https (production); dev trên http://localhost thì tắt.
     cookie_secure: bool = False
     cookie_domain: str | None = None
@@ -56,6 +62,10 @@ class Settings(BaseSettings):
     @property
     def s3_enabled(self) -> bool:
         return bool(self.s3_endpoint_url and self.s3_access_key and self.s3_secret_key)
+
+    @property
+    def admin_email_list(self) -> list[str]:
+        return [e.strip().lower() for e in self.admin_emails.split(",") if e.strip()]
 
     @property
     def cors_origin_list(self) -> list[str]:

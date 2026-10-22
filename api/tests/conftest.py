@@ -28,6 +28,10 @@ os.environ["JWT_SECRET"] = "test-secret-not-for-prod-" + "x" * 16
 os.environ["GOOGLE_CLIENT_ID"] = "test-client-id.apps.googleusercontent.com"
 # Test gửi nước đi dồn dập (không phải người thật) → nới chống spam WS; test_ws_limits tự siết lại.
 os.environ["WS_MSG_BURST"] = "1000"
+# Mặc định không ghép máy trong test (120 giây); test_ghep_may_khi_cho_lau tự hạ qua appconfig.
+os.environ["MM_BOT_AFTER_SECONDS"] = "120"
+os.environ["ADMIN_EMAILS"] = "admin@example.com"
+os.environ["BOT_MOVE_DELAY_MS"] = "20"
 os.environ["WS_MSG_PER_SECOND"] = "500"
 os.environ["GOOGLE_CLIENT_SECRET"] = "test-secret"
 # Không đụng MinIO thật: storage trong bộ nhớ, URL ảnh đi qua API.
@@ -40,6 +44,7 @@ from app.main import create_app  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 TABLES = [
+    "app_config",
     "wallet_ledger",
     "wallets",
     "checkins",

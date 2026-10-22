@@ -37,7 +37,13 @@
     "ALREADY_OWNED": "You already own this item.",
     "NOT_OWNED": "You don't own this item.",
     "MATCH_EXPIRED": "That match is no longer pending.",
-    "MATCH_PENDING": "You have a match waiting for your answer."
+    "MATCH_PENDING": "You have a match waiting for your answer.",
+    "FORBIDDEN": "You are not allowed to do this.",
+    "BAD_REQUEST": "Invalid request.",
+    "BAD_SKIN": "Invalid skin manifest.",
+    "SKIN_DEFAULT_PROTECTED": "Default skins cannot be deleted or disabled.",
+    "BAD_CONFIG_KEY": "Unknown setting.",
+    "BAD_CONFIG_VALUE": "Invalid setting value."
   },
   "currency": {
     "lead": "Lead",

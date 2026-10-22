@@ -37,7 +37,13 @@
     "ALREADY_OWNED": "Bạn đã có vật phẩm này rồi.",
     "NOT_OWNED": "Bạn chưa sở hữu vật phẩm này.",
     "MATCH_EXPIRED": "Trận chờ không còn nữa.",
-    "MATCH_PENDING": "Bạn đang có trận chờ chấp nhận."
+    "MATCH_PENDING": "Bạn đang có trận chờ chấp nhận.",
+    "FORBIDDEN": "Bạn không có quyền này.",
+    "BAD_REQUEST": "Yêu cầu không hợp lệ.",
+    "BAD_SKIN": "Manifest skin không hợp lệ.",
+    "SKIN_DEFAULT_PROTECTED": "Không thể xóa hay tắt skin mặc định.",
+    "BAD_CONFIG_KEY": "Thông số không tồn tại.",
+    "BAD_CONFIG_VALUE": "Giá trị thông số không hợp lệ."
   },
   "currency": {
     "lead": "Ruột chì",

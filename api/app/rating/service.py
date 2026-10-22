@@ -20,7 +20,15 @@ from app.rating import glicko2, points
 from app.rating.points import PLACEMENT_GAMES, Rank, rank_of
 
 SEASON_DAYS = 56  # 8 tuần (docs/07)
-RANKED_WIN_LEAD = 30  # docs/06 — nguồn Ruột chì lặp lại duy nhất
+RANKED_WIN_LEAD = 30  # docs/06 — nguồn Ruột chì lặp lại duy nhất (mặc định; admin chỉnh được)
+
+
+def ranked_win_lead() -> int:
+    from app.admin import config as appconfig
+
+    return appconfig.get_int("ranked_win_lead", RANKED_WIN_LEAD)
+
+
 MIN_MOVES_FOR_REWARD = 10  # đầu hàng trước nước 10 → không thưởng
 SOFT_RESET_RD = 150.0
 
@@ -188,17 +196,18 @@ async def settle(
     _apply(r1, n1, d1, s1, now)
 
     rewards: list[dict[str, int]] = [{}, {}]
-    if winner is not None and reward_eligible(reason, len(moves)):
+    win_lead = ranked_win_lead()
+    if winner is not None and reward_eligible(reason, len(moves)) and win_lead > 0:
         await wallet.credit(
             db,
             user_ids[winner],
             "lead",
-            RANKED_WIN_LEAD,
+            win_lead,
             source="match",
             ref=str(match_id),
             idempotency_key=f"match:{match_id}:{user_ids[winner]}",
         )
-        rewards[winner] = {"lead": RANKED_WIN_LEAD}
+        rewards[winner] = {"lead": win_lead}
 
     db.add(
         Match(
@@ -229,6 +238,80 @@ async def settle(
     )
 
 
+BOT_STAKE = 0.5  # trận với máy: điểm hạng cược một nửa (docs/07)
+
+
+async def settle_vs_bot(
+    db: AsyncSession,
+    *,
+    match_id: uuid.UUID,
+    board: str,
+    user_id: uuid.UUID,
+    seat: int,
+    bot_strength: float,
+    winner: int | None,
+    reason: str,
+    moves: list[dict[str, object]],
+    scores: list[int],
+    started_at: datetime,
+    now: datetime | None = None,
+) -> Settled:
+    """Trận xếp hạng với máy (docs/07): điểm hạng ± một nửa trận cân (+12/−8), thống kê và thưởng
+    như thường, **rating ẩn không đổi** (máy không có rating để ước lượng). Ghế của máy trong các
+    danh sách trả về là 0 / None. Không commit."""
+    now = now or datetime.now(UTC)
+    season = await current_season(db, now)
+    r = await get_or_create_rating(db, user_id, season, for_update=True)
+    s = 0.5 if winner is None else (1.0 if winner == seat else 0.0)
+    full = points.delta(0.5, s, 0.0)
+    d = int(full * BOT_STAKE) if full >= 0 else -int(-full * BOT_STAKE)
+    _apply_points(r, d, s, now)
+
+    rewards: list[dict[str, int]] = [{}, {}]
+    win_lead = ranked_win_lead()
+    if winner == seat and reward_eligible(reason, len(moves)) and win_lead > 0:
+        await wallet.credit(
+            db,
+            user_id,
+            "lead",
+            win_lead,
+            source="match",
+            ref=str(match_id),
+            idempotency_key=f"match:{match_id}:{user_id}",
+        )
+        rewards[seat] = {"lead": win_lead}
+
+    by_seat = lambda mine, other: [mine, other] if seat == 0 else [other, mine]  # noqa: E731
+    db.add(
+        Match(
+            id=match_id,
+            mode="ranked",
+            board=board,
+            season_id=season.id,
+            player0=user_id if seat == 0 else None,
+            player1=user_id if seat == 1 else None,
+            bot_strength=bot_strength,
+            moves=moves,
+            scores=scores,
+            winner=winner,
+            end_reason=reason,
+            rating_delta=[0.0, 0.0],
+            points_delta=by_seat(d, 0),
+            started_at=started_at,
+            ended_at=now,
+        )
+    )
+    await db.flush()
+    return Settled(
+        match_id=match_id,
+        points=by_seat(r.points, 0),
+        points_delta=by_seat(d, 0),
+        ranks=by_seat(await titled_rank(db, r), None),
+        rewards=rewards,
+        placement_left=by_seat(placement_left(r), 0),
+    )
+
+
 def _current(r: Rating, now: datetime) -> glicko2.Glicko:
     g = glicko2.Glicko(r.mmr, r.rd, r.vol)
     if r.last_played_at is None:
@@ -239,6 +322,11 @@ def _current(r: Rating, now: datetime) -> glicko2.Glicko:
 
 def _apply(r: Rating, g: glicko2.Glicko, d: int, score: float, now: datetime) -> None:
     r.mmr, r.rd, r.vol = g.mmr, g.rd, g.vol
+    _apply_points(r, d, score, now)
+
+
+def _apply_points(r: Rating, d: int, score: float, now: datetime) -> None:
+    """Điểm hạng + thống kê (không đụng rating ẩn)."""
     r.points = points.apply(r.points, d)
     r.peak_points = max(r.peak_points, r.points)
     r.games += 1

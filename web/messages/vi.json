@@ -183,7 +183,8 @@
     "replacedBody": "Tài khoản của bạn vừa đăng nhập trên thiết bị hoặc trình duyệt khác nên phiên ở đây đã kết thúc. Bạn đang chơi tiếp với tư cách khách.",
     "replacedHint": "Đăng nhập lại ở đây sẽ đăng xuất nơi kia.",
     "replacedLogin": "Đăng nhập lại",
-    "replacedDismiss": "Chơi tiếp như khách"
+    "replacedDismiss": "Chơi tiếp như khách",
+    "adminLink": "Quản trị"
   },
   "Room": {
     "title": "Phòng riêng",
@@ -206,6 +207,7 @@
     "cancelRoom": "Hủy phòng",
     "connecting": "Đang kết nối…",
     "reconnecting": "Mất kết nối, đang kết nối lại…",
+    "botHint": "Máy · điểm hạng ½",
     "opponentOffline": "Đối thủ đang mất kết nối…",
     "yourTurn": "Đến lượt bạn — chạm vào một cạnh",
     "theirTurn": "{name} đang đi…",
@@ -413,5 +415,101 @@
   "Nav": {
     "back": "Quay lại",
     "breadcrumb": "Vị trí trang"
+  },
+  "Admin": {
+    "title": "Quản trị",
+    "loading": "Đang tải…",
+    "forbidden": "Trang này chỉ dành cho quản trị viên.",
+    "refresh": "Làm mới",
+    "save": "Lưu",
+    "saved": "Đã lưu.",
+    "lead": "Ruột chì",
+    "flower": "Hoa điểm tốt",
+    "day": "Ngày {n}",
+    "tab": {
+      "stats": "Thống kê",
+      "users": "Người chơi",
+      "skins": "Skin",
+      "config": "Thông số"
+    },
+    "rarity": {
+      "common": "Trắng",
+      "uncommon": "Xanh lá",
+      "rare": "Xanh lam",
+      "epic": "Tím",
+      "legendary": "Vàng"
+    },
+    "stat": {
+      "season": "Mùa: {name}",
+      "online": "Đang online",
+      "connections": "Kết nối WS",
+      "roomsPlaying": "Phòng đang chơi",
+      "queueWaiting": "Đang chờ ghép",
+      "pendingMatches": "Trận chờ chấp nhận",
+      "matchesToday": "Ván hôm nay",
+      "matchesTotal": "Tổng ván",
+      "usersToday": "Người mới hôm nay",
+      "accountsTotal": "Tài khoản thật",
+      "usersTotal": "Tổng người dùng"
+    },
+    "users": {
+      "search": "Tìm",
+      "searchHint": "Tên, email hoặc id",
+      "none": "Không có ai.",
+      "guest": "khách",
+      "bannedBadge": "khóa",
+      "pts": "điểm",
+      "wallet": "Ví",
+      "rank": "Điểm hạng",
+      "rename": "Đổi tên hiển thị",
+      "grant": "Cộng / trừ tiền",
+      "grantHint": "Số âm để trừ. Ghi vào sổ cái với nguồn admin.",
+      "grantDo": "Thực hiện",
+      "granted": "Đã cập nhật ví.",
+      "note": "Ghi chú",
+      "ban": "Khóa tài khoản",
+      "banDays": "Khóa {n} ngày",
+      "banForever": "Khóa vĩnh viễn",
+      "unban": "Mở khóa",
+      "banned": "Đã khóa, mọi phiên bị thu hồi.",
+      "unbanned": "Đã mở khóa.",
+      "bannedUntil": "Đang khóa tới {date}.",
+      "notBanned": "Không bị khóa.",
+      "matches": "10 ván gần nhất"
+    },
+    "skins": {
+      "add": "Thêm skin",
+      "export": "Xuất JSON",
+      "import": "Nhập JSON",
+      "count": "{n} skin trong DB",
+      "owners": "{n} người sở hữu",
+      "default": "mặc định",
+      "disabled": "đang tắt",
+      "edit": "Sửa",
+      "disable": "Tắt",
+      "enable": "Bật",
+      "delete": "Xóa",
+      "editTitle": "Sửa {id}",
+      "editHint": "Manifest đúng định dạng shared/skins/**.json (portable). API kiểm tra id, loại, bậc, tên vi/en, khối pen/box.",
+      "needId": "Manifest cần trường id.",
+      "enabledOn": "Đang bật — bấm để tắt",
+      "enabledOff": "Đang tắt — bấm để bật",
+      "confirmDelete": "Xóa skin {id}? Người đang sở hữu sẽ về skin mặc định.",
+      "confirmReplace": "Thay toàn bộ catalog bằng file này (xóa skin không có trong file, trừ mặc định)? Chọn Hủy để chỉ thêm / ghi đè.",
+      "imported": "Đã nhập {n} skin."
+    },
+    "cfg": {
+      "rankedWinLead": "Ruột chì cho người thắng trận xếp hạng",
+      "rankedWinLeadHint": "Mặc định 30. 0 = không thưởng.",
+      "mmBotAfter": "Ghép máy sau (giây chờ)",
+      "mmBotAfterHint": "0 = không ghép máy. Trống = theo biến môi trường MM_BOT_AFTER_SECONDS (45).",
+      "env": "theo env",
+      "useEnv": "Theo env",
+      "rarityPrice": "Giá skin theo bậc",
+      "rarityPriceHint": "Ruột chì hoặc Hoa điểm tốt (hoặc cả hai). Áp dụng ngay cho shop.",
+      "checkinRewards": "Thưởng điểm danh 7 ngày",
+      "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền.",
+      "resetDefaults": "Về mặc định"
+    }
   }
 }

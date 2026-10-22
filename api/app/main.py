@@ -1,5 +1,6 @@
 """Ứng dụng FastAPI (docs/02). Server quyết định mọi kết quả; client chỉ gửi ý định."""
 
+import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -9,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.admin.router import router as admin_router
 from app.auth.router import router as auth_router
 from app.config import Settings, get_settings
 from app.db import dispose_engine, get_db
@@ -33,9 +35,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     timer.start()
     mm = MatchmakingWorker(app.state.redis, app.state.hub)
     mm.start()
+    # Catalog skin + thông số admin: seed từ bản chép, đọc DB, rồi đọc lại định kỳ (docs/08, 13).
+    import asyncio
+
+    from app.admin import config as appconfig
+    from app.db import get_session_factory
+    from app.skins import catalog
+
+    async with get_session_factory()() as db:
+        await catalog.seed(db)
+        await db.commit()
+        await catalog.sync_from_db(db)
+        await appconfig.sync_from_db(db)
+    refresher = asyncio.create_task(catalog.refresh_loop(), name="catalog-refresh")
     try:
         yield
     finally:
+        from app.game import botplay
+
+        refresher.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await refresher
+        await botplay.cancel_all()
         await mm.stop()
         await timer.stop()
         await app.state.hub.stop()
@@ -69,6 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     install_error_handlers(app)
     app.include_router(auth_router)
+    app.include_router(admin_router)
     app.include_router(economy_router)
     app.include_router(rating_router)
     app.include_router(skins_router)

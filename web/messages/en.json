@@ -183,7 +183,8 @@
     "replacedBody": "Your account just signed in on another device or browser, so this session has ended. You are now playing as a guest.",
     "replacedHint": "Signing in again here will sign the other place out.",
     "replacedLogin": "Sign in again",
-    "replacedDismiss": "Keep playing as guest"
+    "replacedDismiss": "Keep playing as guest",
+    "adminLink": "Admin"
   },
   "Room": {
     "title": "Private room",
@@ -206,6 +207,7 @@
     "cancelRoom": "Cancel room",
     "connecting": "Connecting…",
     "reconnecting": "Connection lost, reconnecting…",
+    "botHint": "Bot · half rank points",
     "opponentOffline": "Opponent is disconnected…",
     "yourTurn": "Your turn — tap a line",
     "theirTurn": "{name} is moving…",
@@ -413,5 +415,101 @@
   "Nav": {
     "back": "Back",
     "breadcrumb": "Breadcrumb"
+  },
+  "Admin": {
+    "title": "Admin",
+    "loading": "Loading…",
+    "forbidden": "This page is for administrators only.",
+    "refresh": "Refresh",
+    "save": "Save",
+    "saved": "Saved.",
+    "lead": "Lead",
+    "flower": "Flowers",
+    "day": "Day {n}",
+    "tab": {
+      "stats": "Stats",
+      "users": "Players",
+      "skins": "Skins",
+      "config": "Settings"
+    },
+    "rarity": {
+      "common": "White",
+      "uncommon": "Green",
+      "rare": "Blue",
+      "epic": "Purple",
+      "legendary": "Gold"
+    },
+    "stat": {
+      "season": "Season: {name}",
+      "online": "Online",
+      "connections": "WS connections",
+      "roomsPlaying": "Rooms playing",
+      "queueWaiting": "In queue",
+      "pendingMatches": "Pending matches",
+      "matchesToday": "Games today",
+      "matchesTotal": "Games total",
+      "usersToday": "New users today",
+      "accountsTotal": "Accounts",
+      "usersTotal": "Users total"
+    },
+    "users": {
+      "search": "Search",
+      "searchHint": "Name, email or id",
+      "none": "Nobody found.",
+      "guest": "guest",
+      "bannedBadge": "banned",
+      "pts": "pts",
+      "wallet": "Wallet",
+      "rank": "Rank points",
+      "rename": "Rename",
+      "grant": "Add / remove currency",
+      "grantHint": "Negative to remove. Recorded in the ledger as admin.",
+      "grantDo": "Apply",
+      "granted": "Wallet updated.",
+      "note": "Note",
+      "ban": "Ban",
+      "banDays": "Ban {n} days",
+      "banForever": "Ban forever",
+      "unban": "Unban",
+      "banned": "Banned; all sessions revoked.",
+      "unbanned": "Unbanned.",
+      "bannedUntil": "Banned until {date}.",
+      "notBanned": "Not banned.",
+      "matches": "Last 10 games"
+    },
+    "skins": {
+      "add": "Add skin",
+      "export": "Export JSON",
+      "import": "Import JSON",
+      "count": "{n} skins in DB",
+      "owners": "{n} owners",
+      "default": "default",
+      "disabled": "disabled",
+      "edit": "Edit",
+      "disable": "Disable",
+      "enable": "Enable",
+      "delete": "Delete",
+      "editTitle": "Edit {id}",
+      "editHint": "Manifest in the shared/skins/**.json format (portable). The API checks id, type, rarity, vi/en names and the pen/box block.",
+      "needId": "The manifest needs an id.",
+      "enabledOn": "Enabled — click to disable",
+      "enabledOff": "Disabled — click to enable",
+      "confirmDelete": "Delete skin {id}? Owners fall back to the default skin.",
+      "confirmReplace": "Replace the whole catalog with this file (skins missing from the file are deleted, defaults kept)? Cancel to only add / overwrite.",
+      "imported": "Imported {n} skins."
+    },
+    "cfg": {
+      "rankedWinLead": "Lead for a ranked win",
+      "rankedWinLeadHint": "Default 30. 0 = no reward.",
+      "mmBotAfter": "Match a bot after (seconds waiting)",
+      "mmBotAfterHint": "0 = never. Empty = use the MM_BOT_AFTER_SECONDS environment variable (45).",
+      "env": "from env",
+      "useEnv": "Use env",
+      "rarityPrice": "Skin prices by rarity",
+      "rarityPriceHint": "Lead or flowers (or both). Applies to the shop immediately.",
+      "checkinRewards": "7-day check-in rewards",
+      "checkinRewardsHint": "At least one currency per day.",
+      "resetDefaults": "Reset to defaults"
+    }
   }
 }

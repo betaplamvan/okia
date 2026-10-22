@@ -27,6 +27,16 @@ REWARDS: tuple[dict[str, int], ...] = (
 CYCLE = len(REWARDS)
 
 
+def rewards() -> tuple[dict[str, int], ...]:
+    """Thưởng 7 ngày hiện hành: thông số admin `checkin_rewards` (docs/06), mặc định REWARDS."""
+    from app.admin import config as appconfig
+
+    raw = appconfig.get("checkin_rewards")
+    if isinstance(raw, list) and len(raw) == CYCLE:
+        return tuple({k: int(v) for k, v in r.items()} for r in raw)
+    return REWARDS
+
+
 @dataclass
 class CheckinStatus:
     checked_today: bool
@@ -72,7 +82,7 @@ async def status(
         streak=streak,
         cycle_day=cycle_day,
         best_streak=max(await _best(db, user_id), streak),
-        rewards=REWARDS,
+        rewards=rewards(),
         next_reset=periods.epoch_ms(periods.next_daily_reset(now)),
     )
 
@@ -88,7 +98,7 @@ async def check_in(
         raise AppError("ALREADY_CHECKED_IN", 409)
     new_streak = streak + 1
     cycle_day = ((new_streak - 1) % CYCLE) + 1
-    reward = REWARDS[cycle_day - 1]
+    reward = rewards()[cycle_day - 1]
     db.add(Checkin(user_id=user_id, day=today, streak=new_streak))
     await wallet.grant(
         db,

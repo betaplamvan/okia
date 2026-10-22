@@ -36,8 +36,28 @@ async def optional_user(
     user = await service.get_user(db, uuid.UUID(payload["sub"]))
     if user is None or payload.get("tv") != user.token_version:
         raise AppError("UNAUTHORIZED", 401)
+    if is_banned(user):
+        raise AppError("BANNED", 403, until=user.banned_until.isoformat())  # type: ignore[union-attr]
     request.state.user_locale = user.locale
     return user
+
+
+def is_banned(user: User) -> bool:
+    from datetime import UTC, datetime
+
+    return user.banned_until is not None and user.banned_until > datetime.now(UTC)
+
+
+def is_admin(user: User) -> bool:
+    """Admin (docs/13): tài khoản thật, email đã xác minh, nằm trong ADMIN_EMAILS."""
+    from app.config import get_settings
+
+    return (
+        not user.is_guest
+        and user.email is not None
+        and user.email_verified_at is not None
+        and user.email.lower() in get_settings().admin_email_list
+    )
 
 
 async def current_user(user: Annotated[User | None, Depends(optional_user)]) -> User:
@@ -79,3 +99,9 @@ def real_ip(headers: Mapping[str, str], peer: str) -> str:
 
 def is_loopback(ip: str) -> bool:
     return ip in ("127.0.0.1", "::1", "localhost")
+
+
+async def admin_user(user: Annotated[User, Depends(current_user)]) -> User:
+    if not is_admin(user):
+        raise AppError("FORBIDDEN", 403)
+    return user

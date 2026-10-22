@@ -97,6 +97,7 @@ TEST_DATABASE_URL=$LOCAL_TEST_DATABASE_URL TEST_REDIS_URL=$LOCAL_TEST_REDIS_URL 
 | Variable | `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_PUBLIC_URL` | Endpoint MinIO, bucket, URL đọc công khai (xem [docs/02](../docs/02-kien-truc.md#môi-trường)) |
 | Variable | `APP_BASE_URL`, `API_BASE_URL`, `CORS_ORIGINS` | URL public của web / API; CORS = origin của web |
 | Variable | `COOKIE_SECURE` | `true` khi chạy https |
+| Variable | `ADMIN_EMAILS` | Email (Google, đã xác minh) được quyền admin, cách nhau bởi dấu phẩy — trang `/admin` ([docs/13](../docs/13-xac-thuc.md)) |
 | Variable | `COOKIE_DOMAIN`, `GOOGLE_CLIENT_ID`, `EMAIL_PROVIDER`, `EMAIL_FROM` | Tùy chọn (ý nghĩa: [docs/02](../docs/02-kien-truc.md#môi-trường), `api/.env.example`) |
 | Variable | `WEB_PORT`, `API_PORT` | Cổng trên máy, mặc định `3000`, `8000` |
 | Variable | `API_MEM_LIMIT`, `API_CPU_LIMIT`, `WEB_MEM_LIMIT`, `WEB_CPU_LIMIT` | Giới hạn `--memory`/`--cpus` cho container, mặc định `1g`/`2` và `768m`/`1.5` (máy chạy chung nhiều dịch vụ) |

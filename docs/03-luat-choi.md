@@ -185,7 +185,7 @@ Thời gian một nước (Node, máy dev): trung bình 9–29 ms, tối đa ≈
 | Nơi | Dùng khi | Có thưởng? |
 |---|---|---|
 | Client — `bot.ts` | Giai đoạn 0 (chưa có backend); dự phòng khi mất mạng | Không |
-| Server — `bot.py` | Từ giai đoạn 2A: "Chơi với máy" đi qua phòng đấu ở server; lấp chỗ trong ghép trận thường | Có (server xác nhận kết quả) |
+| Server — `bot.py` | **Đã có (2026-10-22):** ghép máy khi chờ xếp hạng quá lâu ([07](07-xep-hang-ghep-tran.md#ghép-máy-khi-chờ-lâu-2026-10-22)); cùng thuật toán và fixtures với `bot.ts`, ngân sách nhỏ hơn (4 000 nút / 120 ms vì Python chậm hơn). *Chưa:* "Chơi với máy" qua phòng server có thưởng (P2-06) | Có (server xác nhận kết quả) |
 
 Chỉ ván bot chạy ở server mới được thưởng, vì kết quả ở client không đáng tin. Hai bản bot dùng chung **fixtures tình huống** (ví dụ "phải ăn ô", "không được vẽ cạnh thứ 3 khi còn cạnh an toàn") với `strength = 1`.
 

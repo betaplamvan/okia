@@ -63,12 +63,33 @@ class Hub:
 
     async def start(self) -> None:
         self._task = asyncio.create_task(self._listen(), name="ws-hub-pubsub")
+        self._beat = asyncio.create_task(self._heartbeat(), name="ws-hub-heartbeat")
 
     async def stop(self) -> None:
-        if self._task:
-            self._task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._task
+        for t in (getattr(self, "_beat", None), self._task):
+            if t:
+                t.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await t
+        with contextlib.suppress(Exception):
+            await self.redis.delete(self._conns_key)
+
+    @property
+    def _conns_key(self) -> str:
+        import os
+
+        return f"ws:conns:{os.getpid()}"
+
+    async def _heartbeat(self, interval: float = 5.0) -> None:
+        """Số kết nối của tiến trình này → `ws:conns:{pid}` (TTL 3 nhịp) cho admin /stats."""
+        while True:
+            try:
+                await self.redis.set(self._conns_key, len(self.conns), ex=int(interval * 3))
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # noqa: BLE001
+                pass
+            await asyncio.sleep(interval)
 
     async def _listen(self) -> None:
         pubsub = self.redis.pubsub()

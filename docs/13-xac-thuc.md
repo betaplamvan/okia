@@ -117,6 +117,12 @@ Tài khoản thật (Google, dev-login) chỉ đăng nhập ở **một nơi**; 
 - Xóa tài khoản: `DELETE /me` → xóa mềm, ẩn ngay, xóa cứng sau 30 ngày; identity và session xóa ngay
   để không đăng nhập lại được; email giải phóng.
 
+## Admin (2026-10-22)
+
+- **Quyền:** tài khoản thật, email đã xác minh (Google) và nằm trong biến `ADMIN_EMAILS` (dấu phẩy) → `/me.isAdmin = true`, dependency `admin_user` cho mọi `/admin/*` (403 `FORBIDDEN`). Không có bảng vai trò; đổi admin = đổi biến môi trường (GitHub → Environment production → `ADMIN_EMAILS`).
+- **Trang `/admin`** (web, chỉ hiện nút trong hồ sơ khi là admin): *Thống kê* (online, kết nối WS tổng các worker qua `ws:conns:{pid}`, phòng đang chơi `rooms:playing`, hàng chờ, trận chờ chấp nhận, người dùng / tài khoản / người mới hôm nay, ván hôm nay / tổng, mùa) tự làm mới 10 giây; *Người chơi* (tìm theo tên / email / id, ví, hạng, 10 ván gần nhất, cộng/trừ tiền ghi sổ cái nguồn `admin`, đổi tên, khóa 1/7/30 ngày hoặc vĩnh viễn → tăng `token_version`, thu hồi phiên, ngắt WS, đăng nhập lại trả `BANNED` 403 tới hạn; mở khóa); *Skin* (catalog trong bảng `skins`: thêm / sửa manifest JSON / bật tắt / xóa, xuất và nhập JSON đúng định dạng shared/skins — xem [08](08-skin.md)); *Thông số* (bảng `app_config`, [06](06-kinh-te.md#thông-số-chỉnh-ở-admin)).
+- Khóa tài khoản (`users.banned_until`) được kiểm tra ở mọi request có token, khi cấp token mới và khi refresh.
+
 ## Mã lỗi
 
 | `code` | Khi nào |

@@ -75,6 +75,7 @@ class UserOut(CamelModel):
     email: str | None
     email_verified: bool
     is_guest: bool
+    is_admin: bool = False
     locale: Locale
     created_at: datetime
     identities: list[IdentityOut]

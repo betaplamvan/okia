@@ -59,7 +59,11 @@ Worker nền (`api/app/matchmaking/worker.py`, một bản duy nhất nhờ `loc
 
 Client hiện hộp thoại với **vòng đếm ngược tròn** (giờ server), nút **Chơi luôn!** và **Từ chối**. Cả hai `match_accept` → tạo `room:{id}` (`mode = ranked`, map ngẫu nhiên, 30 giây/lượt, bắt đầu ngay) và gửi `matched`. Một người từ chối, hết giờ (worker quét `mm:pending` mỗi giây) hoặc rớt mạng → `match_cancelled` cho cả hai: người gây hủy rời hàng chờ; người kia được **trả về hàng chờ với thời điểm xếp hàng cũ** (không mất chỗ) và nhận `queued` mới. Người đã chấp nhận thấy "Đang chờ người chơi khác"; người chưa nhận thấy "Đối thủ đã sẵn sàng". Đang có trận chờ thì không xếp hàng lại được (`MATCH_PENDING`). Code: `api/app/matchmaking/pending.py`, `worker.accept/decline/cancel`, `web/src/components/ranked/accept-dialog.tsx`.
 
-Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự gửi `queue` lại khi nối lại. Không bao giờ dùng bot ở xếp hạng.
+Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự gửi `queue` lại khi nối lại.
+
+### Ghép máy khi chờ lâu (2026-10-22)
+
+Chờ quá `MM_BOT_AFTER_SECONDS` (mặc định 45 giây) mà không có ai hợp → worker bỏ người đó khỏi hàng chờ, mở ngay phòng xếp hạng **người vs máy** (`room.create_vs_bot`, không qua vòng chấp nhận vì máy luôn sẵn sàng) và gửi `matched`. Máy (`user_id = "bot"`, tên "Máy"/"Bot", `is_bot` trong `room_state.players`, luôn online, skin mặc định) đi qua task nền `botplay` sau mỗi nước của người (~0,9 giây ±40 %), bằng `app/game/bot.py` (bản Python của bot client, cùng fixtures). Độ mạnh theo **rating ẩn** (`bot.strength_for_rating`): tuyến tính MMR 1100 → 0,5 tới 1850 → 1,0; rating chưa chắc (rd ≥ 200) kéo dần về 0,65, người mới hoàn toàn (rd 350) = 0,65. Không dùng bậc rank hiển thị vì điểm hạng tăng theo số ván (+24/−16), không phản ánh đúng trình độ. Chốt ván (`rating.settle_vs_bot`): điểm hạng cược **một nửa** trận cân (+12 / −8, hòa 0), thống kê games/wins/streak và thưởng 30 Ruột chì như thường, **rating ẩn không đổi**; `matches.player{0|1}` của máy = NULL, `bot_strength` ghi lại; lịch sử hiện đối thủ "Máy". Client: chip đối thủ icon máy + "Máy · điểm hạng ½". Hộp tìm trận **không hiện** số người chờ / online (trông nản khi ít người).
 
 ### Khi vắng người
 

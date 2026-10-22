@@ -20,16 +20,10 @@ import { SkinCard, useSkinName } from "@/components/shop/skin-card";
 import { TryDialog } from "@/components/shop/try-dialog";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
-import {
-  BOXES,
-  PENS,
-  RARITIES,
-  RARITY_PRICE,
-  type SkinManifest,
-  type SkinType,
-} from "@/game/skins/skins";
+import { RARITIES, RARITY_PRICE, type SkinManifest, type SkinType } from "@/game/skins/skins";
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/stores/auth";
+import { useCatalog } from "@/stores/catalog";
 
 // Cửa hàng /shop (docs/06 — Shop, ADR-0013): hai tab Bút / Ô, lưới 2 cột trên điện thoại, ví ở đầu,
 // Thử (bàn mẫu) / Mua (xác nhận) / Trang bị. Khách xem và thử được, mua thì mời đăng nhập Google.
@@ -55,7 +49,8 @@ export function ShopScreen() {
   const owned = new Set(skins?.owned ?? []);
   const loadout = skins?.loadout ?? user?.loadout;
   const canBuy = !!skins?.canBuy;
-  const list = (tab === "pen" ? PENS : BOXES) as readonly SkinManifest[];
+  const catalog = useCatalog((s) => s.skins);
+  const list = catalog.filter((s) => s.type === tab);
   // Sắp theo bậc tăng dần, default trước.
   const sorted = [...list].sort(
     (a, b) =>

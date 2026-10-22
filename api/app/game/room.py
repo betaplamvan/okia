@@ -30,6 +30,8 @@ ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # bỏ I/O/0/1 cho dễ đ�
 ROOM_TTL_WAITING = 2 * 3600
 ROOM_TTL_PLAYING = 24 * 3600
 ROOM_TTL_OVER = 10 * 60
+# Tập phòng đang chơi (admin /stats đếm nhanh, không scan key).
+PLAYING_KEY = "rooms:playing"
 MAX_TIMEOUTS = 3
 RANKED_TURN_SECONDS = 30
 DEADLINES_KEY = "deadlines"
@@ -47,6 +49,7 @@ class Player:
     name: str
     seat: int
     timeouts: int = 0  # số lần hết giờ liên tiếp
+    is_bot: bool = False  # máy (docs/03): user_id = BOT_ID, không có tài khoản
     avatar_url: str | None = None
     rank: dict[str, Any] | None = None  # hạng hiển thị lúc vào trận (chỉ phòng xếp hạng)
     loadout: dict[str, str] | None = None  # skin bút / ô đang trang bị (ADR-0013)
@@ -71,6 +74,8 @@ class Room:
     result: dict[str, Any] | None = None
     created_at: int = field(default_factory=now_ms)
     show_last_move: bool = True
+    # Phòng có máy (docs/07 — ghép bot khi chờ lâu): độ mạnh bot; None = không có máy.
+    bot_strength: float | None = None
 
     # ----- (de)serialize -----
 
@@ -154,7 +159,13 @@ async def save(redis: Redis, room: Room) -> None:
         await redis.zadd(DEADLINES_KEY, {room.id: room.deadline})
     else:
         await redis.zrem(DEADLINES_KEY, room.id)
+    if room.status == "playing":
+        await redis.sadd(PLAYING_KEY, room.id)
+    else:
+        await redis.srem(PLAYING_KEY, room.id)
     for p in room.players:
+        if p.is_bot:
+            continue
         if room.status == "over":
             await redis.delete(user_key(p.user_id))
         else:
@@ -315,11 +326,71 @@ async def create_ranked(redis: Redis, a: "Entry", b: "Entry") -> Room:
     return room
 
 
+BOT_ID = "bot"
+BOT_NAME = {"vi": "Máy", "en": "Bot"}
+
+
+async def create_vs_bot(redis: Redis, a: "Entry", strength: float) -> Room:
+    """Phòng xếp hạng người vs máy (docs/07): chờ quá lâu thì worker ghép bot; luật như trận xếp
+    hạng thường, điểm hạng cược một nửa, rating ẩn giữ nguyên (`rating.settle_vs_bot`)."""
+    from app.skins import catalog
+
+    game_map = pick_map(maps.RANDOM_MAP)
+    for _ in range(10):
+        rid = "".join(secrets.choice(ROOM_ALPHABET) for _ in range(6))
+        if not await redis.exists(key(rid)):
+            break
+    else:  # pragma: no cover
+        raise AppError("INTERNAL", 500)
+    seat_a = random.randint(0, 1)
+    room = Room(
+        id=rid,
+        mode="ranked",
+        board=game_map.id,
+        turn_seconds=RANKED_TURN_SECONDS,
+        host_id=a.user_id,
+        status="playing",
+        players=[
+            Player(
+                a.user_id, a.name, seat_a, avatar_url=a.avatar_url, rank=a.rank, loadout=a.loadout
+            ),
+            Player(
+                BOT_ID,
+                BOT_NAME.get(a.locale, BOT_NAME["vi"]),
+                1 - seat_a,
+                is_bot=True,
+                loadout=catalog.default_loadout(),
+            ),
+        ],
+        state=maps.create_game(game_map),
+        started_at=now_ms(),
+        bot_strength=strength,
+    )
+    room.deadline = room.next_deadline()
+    await save(redis, room)
+    return room
+
+
 @dataclass
 class MoveOutcome:
     room: Room
     moved: m.Moved
     over: m.GameOver | None
+
+
+async def play_bot_move(redis: Redis, room_id: str) -> MoveOutcome | None:
+    """Máy đi một nước nếu đang tới lượt máy (botplay). None = không phải lượt máy / phòng xong."""
+    from app.game import bot
+
+    async with RoomLock(redis, room_id):
+        room = await load(redis, room_id)
+        if room is None or room.status != "playing":
+            return None
+        p = room.player_at(room.state.turn)
+        if p is None or not p.is_bot:
+            return None
+        edge = bot.choose_move(room.state, strength=room.bot_strength or 0.8)
+        return await _apply(redis, room, room.state.turn, edge, "player")
 
 
 async def play_move(
@@ -462,6 +533,8 @@ async def _record_progress(room: Room, over: m.GameOver) -> None:
     try:
         async with get_session_factory()() as db:
             for p in room.players:
+                if p.is_bot:
+                    continue
                 await quests.record_game(
                     db,
                     uuid.UUID(p.user_id),
@@ -485,19 +558,35 @@ async def _settle_ranked(room: Room, over: m.GameOver) -> m.RankedResult | None:
     p1 = room.player_at(1)
     if p0 is None or p1 is None:  # pragma: no cover
         return None
+    human = next((p for p in room.players if not p.is_bot), None)
     try:
         async with get_session_factory()() as db:
-            st = await rating.settle(
-                db,
-                match_id=uuid.uuid4(),
-                board=room.board,
-                user_ids=[uuid.UUID(p0.user_id), uuid.UUID(p1.user_id)],
-                winner=over.winner,
-                reason=over.reason,
-                moves=room.moves,
-                scores=list(room.state.scores),
-                started_at=datetime.fromtimestamp((room.started_at or now_ms()) / 1000, UTC),
-            )
+            if room.bot_strength is not None and human is not None:
+                st = await rating.settle_vs_bot(
+                    db,
+                    match_id=uuid.uuid4(),
+                    board=room.board,
+                    user_id=uuid.UUID(human.user_id),
+                    seat=human.seat,
+                    bot_strength=room.bot_strength,
+                    winner=over.winner,
+                    reason=over.reason,
+                    moves=room.moves,
+                    scores=list(room.state.scores),
+                    started_at=datetime.fromtimestamp((room.started_at or now_ms()) / 1000, UTC),
+                )
+            else:
+                st = await rating.settle(
+                    db,
+                    match_id=uuid.uuid4(),
+                    board=room.board,
+                    user_ids=[uuid.UUID(p0.user_id), uuid.UUID(p1.user_id)],
+                    winner=over.winner,
+                    reason=over.reason,
+                    moves=room.moves,
+                    scores=list(room.state.scores),
+                    started_at=datetime.fromtimestamp((room.started_at or now_ms()) / 1000, UTC),
+                )
             await db.commit()
         return m.RankedResult(
             points=st.points,
@@ -577,9 +666,10 @@ def room_state_msg(room: Room, online: dict[str, bool]) -> m.RoomState:
                 user_id=p.user_id,
                 name=p.name,
                 seat=p.seat,  # type: ignore[arg-type]
+                is_bot=p.is_bot,
                 avatar_url=p.avatar_url,
                 rank=m.RankOut(**p.rank) if p.rank else None,  # type: ignore[arg-type]
-                online=online.get(p.user_id, False),
+                online=True if p.is_bot else online.get(p.user_id, False),
             )
             for p in sorted(room.players, key=lambda p: p.seat)
         ],

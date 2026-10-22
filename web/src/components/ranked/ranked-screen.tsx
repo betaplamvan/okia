@@ -279,7 +279,7 @@ export function RankedScreen() {
   );
 }
 
-// Hộp đang tìm: spinner, đã chờ bao lâu (giờ server), số người chờ/online, cảnh báo mở rộng, hủy.
+// Hộp đang tìm: spinner, đã chờ bao lâu (giờ server), cảnh báo mở rộng, hủy. (Không hiện số người chờ.)
 function SearchingBox({
   search,
   onCancel,
@@ -314,11 +314,7 @@ function SearchingBox({
         </Text>
       </HStack>
       <Text fontSize="sm">{t("waited", { s: String(waited) })}</Text>
-      {search.phase === "searching" ? (
-        <Text fontSize="sm" opacity={0.8}>
-          {t("waiting", { n: String(search.waiting), online: String(search.online) })}
-        </Text>
-      ) : null}
+      {/* Số người chờ / online cố ý không hiện (2026-10-22): lúc ít người trông nản. */}
       <Box
         fontSize="sm"
         bg={search.phase === "searching" && search.widened ? "sun" : "paper"}

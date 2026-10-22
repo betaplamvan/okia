@@ -9,6 +9,8 @@
  * SESSION_REPLACED → chuyển về khách và bật `sessionReplaced` để hiện hộp thông báo.
  */
 import { create } from "zustand";
+import type { SkinManifest } from "@/game/skins/skins";
+import { useCatalog } from "@/stores/catalog";
 import {
   api,
   ApiError,
@@ -144,6 +146,10 @@ export const useAuth = create<AuthState>()((set, get) => ({
     if (bootPromise) return bootPromise;
     bootPromise = (async () => {
       set({ status: "loading" });
+      // Catalog skin thật (DB) — không chặn đăng nhập; lỗi thì dùng bản biên dịch.
+      void api<{ manifest: SkinManifest }[]>("/skins", { locale })
+        .then((list) => useCatalog.getState().setCatalog(list.map((s) => s.manifest)))
+        .catch(() => {});
       try {
         const user = await get().refresh();
         if (!user) await get().guest();

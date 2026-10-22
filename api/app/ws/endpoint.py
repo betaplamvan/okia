@@ -14,6 +14,7 @@ from app.auth.deps import is_loopback, real_ip
 from app.config import get_settings
 from app.db import get_session_factory
 from app.errors import AppError
+from app.game import botplay
 from app.game import room as rooms
 from app.i18n import Locale, resolve_locale, t
 from app.matchmaking import queue as mmq
@@ -191,6 +192,7 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
                 await hub.publish(room.id, rooms.room_state_msg(room, online))
             else:
                 await conn.send(rooms.room_state_msg(room, online))
+            botplay.schedule(redis, hub, room)  # vào lại giữa lượt máy (tiến trình mới)
 
         case m.RoomLeave():
             room = await rooms.leave(redis, room_id=msg.room_id, user_id=uid)
@@ -206,6 +208,8 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
             await hub.publish(out.room.id, out.moved)
             if out.over:
                 await hub.publish(out.room.id, out.over)
+            else:
+                botplay.schedule(redis, hub, out.room)
 
         case m.Resign():
             room, over = await rooms.resign(redis, room_id=msg.room_id, user_id=uid)

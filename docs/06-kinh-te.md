@@ -159,3 +159,15 @@ Khảo sát trực tiếp trên site (Tạp Hóa, hồ sơ, trang Ủng hộ). G
 | **Ủng hộ** | 20k/30k/50k đ → 3/6/12 tháng **không quảng cáo** + vật phẩm kỷ niệm "Trống Đồng Tri Ân"; VietQR / MoMo / ZaloPay; cần liên kết Google trước; danh sách cảm ơn |
 
 Nhận xét: họ **không bán tiền**; động cơ là thành tựu + sưu tầm; gacha chỉ bằng tiền miễn phí và minh bạch; "giá tăng trong ngày" thay cho trần ngày. Những điểm này đã được chuyển thành [ADR-0007](adr/0007-thanh-tuu-cap-do-ruong.md). Điểm **không** học: quảng cáo, vật phẩm đổi lấy tiền ủng hộ (xem [10](10-phap-ly.md#donate)), mini-game ngoài trọng tâm.
+
+## Thông số chỉnh ở admin (2026-10-22)
+
+Bảng `app_config` (key → JSON), mặc định trong `api/app/admin/config.py`, cache mỗi tiến trình, đọc lại 15 giây; sửa ở `/admin` → Thông số ([13](13-xac-thuc.md#admin-2026-10-22)):
+
+| Khóa | Mặc định | Dùng ở |
+|---|---|---|
+| `ranked_win_lead` | 30 | thưởng người thắng trận xếp hạng (cả trận với máy) |
+| `rarity_price` | trắng 100 · xanh lá 250 · xanh lam 600 · tím 1500 Ruột chì · vàng 5 Hoa | giá shop |
+| `checkin_rewards` | 10 10 15 15 20 20 30+1 Hoa | điểm danh 7 ngày |
+| `mm_bot_after_seconds` | null (= biến môi trường, 45) | ghép máy khi chờ lâu; 0 = tắt |
+

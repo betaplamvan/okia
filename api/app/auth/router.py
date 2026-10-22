@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import google, ratelimit, service, ws_cache
-from app.auth.deps import client_ip, current_user, get_redis, optional_user
+from app.auth.deps import client_ip, current_user, get_redis, is_admin, is_banned, optional_user
 from app.auth.schemas import (
     DevLoginIn,
     GoogleStartOut,
@@ -68,6 +68,7 @@ def to_user_out(user: User) -> UserOut:
         email=user.email,
         email_verified=user.email_verified_at is not None,
         is_guest=user.is_guest,
+        is_admin=is_admin(user),
         locale=user.locale,  # type: ignore[arg-type]
         created_at=user.created_at,
         identities=[
@@ -100,6 +101,8 @@ async def _login(db: AsyncSession, request: Request, user: User) -> service.Issu
     các kết nối WS đang mở của tài khoản trên mọi tiến trình."""
     from app.ws.endpoint import CLOSE_SESSION_REPLACED
 
+    if is_banned(user):
+        raise AppError("BANNED", 403, until=user.banned_until.isoformat())  # type: ignore[union-attr]
     issued = await service.issue(db, user, request.headers.get("user-agent"))
     await ws_cache.invalidate(request.app.state.redis, user.id)
     if not user.is_guest:
@@ -148,6 +151,9 @@ async def refresh(request: Request, response: Response, db: Db) -> TokenOut:
     except AppError:
         clear_refresh_cookie(response)
         raise
+    if is_banned(issued.user):
+        clear_refresh_cookie(response)
+        raise AppError("BANNED", 403, until=issued.user.banned_until.isoformat())  # type: ignore[union-attr]
     set_refresh_cookie(response, issued.refresh_token)
     return TokenOut(
         access_token=issued.access_token,

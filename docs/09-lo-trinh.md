@@ -25,7 +25,7 @@
 |---|---|---|
 | 0. Prototype offline | 18 / 20 | P0-19 (kiểm tra iOS/Android thật), P0-20 (gửi 5–10 người chơi thử, ghi phản hồi) |
 | 1. Online phòng riêng | 24 / 26 | P1-22 (backup `pg_dump`, Sentry; trang quyền riêng tư đã có), P1-23 (test ảnh chụp Playwright — mới có smoke) |
-| 2A. Ghép trận & xếp hạng | 7 / 9 | P2-05, P2-06 (bot server, ván máy có thưởng) |
+| 2A. Ghép trận & xếp hạng | 8 / 9 | P2-06 ("Chơi với máy" qua phòng server có thưởng) |
 | 2B. Kinh tế & skin | 12 / 20 | P2-13 (dàn xếp), P2-20/21 (pipeline asset, 3 bộ sưu tập), P2-22…26 (thành tựu, EXP, rương, tủ đồ, vật phẩm tiêu hao) |
 | 3. Lan truyền & vận hành | 0 / 13 | — |
 | 4. Donate | 0 / 3 | — |
@@ -158,7 +158,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 - [x] **P2-04** Chỉ ranked (casual vẫn `UNSUPPORTED` tới P2-06), chặn khách / chưa xác minh, chống ghép lại đối thủ vừa gặp, rớt mạng → rời hàng chờ; `tests/test_ranked.py`
 
 ### M2.3 Bot phía server
-- [ ] **P2-05** Port bot sang `bot.py` (dùng chung fixtures tình huống của bot); tự điều chỉnh `strength` theo MMR và chuỗi thắng/thua
+- [x] **P2-05** Port bot sang `bot.py` (dùng chung fixtures tình huống của bot) — 2026-10-22, dùng để **ghép máy khi chờ xếp hạng quá lâu**; `strength` theo rating ẩn (mmr, rd) ([07](07-xep-hang-ghep-tran.md#ghép-máy-khi-chờ-lâu-2026-10-22))
 - [ ] **P2-06** "Chơi với máy" chuyển sang chạy qua phòng ở server (có thưởng); `bot.ts` chỉ còn là dự phòng khi mất mạng; đề nghị chơi với bot sau 30 giây chờ ở casual
 
 ### M2.4 Giao diện xếp hạng
@@ -217,7 +217,7 @@ Không có thứ tự cố định; chọn theo dữ liệu thực tế.
 - [ ] **P3-01** Bảo mật tài khoản nâng cao: trang "Thiết bị đang đăng nhập" thu hồi từng phiên; nhà cung cấp OAuth thứ hai nếu cần (không quay lại mật khẩu, ADR-0011)
 - [ ] **P3-02** Biểu cảm nhanh trong trận (`emote`)
 - [ ] **P3-03** Job kết thúc mùa: reset mềm, phát thưởng theo `peak_tier`
-- [ ] **P3-04** Trang admin tối giản: tra cứu người chơi, cấp vật phẩm, khóa tài khoản, xem xét `match_flags`, sửa nội dung `{vi, en}`
+- [~] **P3-04** (phần đầu 2026-10-22: `/admin` thống kê, người chơi, skin portable, thông số — [13](13-xac-thuc.md#admin-2026-10-22); *chưa:* `match_flags`, sửa nội dung) Trang admin tối giản: tra cứu người chơi, cấp vật phẩm, khóa tài khoản, xem xét `match_flags`, sửa nội dung `{vi, en}`
 - [ ] **P3-05** PostHog: phễu chơi ván đầu, retention D1/D7 (tách theo ngôn ngữ)
 - [ ] **P3-06** PWA (cài lên màn hình chính)
 - [ ] **P3-07** Sự kiện theo mùa: khai giảng, 20/11, Tết — skin `reward` giới hạn thời gian

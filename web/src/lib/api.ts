@@ -88,10 +88,91 @@ export type User = {
   email: string | null;
   emailVerified: boolean;
   isGuest: boolean;
+  /** Email nằm trong ADMIN_EMAILS của API (docs/13 — Admin). */
+  isAdmin?: boolean;
   locale: "vi" | "en";
   createdAt: string;
   identities: Identity[];
 };
+
+// ---------- Quản trị (api/app/admin/router.py) ----------
+
+export type AdminStats = {
+  online: number;
+  connections: number;
+  roomsPlaying: number;
+  queueWaiting: number;
+  pendingMatches: number;
+  usersTotal: number;
+  accountsTotal: number;
+  usersToday: number;
+  matchesToday: number;
+  matchesTotal: number;
+  season: { id: number; name: { vi: string; en: string }; startsAt: string; endsAt: string } | null;
+  serverTime: number;
+};
+
+export type AdminUser = {
+  id: string;
+  displayName: string;
+  email: string | null;
+  isGuest: boolean;
+  emailVerified: boolean;
+  locale: string;
+  avatarUrl: string | null;
+  createdAt: string;
+  bannedUntil: string | null;
+  deletedAt: string | null;
+  lead: number;
+  flower: number;
+  points: number | null;
+  games: number | null;
+};
+
+export type AdminMatch = {
+  id: string;
+  mode: string;
+  board: string;
+  seat: number;
+  opponent: string | null;
+  won: boolean | null;
+  scores: number[];
+  endReason: string;
+  pointsDelta: number | null;
+  botStrength: number | null;
+  endedAt: string;
+};
+
+export type AdminUserDetail = AdminUser & {
+  mmr: number | null;
+  wins: number | null;
+  losses: number | null;
+  identities: string[];
+  matches: AdminMatch[];
+};
+
+export type AdminSkin = {
+  id: string;
+  type: string;
+  rarity: string;
+  enabled: boolean;
+  sort: number;
+  owners: number;
+  updatedAt: string;
+  manifest: { id: string; name?: { vi: string; en: string }; default?: boolean } & Record<
+    string,
+    unknown
+  >;
+};
+
+export type AdminConfigValues = {
+  ranked_win_lead: number;
+  rarity_price: Record<string, Record<string, number>>;
+  checkin_rewards: Record<string, number>[];
+  mm_bot_after_seconds: number | null;
+};
+
+export type AdminConfigOut = { values: AdminConfigValues; defaults: AdminConfigValues };
 
 // ---------- Kinh tế (api/app/economy/router.py) ----------
 
