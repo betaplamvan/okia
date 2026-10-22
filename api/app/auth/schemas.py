@@ -76,6 +76,8 @@ class UserOut(CamelModel):
     email_verified: bool
     is_guest: bool
     is_admin: bool = False
+    # Đã ủng hộ (docs/10 — Donate): không quảng cáo vĩnh viễn, Trống Đồng Tri Ân trong hồ sơ.
+    ad_free: bool = False
     locale: Locale
     created_at: datetime
     identities: list[IdentityOut]

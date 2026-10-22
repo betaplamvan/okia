@@ -99,6 +99,8 @@ export type User = {
   isGuest: boolean;
   /** Email nằm trong ADMIN_EMAILS của API (docs/13 — Admin). */
   isAdmin?: boolean;
+  /** Đã ủng hộ (docs/10 — Donate): không quảng cáo vĩnh viễn, Trống Đồng Tri Ân trong hồ sơ. */
+  adFree?: boolean;
   locale: "vi" | "en";
   createdAt: string;
   identities: Identity[];
@@ -165,9 +167,10 @@ export type AdminUserDetail = AdminUser & {
 // ---------- Ủng hộ (docs/10 — Donate) ----------
 
 export type DonateOut = {
+  /** Chỉ tài khoản đã liên kết Google mới thấy (bắt buộc liên kết trước khi có QR). */
   bank: { bin: string; name: string; accountNo: string; accountName: string } | null;
   myCode: string | null;
-  thanks: { name: string; month: string; mine: boolean }[];
+  supporters: { userId: string; name: string; avatarUrl: string | null; mine: boolean }[];
   count: number;
 };
 

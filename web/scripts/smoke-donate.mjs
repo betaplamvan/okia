@@ -39,28 +39,15 @@ async function sepay(id, content, amount = 20000, kind = "in") {
   return r.json();
 }
 
-// Khách: QR + nội dung theo tên.
+// Khách: không có QR, hộp bắt buộc liên kết Google; vẫn thấy mốc, quà, bảng.
 await page.goto(base + "/donate", { waitUntil: "networkidle" });
-await page.getByTestId("donate-qr").waitFor({ timeout: 15000 });
-await page.getByTestId("donate-name").fill("Bé Na");
-await page.getByTestId("donate-note").waitFor();
-const note = (await page.getByTestId("donate-note").innerText()).trim();
-if (note !== "OKIA Be Na") problems.push("nội dung sai: " + note);
-await page.getByRole("button", { name: "100.000đ" }).click();
-await page.waitForTimeout(300);
+await page.getByTestId("donate-link-required").waitFor({ timeout: 15000 });
+await page.getByTestId("donate-gift").waitFor();
+if (await page.getByTestId("donate-qr").isVisible()) problems.push("khách vẫn thấy QR");
 await page.screenshot({ path: ".shots/donate-guest.png", fullPage: true });
-console.log("khách: QR + nội dung", note);
+console.log("khách: bắt buộc liên kết, không QR");
 
-// Webhook giả → tên lên bảng.
-const name = `Na${stamp % 10000}`;
-const r1 = await sepay(stamp, `MBVCB.1.OKIA ${name}.CT tu 0123`);
-if (!r1.success) problems.push("webhook không success");
-await sepay(stamp + 1, "chuyen tien", 5000, "out"); // bỏ qua
-await page.reload({ waitUntil: "networkidle" });
-await page.getByTestId("donate-thanks").getByText(name).waitFor({ timeout: 10000 });
-console.log("webhook sepay: tên lên bảng cảm ơn", name);
-
-// Đăng nhập → mã tài khoản trong nội dung → webhook với mã → tên tài khoản + "bạn".
+// Đăng nhập (tài khoản liên kết) → QR + nội dung OKIA <mã> → đổi mốc / nhập số khác.
 const status = await page.evaluate(
   async ({ apiBase, email }) => {
     const r = await fetch(`${apiBase}/auth/dev-login`, {
@@ -75,25 +62,40 @@ const status = await page.evaluate(
 );
 if (status !== 200) throw new Error(`dev-login → ${status}`);
 await page.reload({ waitUntil: "networkidle" });
-// Nội dung đổi sang mã tài khoản sau khi store có token (fetch /donate lần hai) → chờ mẫu mã.
-await page.waitForFunction(
-  () =>
-    /^OKIA [0-9A-F]{6}$/.test(
-      document.querySelector('[data-testid="donate-note"]')?.textContent?.trim() ?? "",
-    ),
-  null,
-  { timeout: 15000 },
-);
+await page.getByTestId("donate-qr").waitFor({ timeout: 15000 });
 const myNote = (await page.getByTestId("donate-note").innerText()).trim();
 const code = myNote.replace("OKIA ", "");
-if (!/^[0-9A-F]{6}$/.test(code)) problems.push("không thấy mã tài khoản: " + myNote);
-await sepay(stamp + 2, `OKIA ${code}`, 50000);
+if (!/^[0-9A-F]{6}$/.test(code)) problems.push("nội dung không có mã: " + myNote);
+await page.getByTestId("tier-100000").click();
+await page.getByText("100.000đ").nth(1).waitFor();
+await page.getByTestId("donate-custom").fill("5000");
+await page.getByText("Tối thiểu 10.000đ.").waitFor();
+if (await page.getByTestId("donate-qr").isVisible()) problems.push("số quá nhỏ vẫn có QR");
+await page.getByTestId("donate-custom").fill("35000");
+await page.getByTestId("donate-qr").waitFor({ timeout: 5000 });
+await page.screenshot({ path: ".shots/donate-user.png", fullPage: true });
+console.log("đã liên kết: QR + nội dung", myNote, "; mốc / số khác ok");
+
+// Webhook với mã → mạnh thường quân (avatar + tên tài khoản, "bạn"), Trống Đồng trong hồ sơ.
+await sepay(stamp, `MBVCB.1.OKIA ${code}.CT tu 0123`, 35000);
+await sepay(stamp + 1, "chuyen tien", 5000, "out"); // bỏ qua
+await sepay(stamp + 2, "OKIA Khong Ma", 20000); // tên tự do: ghi nhưng không lên bảng
 await page.reload({ waitUntil: "networkidle" });
 await page.getByTestId("donate-thanks").getByText("Người Ủng Hộ · bạn").waitFor({ timeout: 10000 });
-await page.screenshot({ path: ".shots/donate-user.png", fullPage: true });
-console.log("mã tài khoản:", code, "→ tên tài khoản + bạn");
+const mineRow = page
+  .getByTestId("donate-thanks")
+  .locator('[data-testid^="supporter-"]', { hasText: "· bạn" });
+const donorId = (await mineRow.getAttribute("data-testid")).replace("supporter-", "");
+if (await page.getByTestId("donate-thanks").getByText("Khong Ma").isVisible())
+  problems.push("tên tự do lên bảng");
+await page.goto(base + "/", { waitUntil: "networkidle" });
+await page.getByTestId("player-pill").click();
+await page.getByTestId("donor-badge").waitFor({ timeout: 10000 });
+await page.screenshot({ path: ".shots/donate-profile.png" });
+await page.keyboard.press("Escape");
+console.log("webhook với mã: lên bảng + Trống Đồng trong hồ sơ");
 
-// Admin: tab Ủng hộ thấy số tiền; ẩn dòng của Na → biến khỏi bảng.
+// Admin: tab Ủng hộ thấy số tiền; ẩn dòng của tài khoản → biến khỏi bảng.
 const st2 = await page.evaluate(
   async ({ apiBase, email }) => {
     const r = await fetch(`${apiBase}/auth/dev-login`, {
@@ -110,14 +112,14 @@ if (st2 !== 200) throw new Error(`dev-login admin → ${st2}`);
 await page.goto(base + "/admin", { waitUntil: "networkidle" });
 await page.getByRole("tab", { name: "Ủng hộ" }).click();
 await page.getByTestId("admin-donations").waitFor({ timeout: 15000 });
-await page.getByText("50.000đ").first().waitFor();
-const row = page.getByTestId("admin-donations").locator("tr", { hasText: name });
+await page.getByText("35.000đ").first().waitFor();
+const row = page.getByTestId("admin-donations").locator("tr", { hasText: `OKIA ${code}` });
 await row.getByRole("button", { name: "Ẩn" }).click();
 await page.getByText("Đã lưu.").waitFor({ timeout: 10000 });
 await page.screenshot({ path: ".shots/donate-admin.png" });
 await page.goto(base + "/donate", { waitUntil: "networkidle" });
 await page.getByTestId("donate-thanks").waitFor();
-if (await page.getByTestId("donate-thanks").getByText(name).isVisible())
+if (await page.getByTestId(`supporter-${donorId}`).count())
   problems.push("đã ẩn mà vẫn hiện trên bảng");
 console.log("admin: thấy số tiền, ẩn dòng ok");
 

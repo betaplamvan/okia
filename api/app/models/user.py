@@ -45,6 +45,8 @@ class User(Base, CreatedAtMixin):
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     banned_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # xóa mềm
+    # Đã ủng hộ (docs/10 — Donate): bỏ quảng cáo vĩnh viễn + Trống Đồng Tri Ân trong hồ sơ.
+    ad_free_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     identities: Mapped[list["AuthIdentity"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

@@ -29,6 +29,7 @@ import { AvatarUpload } from "@/components/auth/avatar-upload";
 import { EditProfileForm } from "@/components/auth/edit-profile-form";
 import { RankEmblem } from "@/components/ranked/rank-emblem";
 import { RankTab } from "@/components/ranked/rank-tab";
+import { BronzeDrum } from "@/components/donate/bronze-drum";
 import { TierBadge } from "@/components/ranked/tier-badge";
 import { SkinPreview } from "@/components/shop/skin-preview";
 import { getSkin } from "@/game/skins/skins";
@@ -139,6 +140,11 @@ export function ProfileDialog() {
                         ) : (
                           <Pill tone="mint">{t("verifiedBadge")}</Pill>
                         )}
+                        {user.adFree ? (
+                          <Pill tone="sun" testId="donor-badge">
+                            <BronzeDrum size={14} /> {t("donorBadge")}
+                          </Pill>
+                        ) : null}
                         {user.isAdmin ? (
                           <Button
                             asChild
@@ -208,7 +214,7 @@ export function ProfileDialog() {
                     {/* Tủ trưng bày: bút + dấu ăn đang trang bị, huy hiệu hạng mùa này. */}
                     <Stack gap={2}>
                       <Text fontWeight="700">{t("showcase")}</Text>
-                      <SimpleGrid columns={3} gap={3}>
+                      <SimpleGrid columns={{ base: 2, sm: 4 }} gap={3}>
                         <ShowcaseSlot label={t("showcasePen")} href="/shop">
                           {pen ? <SkinPreview skin={pen} /> : null}
                         </ShowcaseSlot>
@@ -221,6 +227,15 @@ export function ProfileDialog() {
                             size={64}
                             position={ranked?.position ?? null}
                           />
+                        </ShowcaseSlot>
+                        {/* Trống Đồng Tri Ân (docs/10): đã ủng hộ thì sáng, chưa thì mờ + dẫn tới /donate. */}
+                        <ShowcaseSlot label={t("showcaseDonor")} href="/donate">
+                          <Box
+                            opacity={user.adFree ? 1 : 0.3}
+                            filter={user.adFree ? undefined : "grayscale(1)"}
+                          >
+                            <BronzeDrum size={64} />
+                          </Box>
                         </ShowcaseSlot>
                       </SimpleGrid>
                     </Stack>
@@ -303,9 +318,18 @@ export function ProfileDialog() {
   );
 }
 
-function Pill({ tone, children }: { tone: "paper" | "mint" | "sun"; children: React.ReactNode }) {
+function Pill({
+  tone,
+  children,
+  testId,
+}: {
+  tone: "paper" | "mint" | "sun";
+  children: React.ReactNode;
+  testId?: string;
+}) {
   return (
     <Badge
+      data-testid={testId}
       bg={tone}
       color="ink"
       border="2px solid"
