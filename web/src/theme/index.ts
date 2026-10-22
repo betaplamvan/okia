@@ -32,6 +32,12 @@ const buttonRecipe = defineRecipe({
 const config = defineConfig({
   globalCss: {
     // Ô nhập số: bỏ mũi tên tăng/giảm của trình duyệt (lệch phong cách sticker, docs/14).
+    // Footer (site-footer.tsx): hover / focus nền sáng nhẹ như noitu.
+    ".okia-footer-link:hover, .okia-footer-link:focus-visible": {
+      background: "rgba(255, 252, 242, 0.14)",
+      color: "{colors.mint}",
+      outline: "none",
+    },
     'input[type="number"]': { appearance: "textfield" },
     'input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button':
       { appearance: "none", margin: 0 },
