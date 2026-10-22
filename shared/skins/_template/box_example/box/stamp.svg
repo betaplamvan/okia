@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Tên lửa đơn sắc (trắng) — engine nhuộm theo màu bút người ăn (tint: true). -->
+  <g fill="#ffffff" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M64 10 C 84 30, 90 60, 84 86 L 44 86 C 38 60, 44 30, 64 10 Z" fill-opacity="0.9"/>
+    <path d="M44 70 L 26 92 L 46 90 Z"/>
+    <path d="M84 70 L 102 92 L 82 90 Z"/>
+    <path d="M52 86 L 58 104 L 70 104 L 76 86 Z" fill-opacity="0.9"/>
+    <path d="M56 104 Q 64 122 72 104" fill="none" stroke-width="5"/>
+  </g>
+  <circle cx="64" cy="48" r="10" fill="none" stroke="#ffffff" stroke-width="5"/>
+</svg>

@@ -2,7 +2,13 @@
 
 import { Box } from "@chakra-ui/react";
 import { useLocale } from "next-intl";
-import type { BoxSkin, PenForm, PenSkin, SkinManifest } from "@/game/skins/skins";
+import {
+  assetUrl,
+  type BoxSkin,
+  type PenForm,
+  type PenSkin,
+  type SkinManifest,
+} from "@/game/skins/skins";
 
 // Xem trước tĩnh bằng SVG cho thẻ shop (nhẹ, không cần PixiJS): bút và ô đều hiện cả hai hình thái
 // (mình / đối thủ) — bút theo kiểu nét, ô theo hiệu ứng với màu hình thái của bút mặc định. Bản "thật" chạy trong TryDialog (BoardCanvas).
@@ -352,8 +358,43 @@ function BoxShape({
       const b = c >= 0 ? { x: h, y: c - h } : { x: c + h, y: -h };
       return <line key={`${dir}${k}`} x1={a.x * dir} y1={a.y} x2={b.x * dir} y2={b.y} />;
     });
+  // Ảnh của gói skin (ADR-0014): nhuộm màu qua mask độ sáng (ảnh trắng trên nền trong suốt).
+  const imageUrl = effect === "image" ? assetUrl(box, box.box.image) : null;
   let inner: React.ReactNode;
-  switch (effect) {
+  switch (effect === "image" && !imageUrl ? "hatch" : effect) {
+    case "image": {
+      const d = s * (box.box.scale ?? 0.9);
+      const img = <image href={imageUrl ?? ""} x={-d / 2} y={-d / 2} width={d} height={d} />;
+      inner = (
+        <g transform={`rotate(${tilt})`} opacity={alpha}>
+          {box.box.tint === false ? (
+            img
+          ) : (
+            <>
+              <mask
+                id={`m-${uid}`}
+                maskUnits="userSpaceOnUse"
+                x={-d}
+                y={-d}
+                width={d * 2}
+                height={d * 2}
+              >
+                {img}
+              </mask>
+              <rect
+                x={-d / 2}
+                y={-d / 2}
+                width={d}
+                height={d}
+                fill={color}
+                mask={`url(#m-${uid})`}
+              />
+            </>
+          )}
+        </g>
+      );
+      break;
+    }
     case "fill": {
       const j = (k: number) => (hash01(uid.length * 13 + k) - 0.5) * s * 0.08;
       inner = (

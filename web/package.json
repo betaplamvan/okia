@@ -29,8 +29,11 @@
     "smoke:economy": "node scripts/smoke-economy.mjs",
     "smoke:ranked": "node scripts/smoke-ranked.mjs",
     "gen:skins": "node scripts/gen-skins.mjs",
+    "skin:pack": "node scripts/skin-pack.mjs",
+    "skin:validate": "node scripts/skin-pack.mjs --check",
     "smoke:shop": "node scripts/smoke-shop.mjs",
     "smoke:admin": "node scripts/smoke-admin.mjs",
+    "smoke:skin": "node scripts/smoke-skin-package.mjs",
     "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {
@@ -55,6 +58,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.2",
+    "ajv": "8.17.1",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "eslint-config-prettier": "^10.1.8",
@@ -62,6 +66,7 @@
     "fontkit": "^2.0.4",
     "jsdom": "^30.1.3",
     "json-schema-to-typescript": "^16.0.0",
+    "jszip": "3.10.1",
     "playwright": "^1.64.1",
     "png-to-ico": "^3.0.2",
     "prettier": "^3.9.10",

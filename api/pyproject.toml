@@ -20,6 +20,7 @@ dependencies = [
   "pillow>=11",
   "tzdata>=2025.2",
   "boto3>=1.43.116",
+  "jsonschema>=4.23",
 ]
 
 [dependency-groups]
@@ -30,6 +31,7 @@ dev = [
   "ruff>=0.7",
   "mypy>=1.13",
   "respx>=0.22",
+  "types-jsonschema>=4.23",
 ]
 
 [tool.pytest.ini_options]

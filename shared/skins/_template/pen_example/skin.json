@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "id": "pen_example",
+  "type": "pen",
+  "rarity": "rare",
+  "name": { "vi": "Bút chấm bi", "en": "Polka Pen" },
+  "description": {
+    "vi": "Nét bút phủ chấm bi, vụn là những bông hoa nhỏ; tiếng ăn ô kiểu chuông gió. Gói mẫu.",
+    "en": "A polka-dotted stroke that bursts into tiny flowers; wind-chime capture sound. Template package."
+  },
+  "author": "Ô Kìa",
+  "license": "CC0-1.0",
+  "forms": {
+    "mine": { "color": "#2457c5", "color2": "#8fb8ff" },
+    "opponent": { "color": "#c9372c", "color2": "#ffb199" }
+  },
+  "pen": {
+    "style": "gradient",
+    "width": 1.25,
+    "alpha": 0.95,
+    "jitter": 0.8,
+    "texture": "pen/texture.png",
+    "textureScale": 0.5
+  },
+  "combo": {
+    "style": "sticker",
+    "particles": "image",
+    "particleImage": "particles/shape.svg",
+    "shakeFrom": 3
+  },
+  "sfx": { "capture": "sfx/capture.webm", "combo": "sfx/combo.webm" }
+}

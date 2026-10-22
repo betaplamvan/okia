@@ -31,14 +31,20 @@ import { adminCall, Field } from "@/components/admin/admin-screen";
 import { SkinPreview } from "@/components/shop/skin-preview";
 import { toaster } from "@/components/ui/toaster";
 import type { SkinManifest } from "@/game/skins/skins";
-import type { AdminSkin, AdminUser, AdminUserDetail, AdminUserPage } from "@/lib/api";
+import {
+  type AdminSkin,
+  type AdminUser,
+  type AdminUserDetail,
+  type AdminUserPage,
+  type ApiBlob,
+  ApiError,
+} from "@/lib/api";
 
 type RarityKey = "common" | "uncommon" | "rare" | "epic" | "legendary";
 const RARITIES: RarityKey[] = ["common", "uncommon", "rare", "epic", "legendary"];
 const PAGE = 20;
 
-function downloadJson(name: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+function downloadBlob(name: string, blob: Blob) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -445,6 +451,7 @@ export function AdminSkins() {
   const [rows, setRows] = useState<AdminSkin[]>([]);
   const [tab, setTab] = useState<"pen" | "box">("pen");
   const [editing, setEditing] = useState<{ row: AdminSkin; meta: Meta } | null>(null);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(
@@ -491,39 +498,88 @@ export function AdminSkins() {
     });
     await load();
   }
+  // Xuất: gói `<id>.okiaskin.zip` (skin.json + file) / bundle mọi skin — shared/skins/SPEC.md.
   async function exportOne(r: AdminSkin) {
-    const m = await adminCall<unknown>(`/admin/skins/${r.id}/export`);
-    downloadJson(`${r.id}.json`, m);
+    const { blob, filename } = await adminCall<ApiBlob>(`/admin/skins/${r.id}/package`, {
+      blob: true,
+    });
+    downloadBlob(filename === "download" ? `${r.id}.okiaskin.zip` : filename, blob);
   }
   async function exportAll() {
-    const data = await adminCall<{ skins: unknown[] }>("/admin/skins/export");
-    downloadJson(`okia-skins-${new Date().toISOString().slice(0, 10)}.json`, data);
+    const { blob, filename } = await adminCall<ApiBlob>("/admin/skins/export", { blob: true });
+    downloadBlob(filename === "download" ? "okia-skins.zip" : filename, blob);
   }
+  // Nhập: .zip (một gói hoặc bundle) → multipart; .json (manifest, không file) → như cũ.
   async function importFile(file: File) {
     try {
-      const parsed = JSON.parse(await file.text()) as
-        { skins?: unknown[] } | unknown[] | { id?: string };
-      // Chấp nhận: {skins:[…]} (xuất tất cả), […] hoặc một manifest đơn lẻ.
-      const skins = Array.isArray(parsed)
-        ? parsed
-        : "skins" in parsed && Array.isArray(parsed.skins)
-          ? parsed.skins
-          : [parsed];
-      const replace = skins.length > 1 ? window.confirm(t("skins.confirmReplace")) : false;
-      await adminCall<AdminSkin[]>("/admin/skins/import", {
-        method: "POST",
-        body: { skins, replace },
-      });
-      toaster.success({ title: t("skins.imported", { n: String(skins.length) }) });
+      if (/\.zip$/i.test(file.name) || /zip/.test(file.type)) {
+        const form = new FormData();
+        form.append("file", file, file.name);
+        const rows = await adminCall<AdminSkin[]>("/admin/skins/import-package", { form });
+        toaster.success({
+          title: t("skins.importedPackage", { ids: rows.map((r) => r.id).join(", ") }),
+        });
+      } else {
+        const parsed = JSON.parse(await file.text()) as
+          { skins?: unknown[] } | unknown[] | { id?: string };
+        // Chấp nhận: {skins:[…]} (xuất tất cả), […] hoặc một manifest đơn lẻ.
+        const skins = Array.isArray(parsed)
+          ? parsed
+          : "skins" in parsed && Array.isArray(parsed.skins)
+            ? parsed.skins
+            : [parsed];
+        const replace = skins.length > 1 ? window.confirm(t("skins.confirmReplace")) : false;
+        await adminCall<AdminSkin[]>("/admin/skins/import", {
+          method: "POST",
+          body: { skins, replace },
+        });
+        toaster.success({ title: t("skins.imported", { n: String(skins.length) }) });
+      }
       await load();
     } catch (e) {
-      toaster.error({ title: String(e) });
+      if (!(e instanceof ApiError)) toaster.error({ title: String(e) }); // ApiError đã toast
     }
   }
 
   const shown = rows.filter((r) => r.type === tab);
   return (
-    <Stack gap={3} color="ink" data-testid="admin-skins">
+    <Stack
+      gap={3}
+      color="ink"
+      data-testid="admin-skins"
+      position="relative"
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!dragging) setDragging(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        const f = e.dataTransfer.files?.[0];
+        if (f) void importFile(f);
+      }}
+    >
+      {dragging ? (
+        <Box
+          position="absolute"
+          inset={0}
+          zIndex={1}
+          bg="rgba(124, 245, 197, 0.35)"
+          border="3px dashed"
+          borderColor="ink"
+          borderRadius="xl"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          fontWeight="700"
+          pointerEvents="none"
+        >
+          {t("skins.dropHere")}
+        </Box>
+      ) : null}
       <HStack flexWrap="wrap">
         {(["pen", "box"] as const).map((k) => (
           <Button
@@ -545,7 +601,7 @@ export function AdminSkins() {
         <input
           ref={fileRef}
           type="file"
-          accept="application/json"
+          accept=".zip,.json,application/zip,application/json"
           hidden
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -588,6 +644,19 @@ export function AdminSkins() {
                 {r.manifest.default ? ` · ${t("skins.default")}` : ""}
                 {!r.enabled ? ` · ${t("skins.disabled")}` : ""}
               </Text>
+              {r.manifest.assets?.files?.length ? (
+                <Badge
+                  alignSelf="flex-start"
+                  mt={1}
+                  bg="sun"
+                  color="ink"
+                  border="2px solid"
+                  borderColor="ink"
+                  data-testid="admin-skin-package"
+                >
+                  {t("skins.packageFiles", { n: String(r.manifest.assets.files.length) })}
+                </Badge>
+              ) : null}
             </Stack>
             <HStack flexWrap="wrap" gap={1}>
               <Button
@@ -641,9 +710,16 @@ export function AdminSkins() {
                       <Box w="96px" flexShrink={0}>
                         <SkinPreview skin={editing.row.manifest as unknown as SkinManifest} />
                       </Box>
-                      <Text fontSize="xs" opacity={0.75}>
-                        {t("skins.metaOnlyHint")}
-                      </Text>
+                      <Stack gap={1}>
+                        <Text fontSize="xs" opacity={0.75}>
+                          {t("skins.metaOnlyHint")}
+                        </Text>
+                        {editing.row.manifest.assets?.files?.length ? (
+                          <Text fontSize="xs" fontFamily="mono" opacity={0.85}>
+                            {t("skins.files")}: {editing.row.manifest.assets.files.join(", ")}
+                          </Text>
+                        ) : null}
+                      </Stack>
                     </HStack>
                     <MetaField
                       label={t("skins.nameVi")}

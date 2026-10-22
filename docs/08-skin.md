@@ -1,6 +1,6 @@
 # 08 — Hệ thống skin
 
-Quyết định: [ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md) (2026-10-21; bổ sung cùng ngày: bút hai hình thái). **Đã làm:** catalog 22 skin, engine, shop `/shop`, mua/trang bị, loadout trong trận. Code: `shared/skins/` (manifest), `web/src/game/skins/`, `web/src/game/renderer/board-renderer.ts` (hiệu ứng), `api/app/skins/` (catalog, kho, shop).
+Quyết định: [ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md) (2026-10-21; bổ sung cùng ngày: bút hai hình thái), [ADR-0014](adr/0014-goi-skin-zip-asset-ngoai.md) (2026-10-22: gói skin zip có ảnh + tiếng, nhập ở admin). **Đã làm:** catalog 22 skin, engine, shop `/shop`, mua/trang bị, loadout trong trận, gói skin. Code: `shared/skins/` (manifest, `schema.json`, `SPEC.md`, gói mẫu `_template/`), `web/src/game/skins/`, `web/src/game/renderer/board-renderer.ts` (hiệu ứng), `api/app/skins/` (catalog, gói `package.py`, kho, shop).
 
 ## Hai loại skin
 
@@ -27,7 +27,7 @@ Giá cố định trong `api/app/skins/catalog.py` (`RARITY_PRICE`) và `web/src
 
 ## Manifest
 
-Nguồn chuẩn: `shared/skins/<type>/<id>.json`. `pnpm gen:skins` kiểm tra (id khớp tên file, đủ `name`/`description` vi + en, enum hợp lệ, đúng một `default` mỗi loại; bút: `pen.style` trong enum, `forms.mine`/`forms.opponent` có `color` hex hợp lệ và **khác nhau**, `rainbow`/`metal` phải có `colors`) rồi sinh `api/app/skins/catalog.json` + `web/src/game/skins/catalog.data.ts`. **Không sửa tay** hai file sinh.
+Nguồn sự thật về cấu trúc: **`shared/skins/schema.json`** (JSON Schema 2020-12; thêm trường mới thì sửa ở đây trước). Seed trong repo: `shared/skins/<type>/<id>.json`. `pnpm gen:skins` kiểm tra bằng ajv theo schema (+ ràng buộc ngoài schema: id khớp tên file và tiền tố theo loại, đúng một `default` mỗi loại bậc common, hai hình thái khác màu chính, `rainbow`/`metal` phải có `colors`, seed không tham chiếu file) rồi sinh `api/app/skins/catalog.json` + `web/src/game/skins/catalog.data.ts` và chép schema sang `api/app/skins/schema.json`. **Không sửa tay** các file sinh. Cùng bộ kiểm tra (`web/scripts/lib/skin-schema.mjs`) dùng cho `pnpm skin:validate`; API dùng `jsonschema` với cùng thông điệp.
 
 ```json
 {
@@ -83,7 +83,7 @@ Hiệu ứng chạy liên tục (thở, lửa, trôi, ánh kim) đi qua `app.tic
 | Bút cầu vồng | vàng | `rainbow` | `[#2ecc71, #2d9cdb, #7b4fe0]` → `[#e0313b, #ff8c1a, #ffd93d]` |
 | Bút vàng | vàng | `metal` | `[#b8860b, #ffe680, #fff6c2, #d4a017]` → `[#8c3b1e, #ffb27a, #ffd9bf, #c8653a]` |
 
-`combo.style` ∈ `sticker` (vàng viền đen, mặc định) · `ink` (màu bút, viền giấy, xoay mạnh) · `chalk` (màu bút, không viền) · `neon` (màu `glow`, viền màu bút) · `sparkle` (màu `glow` — cầu vồng: màu giữa dải — + thêm chùm sao) · `fire` (màu `color2`, viền màu bút, thêm chùm lửa). `combo.particles` và `box.particles` ∈ `paper` (vụn giấy, có trọng lực) · `ink` (giọt mực) · `chalk` (bụi trắng, rơi chậm) · `spark` (tia, không rơi) · `star` (sao vàng) · `heart` (tim nhỏ). `sfx.capture`/`sfx.combo` là tên trong audio sprite; tên lạ → engine dùng `capture`/`combo` mặc định.
+`combo.style` ∈ `sticker` (vàng viền đen, mặc định) · `ink` (màu bút, viền giấy, xoay mạnh) · `chalk` (màu bút, không viền) · `neon` (màu `glow`, viền màu bút) · `sparkle` (màu `glow` — cầu vồng: màu giữa dải — + thêm chùm sao) · `fire` (màu `color2`, viền màu bút, thêm chùm lửa). `combo.particles` và `box.particles` ∈ `paper` (vụn giấy, có trọng lực) · `ink` (giọt mực) · `chalk` (bụi trắng, rơi chậm) · `spark` (tia, không rơi) · `star` (sao vàng) · `heart` (tim nhỏ) · `image` (ảnh `particleImage` trong gói, nhuộm màu bút). `sfx.capture`/`sfx.combo` là tên trong audio sprite **hoặc** file trong gói (`sfx/<tên>.webm`); tên lạ / file lỗi → engine dùng `capture`/`combo` mặc định. `pen.texture` (ảnh lặp trong gói) là lớp phủ trên nét: vùng đục nhuộm `color2` của hình thái, vùng trong suốt để lộ màu nét; `textureScale` chỉnh cỡ.
 
 ```json
 {
@@ -111,6 +111,7 @@ Skin ô chỉ định **hình** và **animation hiện** (+ hiệu ứng sống,
 | `seal` — Dấu sáp vàng | đĩa sáp vàng méo (tất định) viền mực + sao màu bút | giọt sáp rơi rồi lan thành đĩa (0,25 s), con dấu đập xuống in sao (0,2 s), chùm sao | vệt lấp lánh chạy qua mặt sáp mỗi ~3 s (lệch pha theo ô), 0 hạt |
 | `flower` — Hoa điểm tốt | 5 cánh (ellipse) màu bút alpha 0,7 + viền, nhụy vàng viền mực | từng cánh nở quanh nhụy (80 ms/cánh, 0,4 s), phấn hoa vàng bay lên | cả hoa khẽ lay (±3°, 2 s/chu kỳ) |
 | `flame` — Ô cháy | nền cháy xém alpha 0,28 mép lượn sóng + viền mực alpha 0,5 | bùng ~8 ngọn lửa màu bút/`color2` (dùng chung hạt lửa của Bút lửa, 0,3 s) rồi nền hiện | 2 đốm than hồng nhấp nháy + 1 làn khói mỏng bay lên, liên tục; tối đa 3 vật thể/ô, trần 150 cả bàn (bàn 7×7 đầy vẫn đủ) |
+| `image` — Ảnh trong gói (ADR-0014) | ảnh `box.image` (SVG/PNG/WebP) vừa `scale` × ô (mặc định 0,9), nhuộm màu bút trừ khi `tint: false`, nghiêng ±6° tất định theo ô | đập từ to xuống (1,5×→1×, 0,28 s, back.out); chưa nạp ảnh → gạch chéo, vẽ lại khi nạp xong | — |
 
 Vụn (`box.particles`) bắn ra lúc ăn ô dùng màu hình thái bút của người ăn.
 
@@ -137,7 +138,17 @@ Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt pa
 
 ## Catalog trong DB (2026-10-22)
 
-Nguồn lúc chạy là bảng `skins` (id, type, rarity, enabled, sort, manifest JSONB). `app/skins/catalog.json` (sinh từ `shared/skins` bằng `pnpm gen:skins`) chỉ còn là **seed**: API khởi động chèn các id chưa có trong DB, không ghi đè bản admin đã sửa. Mỗi tiến trình giữ cache, đọc lại DB mỗi 15 giây (admin sửa thì tiến trình đó cập nhật ngay). Web tải `GET /skins` lúc boot và `registerSkins()` thay bảng tra của engine (bản biên dịch `catalog.data.ts` là dự phòng) — thêm / sửa / tắt skin ở `/admin` không cần deploy. **Portable:** `GET /admin/skins/export` và `POST /admin/skins/import` dùng đúng định dạng `shared/skins/**.json` (danh sách manifest); import có tùy chọn `replace`. Skin `default` không xóa / tắt được; xóa skin khác thì người sở hữu về mặc định. API chỉ kiểm tra tối thiểu (id, loại, bậc, tên vi/en, khối pen/box) — kiểm tra sâu vẫn ở `gen-skins.mjs` cho nguồn trong repo. Giá theo bậc lấy từ thông số admin `rarity_price`.
+Nguồn lúc chạy là bảng `skins` (id, type, rarity, enabled, sort, manifest JSONB). `app/skins/catalog.json` (sinh từ `shared/skins` bằng `pnpm gen:skins`) chỉ còn là **seed**: API khởi động chèn các id chưa có trong DB, không ghi đè bản admin đã sửa. Mỗi tiến trình giữ cache, đọc lại DB mỗi 15 giây (admin sửa thì tiến trình đó cập nhật ngay). Web tải `GET /skins` lúc boot và `registerSkins()` thay bảng tra của engine (bản biên dịch `catalog.data.ts` là dự phòng) — thêm / sửa / tắt skin ở `/admin` không cần deploy. Skin `default` không xóa / tắt / ghi đè bằng bản không-default được; xóa skin khác thì người sở hữu về mặc định. API kiểm tra manifest theo `schema.json` (cùng quy tắc với `gen-skins.mjs`). Giá theo bậc lấy từ thông số admin `rarity_price`.
+
+## Gói skin `.okiaskin.zip` (2026-10-22, ADR-0014)
+
+**Chuẩn:** [`shared/skins/SPEC.md`](../shared/skins/SPEC.md) (viết cho người và agent sinh skin) + `schema.json`; gói mẫu `shared/skins/_template/{pen_example,box_example}`. Gói = `skin.json` + file tùy chọn trong bốn thư mục `sfx/` (webm/mp3/ogg ≤ 400 KB), `box/`, `particles/`, `pen/` (svg/png/webp ≤ 300 KB); tối đa 24 file, zip ≤ 3 MB; mọi file phải được manifest tham chiếu và ngược lại. Một zip có thể là **bundle** nhiều thư mục (mỗi thư mục một gói). Ba primitive nhận ảnh trong engine: `box.effect: image`, `particles: image`, `pen.texture`; tiếng: `sfx.*` trỏ file trong gói. Không có code trong gói.
+
+**Luồng nhập** (`POST /admin/skins/import-package`, multipart): giải nén an toàn (`app/skins/package.py`: chặn `..`, kiểm tra chữ ký PNG/WebP/WebM/MP3/Ogg/SVG, SVG không script / không tham chiếu ngoài) → kiểm tra manifest theo schema + ràng buộc → kiểm tra **hết** bundle rồi mới ghi: file lên object storage (`skins/{id}/{ver}/{path}`, `ver` = băm nội dung 10 hex), manifest vào DB kèm `assets {ver, files}`, `catalog.sync_from_db`; phiên bản cũ của cùng id được dọn sau khi commit. Client nhận `/skins` với `assets.base` (= `API_BASE_URL/skins/assets/{id}/{ver}`) và tự ghép URL (`assetUrl()` trong `skins.ts`); `GET /skins/assets/{id}/{ver}/{path}` trả file với `Cache-Control: immutable`, `nosniff`, SVG kèm CSP `default-src 'none'`.
+
+**Client:** renderer nạp ảnh qua `Assets.load` khi `setSkins` (`loadAssets`), vẽ lại khi xong; trước đó ô ảnh hiện gạch chéo, nét không texture, vụn ảnh thành vụn giấy. Tiếng ngoài sprite: `audio.loadSfx(url)` nạp trước khi vào trận (`use-game-sounds.ts`), lỗi tải → tiếng mặc định. Thẻ shop (`SkinPreview`) vẽ ảnh ô qua mask SVG (nhuộm màu).
+
+**Xuất:** `GET /admin/skins/{id}/package` → zip đúng chuẩn (sửa rồi nhập lại); `GET /admin/skins/export` → bundle mọi skin (`?format=json` chỉ manifest, không file). Trang admin tab Skin: nút "Nhập gói" (.zip / .json) hoặc kéo thả, nhãn "gói · n file" trên thẻ, hộp sửa metadata liệt kê file. CLI: `pnpm skin:pack <thư mục>` / `pnpm skin:validate <thư mục | zip>` (web/scripts/skin-pack.mjs, cùng bộ kiểm tra và thông điệp lỗi với API).
 
 ## Shop & trang bị
 

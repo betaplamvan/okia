@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { audio } from "@/game/audio/audio-manager";
 import type { GameSession } from "@/game/controller";
-import { DEFAULT_PEN, type SeatSkins } from "@/game/skins/skins";
+import { assetUrl, DEFAULT_PEN, skinAssetUrls, type SeatSkins } from "@/game/skins/skins";
 
 // Phát tiếng theo diễn biến ván (docs/08 — Animation & Âm thanh): nét vẽ, ăn ô (cao dần theo
 // combo, tiếng của skin bút người vừa đi), tới lượt mình, kết thúc. Chỉ đọc chênh lệch giữa hai
@@ -13,6 +13,9 @@ export function useGameSounds(session: GameSession, skins?: SeatSkins) {
   const skinsRef = useRef(skins);
   useEffect(() => {
     skinsRef.current = skins;
+    // Tiếng của gói skin (ADR-0014): nạp trước để "ting" đầu tiên không trễ.
+    for (const pen of skins?.pens ?? [])
+      for (const url of skinAssetUrls(pen).sounds) void audio.loadSfx(url);
   }, [skins]);
 
   useEffect(() => {
@@ -29,7 +32,12 @@ export function useGameSounds(session: GameSession, skins?: SeatSkins) {
       audio.playDraw();
       if (lastMove.captured.length > 0) {
         const n = lastMove.captured.length;
-        const sfx = (skinsRef.current?.pens[lastMove.by] ?? DEFAULT_PEN).sfx;
+        const pen = skinsRef.current?.pens[lastMove.by] ?? DEFAULT_PEN;
+        // Tên trong sprite, hoặc URL file của gói skin.
+        const sfx = {
+          capture: assetUrl(pen, pen.sfx.capture) ?? pen.sfx.capture,
+          combo: assetUrl(pen, pen.sfx.combo) ?? pen.sfx.combo,
+        };
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(combo >= 3 ? [15, 30, 25] : 15);
         }

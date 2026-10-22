@@ -40,7 +40,7 @@
     "MATCH_PENDING": "You have a match waiting for your answer.",
     "FORBIDDEN": "You are not allowed to do this.",
     "BAD_REQUEST": "Invalid request.",
-    "BAD_SKIN": "Invalid skin manifest.",
+    "BAD_SKIN": "Invalid skin: {detail}",
     "SKIN_DEFAULT_PROTECTED": "Default skins cannot be deleted or disabled.",
     "BAD_CONFIG_KEY": "Unknown setting.",
     "BAD_CONFIG_VALUE": "Invalid setting value."

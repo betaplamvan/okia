@@ -488,8 +488,8 @@
       "grantPreview": "Sẽ áp dụng: {lead} Ruột chì, {flower} Hoa điểm tốt."
     },
     "skins": {
-      "export": "Xuất JSON",
-      "import": "Nhập JSON",
+      "export": "Xuất tất cả (.zip)",
+      "import": "Nhập gói (.zip / .json)",
       "count": "{n} skin trong DB",
       "owners": "{n} người sở hữu",
       "default": "mặc định",
@@ -499,7 +499,7 @@
       "enable": "Bật",
       "delete": "Xóa",
       "editTitle": "Sửa {id}",
-      "editHint": "Thẻ = một skin trong DB. Nhập JSON chấp nhận file xuất tất cả hoặc một skin; hiệu ứng chỉ đổi qua nhập JSON.",
+      "editHint": "Thẻ = một skin trong DB. Nhập gói .zip theo chuẩn shared/skins/SPEC.md (một gói hoặc bundle nhiều thư mục) hoặc file JSON manifest; kéo thả vào đây cũng được. Hiệu ứng / file chỉ đổi qua nhập lại gói.",
       "enabledOn": "Đang bật — bấm để tắt",
       "enabledOff": "Đang tắt — bấm để bật",
       "confirmDelete": "Xóa skin {id}? Người đang sở hữu sẽ về skin mặc định.",
@@ -507,15 +507,19 @@
       "imported": "Đã nhập {n} skin.",
       "pen": "Bút",
       "box": "Dấu ăn",
-      "exportOne": "Xuất",
-      "metaOnlyHint": "Chỉ sửa được tên, mô tả, bậc, thứ tự và bật/tắt. Hình nét và hiệu ứng là một phần của manifest: muốn đổi thì xuất JSON, sửa, rồi nhập lại.",
+      "exportOne": "Xuất gói",
+      "metaOnlyHint": "Chỉ sửa được tên, mô tả, bậc, thứ tự và bật/tắt. Hình nét, hiệu ứng và file đi kèm là một phần của gói: muốn đổi thì xuất gói, sửa, rồi nhập lại.",
       "nameVi": "Tên (vi)",
       "nameEn": "Tên (en)",
       "descVi": "Mô tả (vi)",
       "descEn": "Mô tả (en)",
       "rarity": "Bậc",
       "sort": "Thứ tự",
-      "enabledLabel": "Trạng thái"
+      "enabledLabel": "Trạng thái",
+      "packageFiles": "gói · {n} file",
+      "files": "File trong gói",
+      "dropHere": "Thả file .zip / .json để nhập",
+      "importedPackage": "Đã nhập gói: {ids}."
     },
     "cfg": {
       "rankedWinLead": "Ruột chì cho người thắng trận xếp hạng",

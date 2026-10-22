@@ -1,14 +1,17 @@
 /**
- * Catalog skin (docs/08, ADR-0013). Nguồn: shared/skins/**.json → catalog.data.ts (pnpm gen:skins).
+ * Catalog skin (docs/08, ADR-0013, ADR-0014). Nguồn: shared/skins/**.json → catalog.data.ts
+ * (pnpm gen:skins); lúc chạy thay bằng catalog từ API (skin admin nhập, kể cả gói zip có file).
  * Hai loại: `pen` (nét vẽ + bộ tiếng ăn ô/combo + kiểu chữ COMBO + vụn) và `box` (hình ô đã ăn).
  * Năm bậc hiếm: trắng → xanh lá → xanh lam → tím → vàng. Giá theo bậc (api/app/skins/catalog.py).
+ * Định dạng chuẩn: shared/skins/schema.json + SPEC.md.
  */
 import { SKIN_SOURCES } from "./catalog.data";
 
 export type SkinType = "pen" | "box";
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 export type ComboStyle = "sticker" | "ink" | "chalk" | "neon" | "sparkle" | "fire";
-export type Particles = "paper" | "ink" | "chalk" | "spark" | "star" | "heart";
+/** Loại vụn; `image` = ảnh `particleImage` trong gói skin (nhuộm theo màu bút). */
+export type Particles = "paper" | "ink" | "chalk" | "spark" | "star" | "heart" | "image";
 /** Hình ô đã ăn (docs/08): mỗi hiệu ứng có hình, animation hiện và (một số) hiệu ứng sống. */
 export type BoxEffect =
   | "hatch"
@@ -21,7 +24,8 @@ export type BoxEffect =
   | "heart"
   | "seal"
   | "flower"
-  | "flame";
+  | "flame"
+  | "image";
 
 /** Kiểu vẽ nét (docs/08 — "pen.style"): quyết định cách engine dùng màu của hình thái. */
 export type PenStyle =
@@ -62,11 +66,17 @@ export interface PenParams {
   grain?: "graphite" | "wax";
   /** Quầng bụi màu `color2` rộng, mờ dưới nét (phấn). */
   halo?: boolean;
+  /** Ảnh lặp phủ lên nét (gói skin: `pen/<tên>.png`), nhuộm theo màu hình thái. */
+  texture?: string;
+  /** Tỷ lệ ảnh lặp (1 = 1 px ảnh ≈ 1 px màn). */
+  textureScale?: number;
 }
 
 export interface ComboParams {
   style: ComboStyle;
   particles: Particles;
+  /** Ảnh vụn khi `particles` = image (gói skin: `particles/<tên>.svg`). */
+  particleImage?: string;
   shakeFrom: number;
 }
 
@@ -74,15 +84,33 @@ export interface BoxParams {
   effect: BoxEffect;
   alpha: number;
   particles: Particles;
+  particleImage?: string;
+  /** Hình tô vào ô khi `effect` = image (gói skin: `box/<tên>.svg`). */
+  image?: string;
+  /** image: nhuộm theo màu bút người ăn (mặc định true). */
+  tint?: boolean;
+  /** image: cỡ ảnh so với ô (mặc định 0.9). */
+  scale?: number;
 }
 
-interface SkinBase {
+/** File đi kèm gói skin, do API ghi khi nhập: `base` là URL gốc để tải `files`. */
+export interface SkinAssets {
+  ver: string;
+  files: string[];
+  base?: string;
+}
+
+export interface SkinBase {
+  schema?: 1;
   id: string;
   type: SkinType;
   rarity: Rarity;
   name: { vi: string; en: string };
   description: { vi: string; en: string };
   default?: boolean;
+  author?: string;
+  license?: string;
+  assets?: SkinAssets;
 }
 
 export interface PenSkin extends SkinBase {
@@ -123,6 +151,40 @@ export function registerSkins(list: readonly SkinManifest[]): boolean {
   BY_ID.clear();
   for (const s of list) BY_ID.set(s.id, s);
   return true;
+}
+
+/** Chuỗi là tham chiếu file trong gói (`sfx/…`, `box/…`, `particles/…`, `pen/…`)? */
+export function isAssetRef(ref: string | null | undefined): ref is string {
+  return typeof ref === "string" && /^(sfx|box|particles|pen)\/[a-z0-9_-]+\.[a-z0-9]+$/.test(ref);
+}
+
+/** URL tuyệt đối của một file trong gói skin; null nếu không phải tham chiếu hoặc skin không có gói. */
+export function assetUrl(skin: SkinBase, ref: string | null | undefined): string | null {
+  if (!isAssetRef(ref) || !skin.assets?.base) return null;
+  if (!skin.assets.files.includes(ref)) return null;
+  return `${skin.assets.base.replace(/\/$/, "")}/${ref}`;
+}
+
+/** Mọi URL ảnh / tiếng mà một skin cần nạp trước khi vào trận. */
+export function skinAssetUrls(skin: SkinManifest): { images: string[]; sounds: string[] } {
+  const images: string[] = [];
+  const sounds: string[] = [];
+  const img = (ref: string | undefined) => {
+    const u = assetUrl(skin, ref);
+    if (u && !images.includes(u)) images.push(u);
+  };
+  if (skin.type === "pen") {
+    img(skin.pen.texture);
+    img(skin.combo.particleImage);
+    for (const ref of [skin.sfx.capture, skin.sfx.combo]) {
+      const u = assetUrl(skin, ref);
+      if (u && !sounds.includes(u)) sounds.push(u);
+    }
+  } else {
+    img(skin.box.image);
+    img(skin.box.particleImage);
+  }
+  return { images, sounds };
 }
 
 export interface Loadout {
