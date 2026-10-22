@@ -462,8 +462,8 @@
       "wallet": "Wallet",
       "rank": "Rank points",
       "rename": "Rename",
-      "grant": "Add / remove currency",
-      "grantHint": "Negative to remove. Recorded in the ledger as admin.",
+      "grant": "Add / remove wallet currency",
+      "grantHint": "Positive adds, negative removes. Each apply writes one ledger row with source admin and your note.",
       "grantDo": "Apply",
       "granted": "Wallet updated.",
       "note": "Note",
@@ -483,7 +483,9 @@
       "range": "{from}–{to} / {total}",
       "page": "Page {n}/{of}",
       "prev": "Prev",
-      "next": "Next"
+      "next": "Next",
+      "notePlaceholder": "Reason (e.g. compensation for the Oct 22 outage)",
+      "grantPreview": "Will apply: {lead} lead, {flower} flowers."
     },
     "skins": {
       "export": "Export JSON",

@@ -462,8 +462,8 @@
       "wallet": "Ví",
       "rank": "Điểm hạng",
       "rename": "Đổi tên hiển thị",
-      "grant": "Cộng / trừ tiền",
-      "grantHint": "Số âm để trừ. Ghi vào sổ cái với nguồn admin.",
+      "grant": "Cộng / trừ tiền trong ví",
+      "grantHint": "Nhập số dương để cộng, số âm để trừ. Mỗi lần ghi một dòng sổ cái nguồn admin kèm ghi chú.",
       "grantDo": "Thực hiện",
       "granted": "Đã cập nhật ví.",
       "note": "Ghi chú",
@@ -483,7 +483,9 @@
       "range": "{from}–{to} / {total}",
       "page": "Trang {n}/{of}",
       "prev": "Trước",
-      "next": "Sau"
+      "next": "Sau",
+      "notePlaceholder": "Lý do (ví dụ: đền bù lỗi ngày 22/10)",
+      "grantPreview": "Sẽ áp dụng: {lead} Ruột chì, {flower} Hoa điểm tốt."
     },
     "skins": {
       "export": "Xuất JSON",

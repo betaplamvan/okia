@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Avatar,
   Badge,
   Box,
   Button,
@@ -17,7 +18,15 @@ import {
 } from "@chakra-ui/react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuChevronLeft, LuChevronRight, LuDownload, LuSearch, LuUpload } from "react-icons/lu";
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuDownload,
+  LuFlower,
+  LuPencil,
+  LuSearch,
+  LuUpload,
+} from "react-icons/lu";
 import { adminCall, Field } from "@/components/admin/admin-screen";
 import { SkinPreview } from "@/components/shop/skin-preview";
 import { toaster } from "@/components/ui/toaster";
@@ -181,6 +190,10 @@ export function AdminUsers() {
             >
               <button type="button" onClick={() => void open(u.id)}>
                 <HStack gap={3}>
+                  <Avatar.Root size="sm" bg={u.isGuest ? "sun" : "mint"} color="ink" flexShrink={0}>
+                    <Avatar.Fallback name={u.displayName} fontWeight="700" />
+                    {u.avatarUrl ? <Avatar.Image src={u.avatarUrl} /> : null}
+                  </Avatar.Root>
                   <Stack gap={0} flex="1" minW={0}>
                     <Text fontWeight="700" truncate>
                       {u.displayName}{" "}
@@ -271,31 +284,80 @@ export function AdminUsers() {
               </HStack>
             </Field>
             <Field label={t("users.grant")} hint={t("users.grantHint")}>
-              <HStack flexWrap="wrap">
-                <Input
-                  type="number"
-                  w="24"
-                  placeholder={t("lead")}
-                  value={lead}
-                  onChange={(e) => setLead(e.target.value)}
-                />
-                <Input
-                  type="number"
-                  w="24"
-                  placeholder={t("flower")}
-                  value={flower}
-                  onChange={(e) => setFlower(e.target.value)}
-                />
-                <Input
-                  w="40"
-                  placeholder={t("users.note")}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-                <Button variant="sticker" size="sm" bg="sun" onClick={() => void grant()}>
+              <Stack gap={2}>
+                <HStack gap={3} flexWrap="wrap" align="flex-end">
+                  <Stack gap={0.5}>
+                    <HStack gap={1} fontSize="xs" fontWeight="700">
+                      <Box
+                        as="span"
+                        bg="sun"
+                        border="2px solid"
+                        borderColor="ink"
+                        borderRadius="full"
+                        px={1.5}
+                      >
+                        <LuPencil />
+                      </Box>
+                      <Text as="span">{t("lead")}</Text>
+                    </HStack>
+                    <Input
+                      type="number"
+                      w="28"
+                      placeholder="±0"
+                      value={lead}
+                      onChange={(e) => setLead(e.target.value)}
+                    />
+                  </Stack>
+                  <Stack gap={0.5}>
+                    <HStack gap={1} fontSize="xs" fontWeight="700">
+                      <Box
+                        as="span"
+                        bg="pink"
+                        border="2px solid"
+                        borderColor="ink"
+                        borderRadius="full"
+                        px={1.5}
+                      >
+                        <LuFlower />
+                      </Box>
+                      <Text as="span">{t("flower")}</Text>
+                    </HStack>
+                    <Input
+                      type="number"
+                      w="28"
+                      placeholder="±0"
+                      value={flower}
+                      onChange={(e) => setFlower(e.target.value)}
+                    />
+                  </Stack>
+                  <Stack gap={0.5} flex="1" minW="40">
+                    <Text fontSize="xs" fontWeight="700">
+                      {t("users.note")}
+                    </Text>
+                    <Input
+                      placeholder={t("users.notePlaceholder")}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+                  </Stack>
+                </HStack>
+                <Text fontSize="sm">
+                  {t("users.grantPreview", {
+                    lead: String(Number(lead) || 0),
+                    flower: String(Number(flower) || 0),
+                  })}
+                </Text>
+                <Button
+                  variant="sticker"
+                  size="sm"
+                  bg="sun"
+                  alignSelf="flex-start"
+                  disabled={!(Number(lead) || Number(flower))}
+                  onClick={() => void grant()}
+                >
                   {t("users.grantDo")}
                 </Button>
-              </HStack>
+              </Stack>
             </Field>
             <Field
               label={t("users.ban")}

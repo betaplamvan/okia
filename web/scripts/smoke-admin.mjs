@@ -73,7 +73,7 @@ const row = page.getByTestId("admin-users").getByText("thuong-smoke@example.com"
 await row.waitFor({ timeout: 10000 });
 await row.click();
 await page.getByTestId("admin-user-detail").waitFor();
-await page.getByPlaceholder("Ruột chì").first().fill("25");
+await page.getByTestId("admin-user-detail").locator('input[type="number"]').first().fill("25");
 await page.getByRole("button", { name: "Thực hiện" }).click();
 await page.getByText("Đã cập nhật ví").waitFor({ timeout: 10000 });
 await page.screenshot({ path: ".shots/admin-users.png" });
