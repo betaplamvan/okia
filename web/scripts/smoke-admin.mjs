@@ -1,5 +1,5 @@
 // Smoke trang quản trị (docs/13 — Admin): đăng nhập dev-login bằng email admin (api/.env:
-// ADMIN_EMAILS=ducquan@gmail.com), nút "Quản trị" trong hồ sơ → /admin → 4 tab hoạt động.
+// ADMIN_EMAILS=ducquank52t1@gmail.com), nút "Quản trị" trong hồ sơ → /admin → 4 tab hoạt động.
 //   node scripts/smoke-admin.mjs [http://localhost:3000]
 import { chromium } from "playwright";
 
@@ -54,7 +54,7 @@ await page.getByText("chỉ dành cho quản trị viên").waitFor({ timeout: 10
 console.log("người thường: bị chặn ở /admin");
 
 // Admin.
-await devLogin("ducquan@gmail.com");
+await devLogin("ducquank52t1@gmail.com");
 await page.getByTestId("admin-home-link").waitFor({ timeout: 10000 }); // nút khiên trang chủ
 await page.getByTestId("player-pill").click();
 await page.getByRole("dialog").waitFor();
