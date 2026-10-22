@@ -134,10 +134,15 @@ export class NetworkController implements GameController {
         }
         this.serverState = res.state;
         const prev = this.session;
-        const sameTurnStreak = prev.lastMove?.by === by && prev.lastMove.captured.length > 0;
-        const combo =
-          res.captured.length > 0 ? (sameTurnStreak ? prev.combo : 0) + res.captured.length : 0;
         const wasPending = prev.online?.pendingEdge === m.edge && by === this.mySeat;
+        const sameTurnStreak = prev.lastMove?.by === by && prev.lastMove.captured.length > 0;
+        // Nước của mình đã tính combo lúc bấm (lạc quan): server dội lại cùng nước thì GIỮ, không
+        // cộng lần nữa (trước đây cộng đôi → combo nhảy 1 → 3 → 5, chữ ×2 / ×4 không bao giờ hiện).
+        const combo = wasPending
+          ? prev.combo
+          : res.captured.length > 0
+            ? (sameTurnStreak ? prev.combo : 0) + res.captured.length
+            : 0;
         this.emit(
           {
             state: res.state,
