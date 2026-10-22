@@ -31,7 +31,10 @@
       "additionalProperties": false,
       "required": ["mine", "opponent"],
       "properties": {
-        "mine": { "$ref": "#/$defs/form", "description": "Hình thái tông LẠNH: nét của mình." },
+        "mine": {
+          "$ref": "#/$defs/form",
+          "description": "Hình thái tông LẠNH: nét của mình."
+        },
         "opponent": {
           "$ref": "#/$defs/form",
           "description": "Hình thái tông NÓNG: nét đối thủ. Màu chính phải khác mine."
@@ -44,7 +47,16 @@
       "required": ["style", "width"],
       "properties": {
         "style": {
-          "enum": ["flat", "twotone", "gradient", "neon", "brush", "fire", "rainbow", "metal"]
+          "enum": [
+            "flat",
+            "twotone",
+            "gradient",
+            "neon",
+            "brush",
+            "fire",
+            "rainbow",
+            "metal"
+          ]
         },
         "width": {
           "type": "number",
@@ -60,7 +72,10 @@
           "description": "Hệ số run tay (1 = mặc định)."
         },
         "cap": { "enum": ["round", "square"] },
-        "taper": { "type": "boolean", "description": "Nét mảnh ở hai đầu, dày ở giữa." },
+        "taper": {
+          "type": "boolean",
+          "description": "Nét mảnh ở hai đầu, dày ở giữa."
+        },
         "dash": {
           "type": "array",
           "items": { "type": "number", "minimum": 0.05, "maximum": 4 },
@@ -109,8 +124,14 @@
       "additionalProperties": false,
       "required": ["capture", "combo"],
       "properties": {
-        "capture": { "$ref": "#/$defs/sfxRef", "description": "Tiếng ăn ô (cao dần theo combo)." },
-        "combo": { "$ref": "#/$defs/sfxRef", "description": "Tiếng COMBO từ ô thứ 2 trong lượt." }
+        "capture": {
+          "$ref": "#/$defs/sfxRef",
+          "description": "Tiếng ăn ô (cao dần theo combo)."
+        },
+        "combo": {
+          "$ref": "#/$defs/sfxRef",
+          "description": "Tiếng COMBO từ ô thứ 2 trong lượt."
+        }
       }
     },
     "box": {
@@ -165,7 +186,11 @@
       "required": ["ver", "files"],
       "properties": {
         "ver": { "type": "string", "pattern": "^[a-f0-9]{10}$" },
-        "files": { "type": "array", "items": { "$ref": "#/$defs/assetRef" }, "maxItems": 24 },
+        "files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assetRef" },
+          "maxItems": 24
+        },
         "base": { "type": "string" }
       }
     }
@@ -173,7 +198,10 @@
   "allOf": [
     {
       "if": { "properties": { "type": { "const": "pen" } } },
-      "then": { "required": ["forms", "pen", "combo", "sfx"], "not": { "required": ["box"] } }
+      "then": {
+        "required": ["forms", "pen", "combo", "sfx"],
+        "not": { "required": ["box"] }
+      }
     },
     {
       "if": { "properties": { "type": { "const": "box" } } },
@@ -192,7 +220,10 @@
     {
       "if": {
         "properties": {
-          "box": { "properties": { "effect": { "const": "image" } }, "required": ["effect"] }
+          "box": {
+            "properties": { "effect": { "const": "image" } },
+            "required": ["effect"]
+          }
         },
         "required": ["box"]
       },
@@ -201,7 +232,10 @@
     {
       "if": {
         "properties": {
-          "box": { "properties": { "particles": { "const": "image" } }, "required": ["particles"] }
+          "box": {
+            "properties": { "particles": { "const": "image" } },
+            "required": ["particles"]
+          }
         },
         "required": ["box"]
       },
@@ -222,7 +256,10 @@
     {
       "if": {
         "properties": {
-          "pen": { "properties": { "style": { "enum": ["rainbow", "metal"] } }, "required": ["style"] }
+          "pen": {
+            "properties": { "style": { "enum": ["rainbow", "metal"] } },
+            "required": ["style"]
+          }
         },
         "required": ["pen"]
       },
@@ -254,7 +291,10 @@
       "additionalProperties": false,
       "required": ["color"],
       "properties": {
-        "color": { "$ref": "#/$defs/hex", "description": "Màu chính: nét, ô đã ăn, vụn." },
+        "color": {
+          "$ref": "#/$defs/hex",
+          "description": "Màu chính: nét, ô đã ăn, vụn."
+        },
         "color2": {
           "$ref": "#/$defs/hex",
           "description": "Màu cuối gradient (gradient, brush, fire, halo phấn)."
@@ -270,8 +310,14 @@
           "$ref": "#/$defs/hex",
           "description": "Quầng sáng (neon, metal); màu chữ COMBO kiểu neon/sparkle."
         },
-        "core": { "$ref": "#/$defs/hex", "description": "Lõi sáng giữa nét (neon, fire)." },
-        "accent": { "$ref": "#/$defs/hex", "description": "Chấm sáp (grain = wax)." }
+        "core": {
+          "$ref": "#/$defs/hex",
+          "description": "Lõi sáng giữa nét (neon, fire)."
+        },
+        "accent": {
+          "$ref": "#/$defs/hex",
+          "description": "Chấm sáp (grain = wax)."
+        }
       }
     },
     "particles": {
@@ -282,14 +328,20 @@
       "type": "string",
       "pattern": "^(box|particles|pen)/[a-z0-9_\\-]{1,40}\\.(svg|png|webp)$"
     },
-    "audioRef": { "type": "string", "pattern": "^sfx/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg)$" },
+    "audioRef": {
+      "type": "string",
+      "pattern": "^sfx/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg)$"
+    },
     "assetRef": {
       "type": "string",
       "pattern": "^(sfx|box|particles|pen)/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg|svg|png|webp)$"
     },
     "sfxRef": {
       "description": "Tên tiếng có sẵn trong engine (capture, capture_bell, capture_chalk, capture_fire, capture_ink, capture_marker, capture_neon, capture_soft, combo, combo_bell, combo_chalk, combo_fire, combo_ink, combo_neon) HOẶC file trong gói: sfx/<tên>.webm|mp3|ogg.",
-      "anyOf": [{ "type": "string", "pattern": "^[a-z0-9_]{1,40}$" }, { "$ref": "#/$defs/audioRef" }]
+      "anyOf": [
+        { "type": "string", "pattern": "^[a-z0-9_]{1,40}$" },
+        { "$ref": "#/$defs/audioRef" }
+      ]
     }
   }
 }

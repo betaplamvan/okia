@@ -528,7 +528,11 @@
       "previewDefault": "Mặc định — thay bản hiện có",
       "previewNoFiles": "Không có file đi kèm",
       "previewBadJson": "File JSON không phải manifest skin (thiếu id / type / rarity / name / description).",
-      "editPreviewHint": "Thẻ bên trái đổi theo khi bạn gõ — đây là cái người chơi sẽ thấy sau khi Lưu."
+      "editPreviewHint": "Thẻ bên trái đổi theo khi bạn gõ — đây là cái người chơi sẽ thấy sau khi Lưu.",
+      "purge": "Xóa tất cả trừ mặc định",
+      "confirmPurge": "Xóa mọi skin không phải mặc định (kể cả đang tắt)? Người sở hữu giữ quyền trong kho: nhập lại gói cùng id là có lại. Hãy xuất tất cả (.zip) trước.",
+      "purged": "Đã xóa {n} skin.",
+      "previewReplace": "Thay toàn bộ catalog: xóa skin không có trong gói này (trừ mặc định)"
     },
     "cfg": {
       "rankedWinLead": "Ruột chì cho người thắng trận xếp hạng",

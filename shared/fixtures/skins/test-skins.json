@@ -1,0 +1,198 @@
+{
+  "skins": [
+    {
+      "id": "pen_marker",
+      "type": "pen",
+      "rarity": "uncommon",
+      "name": {
+        "vi": "Bút dạ",
+        "en": "Marker"
+      },
+      "description": {
+        "vi": "Nét dày, đầu vuông, mực loang nhẹ ở mép.",
+        "en": "Thick square-tipped stroke with a soft bleed."
+      },
+      "forms": {
+        "mine": {
+          "color": "#2563eb",
+          "color2": "#1b47b8"
+        },
+        "opponent": {
+          "color": "#f97316",
+          "color2": "#c2410c"
+        }
+      },
+      "pen": {
+        "style": "twotone",
+        "width": 1.7,
+        "alpha": 0.8,
+        "jitter": 0.6,
+        "cap": "square"
+      },
+      "combo": {
+        "style": "sticker",
+        "particles": "paper",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_marker",
+        "combo": "combo"
+      }
+    },
+    {
+      "id": "pen_ink_purple",
+      "type": "pen",
+      "rarity": "rare",
+      "name": {
+        "vi": "Bút mực tím",
+        "en": "Purple Ink Pen"
+      },
+      "description": {
+        "vi": "Mực tím học trò; ăn ô là mực bắn tung tóe.",
+        "en": "Schoolkid purple ink that splashes on every capture."
+      },
+      "forms": {
+        "mine": {
+          "color": "#4a2d9c",
+          "color2": "#8f6ad6"
+        },
+        "opponent": {
+          "color": "#9c1f6e",
+          "color2": "#e26bb4"
+        }
+      },
+      "pen": {
+        "style": "gradient",
+        "width": 1.1,
+        "alpha": 0.95,
+        "jitter": 0.8,
+        "taper": true
+      },
+      "combo": {
+        "style": "ink",
+        "particles": "ink",
+        "shakeFrom": 3
+      },
+      "sfx": {
+        "capture": "capture_ink",
+        "combo": "combo_ink"
+      }
+    },
+    {
+      "id": "pen_neon",
+      "type": "pen",
+      "rarity": "epic",
+      "name": {
+        "vi": "Bút neon",
+        "en": "Neon Pen"
+      },
+      "description": {
+        "vi": "Nét phát sáng, tia điện bắn ra khi ăn chuỗi.",
+        "en": "Glowing stroke with electric sparks on combos."
+      },
+      "forms": {
+        "mine": {
+          "color": "#00bcd4",
+          "glow": "#7cf5c5",
+          "core": "#e9ffff"
+        },
+        "opponent": {
+          "color": "#ff2bd6",
+          "glow": "#ffa6ec",
+          "core": "#fff0fb"
+        }
+      },
+      "pen": {
+        "style": "neon",
+        "width": 0.9,
+        "alpha": 1,
+        "jitter": 0.4
+      },
+      "combo": {
+        "style": "neon",
+        "particles": "spark",
+        "shakeFrom": 2
+      },
+      "sfx": {
+        "capture": "capture_neon",
+        "combo": "combo_neon"
+      }
+    },
+    {
+      "id": "pen_gold",
+      "type": "pen",
+      "rarity": "legendary",
+      "name": {
+        "vi": "Bút vàng",
+        "en": "Golden Pen"
+      },
+      "description": {
+        "vi": "Nét viền vàng, sao lấp lánh và tiếng chuông khi ăn ô.",
+        "en": "Gold-rimmed stroke, twinkling stars and a bell on capture."
+      },
+      "forms": {
+        "mine": {
+          "color": "#d4a017",
+          "colors": ["#b8860b", "#ffe680", "#fff6c2", "#d4a017"],
+          "glow": "#ffd93d"
+        },
+        "opponent": {
+          "color": "#c8653a",
+          "colors": ["#8c3b1e", "#ffb27a", "#ffd9bf", "#c8653a"],
+          "glow": "#ffb27a"
+        }
+      },
+      "pen": {
+        "style": "metal",
+        "width": 1.1,
+        "alpha": 1,
+        "jitter": 0.6
+      },
+      "combo": {
+        "style": "sparkle",
+        "particles": "star",
+        "shakeFrom": 2
+      },
+      "sfx": {
+        "capture": "capture_bell",
+        "combo": "combo_bell"
+      }
+    },
+    {
+      "id": "box_fill",
+      "type": "box",
+      "rarity": "common",
+      "name": {
+        "vi": "Tô kín",
+        "en": "Solid Fill"
+      },
+      "description": {
+        "vi": "Tô kín ô bằng màu bút.",
+        "en": "Fill the whole box with your pen color."
+      },
+      "box": {
+        "effect": "fill",
+        "alpha": 0.4,
+        "particles": "paper"
+      }
+    },
+    {
+      "id": "box_seal",
+      "type": "box",
+      "rarity": "legendary",
+      "name": {
+        "vi": "Dấu sáp vàng",
+        "en": "Golden Wax Seal"
+      },
+      "description": {
+        "vi": "Giọt sáp vàng rơi xuống, đóng dấu sao màu bút; mặt sáp lấp lánh mãi.",
+        "en": "A drop of golden wax stamped with a star in your pen color; it keeps glinting."
+      },
+      "box": {
+        "effect": "seal",
+        "alpha": 0.5,
+        "particles": "star"
+      }
+    }
+  ]
+}

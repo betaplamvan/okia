@@ -528,7 +528,11 @@
       "previewDefault": "Default — replaces current",
       "previewNoFiles": "No bundled files",
       "previewBadJson": "JSON file is not a skin manifest (missing id / type / rarity / name / description).",
-      "editPreviewHint": "The card on the left updates as you type — this is what players will see after Save."
+      "editPreviewHint": "The card on the left updates as you type — this is what players will see after Save.",
+      "purge": "Delete all but defaults",
+      "confirmPurge": "Delete every non-default skin (including disabled ones)? Owners keep their inventory: re-importing the same id restores it. Export all (.zip) first.",
+      "purged": "Deleted {n} skins.",
+      "previewReplace": "Replace the whole catalog: delete skins not in this package (except defaults)"
     },
     "cfg": {
       "rankedWinLead": "Lead for a ranked win",
