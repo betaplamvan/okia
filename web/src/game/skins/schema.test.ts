@@ -82,8 +82,17 @@ describe("assetUrl", () => {
     expect(assetUrl(skin, "particles/shape.svg")).toBeNull(); // không trong files
     expect(assetUrl({ ...skin, assets: undefined }, "box/stamp.svg")).toBeNull();
     expect(skinAssetUrls(skin)).toEqual({
-      images: ["https://api.test/skins/assets/box_example/abcdef0123/box/stamp.svg"],
+      images: [
+        { url: "https://api.test/skins/assets/box_example/abcdef0123/box/stamp.svg", ext: "svg" },
+      ],
       sounds: [],
     });
+    // Xem trước ở admin: blob cục bộ ưu tiên hơn base.
+    const local = {
+      ...skin,
+      assets: { ...skin.assets!, urls: { "box/stamp.svg": "blob:http://x/1" } },
+    } as SkinManifest;
+    expect(assetUrl(local, "box/stamp.svg")).toBe("blob:http://x/1");
+    expect(skinAssetUrls(local).images).toEqual([{ url: "blob:http://x/1", ext: "svg" }]);
   });
 });

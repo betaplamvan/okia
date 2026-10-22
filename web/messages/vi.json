@@ -519,7 +519,16 @@
       "packageFiles": "gói · {n} file",
       "files": "File trong gói",
       "dropHere": "Thả file .zip / .json để nhập",
-      "importedPackage": "Đã nhập gói: {ids}."
+      "importedPackage": "Đã nhập gói: {ids}.",
+      "previewTitle": "Xem trước gói — {n} skin",
+      "previewHint": "Chưa ghi gì lên máy chủ. Thẻ hiện đúng như trong shop; bấm Thử để xem nét, ô, vụn và tiếng trên bàn mẫu với file ngay trong zip. Ưng rồi mới Nhập.",
+      "previewImport": "Nhập {n} skin",
+      "previewExists": "Đã có — sẽ ghi đè",
+      "previewNew": "Mới",
+      "previewDefault": "Mặc định — thay bản hiện có",
+      "previewNoFiles": "Không có file đi kèm",
+      "previewBadJson": "File JSON không phải manifest skin (thiếu id / type / rarity / name / description).",
+      "editPreviewHint": "Thẻ bên trái đổi theo khi bạn gõ — đây là cái người chơi sẽ thấy sau khi Lưu."
     },
     "cfg": {
       "rankedWinLead": "Ruột chì cho người thắng trận xếp hạng",

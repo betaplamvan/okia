@@ -148,7 +148,7 @@ Nguồn lúc chạy là bảng `skins` (id, type, rarity, enabled, sort, manifes
 
 **Client:** renderer nạp ảnh qua `Assets.load` khi `setSkins` (`loadAssets`), vẽ lại khi xong; trước đó ô ảnh hiện gạch chéo, nét không texture, vụn ảnh thành vụn giấy. Tiếng ngoài sprite: `audio.loadSfx(url)` nạp trước khi vào trận (`use-game-sounds.ts`), lỗi tải → tiếng mặc định. Thẻ shop (`SkinPreview`) vẽ ảnh ô qua mask SVG (nhuộm màu).
 
-**Xuất:** `GET /admin/skins/{id}/package` → zip đúng chuẩn (sửa rồi nhập lại); `GET /admin/skins/export` → bundle mọi skin (`?format=json` chỉ manifest, không file). Trang admin tab Skin: nút "Nhập gói" (.zip / .json) hoặc kéo thả, nhãn "gói · n file" trên thẻ, hộp sửa metadata liệt kê file. CLI: `pnpm skin:pack <thư mục>` / `pnpm skin:validate <thư mục | zip>` (web/scripts/skin-pack.mjs, cùng bộ kiểm tra và thông điệp lỗi với API).
+**Xuất:** `GET /admin/skins/{id}/package` → zip đúng chuẩn (sửa rồi nhập lại); `GET /admin/skins/export` → bundle mọi skin (`?format=json` chỉ manifest, không file). Trang admin tab Skin: nút "Nhập gói" (.zip / .json) hoặc kéo thả → **hộp xem trước** trước khi ghi (`POST /admin/skins/preview-package` kiểm tra y như nhập nhưng không ghi; thẻ đúng như trong shop, file đi kèm với cỡ, nhãn Mới / Đã có — sẽ ghi đè / Mặc định; nút Thử mở bàn mẫu thật với ảnh / tiếng đọc ngay từ zip qua blob: URL — `assets.urls` chỉ ở client) rồi mới "Nhập"; nhãn "gói · n file" trên thẻ; hộp sửa metadata có **thẻ xem trước sống** đổi theo tên / mô tả / bậc đang gõ, liệt kê file. CLI: `pnpm skin:pack <thư mục>` / `pnpm skin:validate <thư mục | zip>` (web/scripts/skin-pack.mjs, cùng bộ kiểm tra và thông điệp lỗi với API).
 
 ## Shop & trang bị
 

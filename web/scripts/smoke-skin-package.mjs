@@ -66,10 +66,32 @@ await page.goto(base + "/admin", { waitUntil: "networkidle" });
 await page.getByRole("tab", { name: "Skin" }).click();
 await page.getByText(/\d+ skin trong DB/).waitFor({ timeout: 15000 });
 
-// Nhập hai gói qua ô chọn file (ẩn).
-for (const z of zips) {
+// Nhập hai gói qua ô chọn file (ẩn) → hộp xem trước (thẻ, file, "Mới") → Thử ngay từ zip → Nhập.
+for (const [k, z] of zips.entries()) {
   await page.locator('input[type="file"]').setInputFiles(z);
+  const pv = page.getByTestId("import-preview");
+  await pv.waitFor({ timeout: 15000 });
+  const id = k === 0 ? "pen_example" : "box_example";
+  await pv.getByTestId(`preview-skin-${id}`).getByText(/Mới|Đã có/).waitFor();
+  if (!/\.(svg|png|webm) · \d/.test(await pv.innerText())) problems.push("xem trước thiếu file");
+  if (k === 0) {
+    // Thử trên bàn mẫu với ảnh / tiếng đọc từ zip (blob:), chưa nhập.
+    await pv.getByTestId(`preview-skin-${id}`).getByRole("button", { name: "Thử" }).click();
+    const dlg = page.getByRole("dialog").filter({ hasText: "Vẽ thử" });
+    await dlg.getByRole("application").locator("canvas").waitFor({ timeout: 15000 });
+    await page.waitForTimeout(500);
+    for (let i = 0; i < 6; i++) {
+      await dlg.getByTestId("try-draw").click();
+      await page.waitForTimeout(200);
+    }
+    await page.screenshot({ path: ".shots/skin-package-preview-try.png" });
+    await page.keyboard.press("Escape");
+    await dlg.waitFor({ state: "hidden" });
+    await page.screenshot({ path: ".shots/skin-package-preview.png" });
+  }
+  await page.getByTestId("import-confirm").click();
   await page.getByText(/Đã nhập gói: (pen|box)_example\./).waitFor({ timeout: 15000 });
+  await pv.waitFor({ state: "hidden" });
 }
 await page.getByTestId("admin-skin-pen_example").getByTestId("admin-skin-package").waitFor();
 const penBadge = await page
@@ -86,7 +108,12 @@ console.log("admin: nhập 2 gói, nhãn gói ok");
 await page.getByRole("button", { name: "Bút" }).click();
 await page.getByTestId("admin-skin-pen_example").getByRole("button", { name: "Sửa" }).click();
 await page.getByRole("dialog").getByText("File trong gói").waitFor();
+// Thẻ xem trước đổi theo khi gõ tên (chưa Lưu).
+await page.getByRole("dialog").locator("input").first().fill("Bút xem trước");
+await page.getByTestId("edit-preview").getByText("Bút xem trước").waitFor({ timeout: 5000 });
+await page.screenshot({ path: ".shots/skin-package-edit.png" });
 await page.keyboard.press("Escape");
+await page.getByRole("dialog").waitFor({ state: "hidden" });
 
 // Xuất gói → tải về đúng tên, kích thước > 0.
 const [dl] = await Promise.all([

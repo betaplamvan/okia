@@ -69,11 +69,15 @@ class AudioManager {
   }
 
   /** Nạp trước một tiếng ngoài sprite (URL trong gói skin). Gọi lại nhiều lần vô hại. */
-  async loadSfx(url: string): Promise<void> {
+  async loadSfx(url: string, ext?: string): Promise<void> {
     if (typeof window === "undefined" || !isUrl(url) || this.extra.has(url)) return;
     const { Howl } = await import("howler");
     if (this.extra.has(url)) return;
-    const entry: ExtraSfx = { howl: new Howl({ src: [url], preload: true }), ok: null };
+    const entry: ExtraSfx = {
+      // blob: URL (xem trước gói ở admin) không có đuôi → Howler cần `format`.
+      howl: new Howl({ src: [url], preload: true, ...(ext ? { format: [ext] } : {}) }),
+      ok: null,
+    };
     entry.howl.once("load", () => {
       entry.ok = true;
     });

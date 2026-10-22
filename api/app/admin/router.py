@@ -11,7 +11,8 @@
 - GET  /admin/skins · PATCH /admin/skins/{id} (metadata) · PUT (manifest JSON) · DELETE
 - GET  /admin/skins/{id}/export (manifest JSON) · GET /admin/skins/{id}/package (zip gói)
 - GET  /admin/skins/export (bundle zip; ?format=json) · POST /admin/skins/import (JSON)
-- POST /admin/skins/import-package (multipart zip: một gói hoặc bundle — shared/skins/SPEC.md)
+- POST /admin/skins/preview-package (xem trước, không ghi) · POST /admin/skins/import-package
+  (multipart zip: một gói hoặc bundle — shared/skins/SPEC.md)
 - GET  /admin/config · PUT /admin/config (app/admin/config.py)
 """
 
@@ -620,6 +621,43 @@ async def skins_import(body: SkinsImportIn, db: Db) -> list[AdminSkinOut]:
     for sid, a in dropped:
         await _drop_files(sid, a)
     return await skins(db)
+
+
+class PreviewSkinOut(CamelModel):
+    manifest: dict[str, Any]
+    folder: str
+    files: list[dict[str, Any]]
+    exists: bool
+    replaces_default: bool
+
+
+class PackagePreviewOut(CamelModel):
+    skins: list[PreviewSkinOut]
+
+
+@router.post("/skins/preview-package", response_model=PackagePreviewOut)
+async def skins_preview_package(db: Db, file: Annotated[UploadFile, File()]) -> PackagePreviewOut:
+    """Xem trước: kiểm tra gói y hệt lúc nhập (schema, file, bảo vệ default) nhưng KHÔNG ghi gì.
+    Trả manifest, file đi kèm (tên, cỡ), thư mục trong zip, skin nào đã có (sẽ ghi đè)."""
+    data = await file.read(package.MAX_ZIP + 1)
+    try:
+        pkgs = package.parse(data, allow_default=True)
+    except package.PackageError as e:
+        raise AppError("BAD_SKIN", 400, detail=str(e)[:300]) from e
+    out: list[PreviewSkinOut] = []
+    for p in pkgs:
+        row = await db.get(SkinRow, p.manifest["id"])
+        _guard_default(row, p.manifest, True)
+        out.append(
+            PreviewSkinOut(
+                manifest=p.manifest,
+                folder=p.folder,
+                files=[{"path": k, "size": len(v)} for k, v in sorted(p.files.items())],
+                exists=row is not None,
+                replaces_default=bool(row and row.manifest.get("default")),
+            )
+        )
+    return PackagePreviewOut(skins=out)
 
 
 @router.post("/skins/import-package", response_model=list[AdminSkinOut])

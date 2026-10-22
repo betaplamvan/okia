@@ -98,6 +98,8 @@ export interface SkinAssets {
   ver: string;
   files: string[];
   base?: string;
+  /** Chỉ client: URL cục bộ (blob:) khi xem trước gói chưa nhập ở admin — ưu tiên hơn `base`. */
+  urls?: Record<string, string>;
 }
 
 export interface SkinBase {
@@ -158,31 +160,39 @@ export function isAssetRef(ref: string | null | undefined): ref is string {
   return typeof ref === "string" && /^(sfx|box|particles|pen)\/[a-z0-9_-]+\.[a-z0-9]+$/.test(ref);
 }
 
-/** URL tuyệt đối của một file trong gói skin; null nếu không phải tham chiếu hoặc skin không có gói. */
+/** URL của một file trong gói skin (blob cục bộ khi xem trước, hoặc `base` + đường dẫn); null nếu không
+ * phải tham chiếu, skin không có gói, hoặc file không có trong gói. */
 export function assetUrl(skin: SkinBase, ref: string | null | undefined): string | null {
-  if (!isAssetRef(ref) || !skin.assets?.base) return null;
-  if (!skin.assets.files.includes(ref)) return null;
+  if (!isAssetRef(ref) || !skin.assets) return null;
+  const local = skin.assets.urls?.[ref];
+  if (local) return local;
+  if (!skin.assets.base || !skin.assets.files.includes(ref)) return null;
   return `${skin.assets.base.replace(/\/$/, "")}/${ref}`;
 }
 
-/** Mọi URL ảnh / tiếng mà một skin cần nạp trước khi vào trận. */
-export function skinAssetUrls(skin: SkinManifest): { images: string[]; sounds: string[] } {
-  const images: string[] = [];
-  const sounds: string[] = [];
-  const img = (ref: string | undefined) => {
-    const u = assetUrl(skin, ref);
-    if (u && !images.includes(u)) images.push(u);
+/** URL + đuôi file (blob: không có đuôi → bộ nạp cần biết loại). */
+export interface AssetUrl {
+  url: string;
+  ext: string;
+}
+
+/** Mọi ảnh / tiếng mà một skin cần nạp trước khi vào trận. */
+export function skinAssetUrls(skin: SkinManifest): { images: AssetUrl[]; sounds: AssetUrl[] } {
+  const images: AssetUrl[] = [];
+  const sounds: AssetUrl[] = [];
+  const add = (list: AssetUrl[], ref: string | undefined) => {
+    const url = assetUrl(skin, ref);
+    if (url && !list.some((a) => a.url === url))
+      list.push({ url, ext: (ref as string).split(".").pop() ?? "" });
   };
   if (skin.type === "pen") {
-    img(skin.pen.texture);
-    img(skin.combo.particleImage);
-    for (const ref of [skin.sfx.capture, skin.sfx.combo]) {
-      const u = assetUrl(skin, ref);
-      if (u && !sounds.includes(u)) sounds.push(u);
-    }
+    add(images, skin.pen.texture);
+    add(images, skin.combo.particleImage);
+    add(sounds, skin.sfx.capture);
+    add(sounds, skin.sfx.combo);
   } else {
-    img(skin.box.image);
-    img(skin.box.particleImage);
+    add(images, skin.box.image);
+    add(images, skin.box.particleImage);
   }
   return { images, sounds };
 }

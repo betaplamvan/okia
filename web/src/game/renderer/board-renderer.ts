@@ -318,16 +318,21 @@ export class BoardRenderer {
    * nạp xong, ô / nét dùng hình dự phòng (gạch chéo, nét trơn). Ảnh lỗi → giữ dự phòng.
    */
   private async loadAssets() {
-    const urls = [...this.skins.pens, ...this.skins.boxes].flatMap((s) => skinAssetUrls(s).images);
-    const missing = [...new Set(urls)].filter((u) => !this.px.Assets.cache.has(u));
+    const all = [...this.skins.pens, ...this.skins.boxes].flatMap((s) => skinAssetUrls(s).images);
+    const seen = new Set<string>();
+    const missing = all.filter(
+      (a) => !seen.has(a.url) && !!seen.add(a.url) && !this.px.Assets.cache.has(a.url),
+    );
     if (missing.length === 0) return;
     const gen = ++this.assetGen;
     await Promise.all(
-      missing.map((u) =>
+      missing.map((a) =>
         this.px.Assets.load<Texture>({
-          src: u,
-          alias: u,
-          data: { resolution: u.endsWith(".svg") ? 2 : 1 },
+          src: a.url,
+          alias: a.url,
+          // blob: URL (xem trước ở admin) không có đuôi → chỉ rõ bộ nạp; SVG raster hóa ×2.
+          loadParser: a.ext === "svg" ? "loadSVG" : "loadTextures",
+          data: { resolution: a.ext === "svg" ? 2 : 1 },
         })
           .then((t) => {
             t.source.addressMode = "repeat"; // ảnh lặp dọc nét

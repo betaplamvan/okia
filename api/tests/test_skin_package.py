@@ -154,6 +154,19 @@ def test_parse_tu_choi_goi_hong() -> None:
 async def test_nhap_goi_phuc_vu_asset_xuat_lai(client: AsyncClient) -> None:
     admin = await login(client)
     data = zip_dir(TEMPLATE / "pen_example")
+    # Xem trước: kiểm tra như nhập nhưng không ghi gì; báo skin mới / đã có.
+    r = await client.post(
+        "/admin/skins/preview-package", files={"file": ("p.zip", data)}, headers=admin
+    )
+    assert r.status_code == 200, r.text
+    (pv,) = r.json()["skins"]
+    assert pv["exists"] is False and pv["folder"] == "" and len(pv["files"]) == 4
+    assert pv["files"][0] == {"path": "particles/shape.svg", "size": pv["files"][0]["size"]}
+    assert catalog.get_skin("pen_example") is None
+    r = await client.post(
+        "/admin/skins/preview-package", files={"file": ("p.zip", b"xx")}, headers=admin
+    )
+    assert r.status_code == 400 and "zip" in r.json()["message"]
     r = await client.post(
         "/admin/skins/import-package",
         files={"file": ("pen_example.okiaskin.zip", data, "application/zip")},
@@ -239,6 +252,12 @@ async def test_nhap_goi_phuc_vu_asset_xuat_lai(client: AsyncClient) -> None:
         assert r.status_code == 200, r.text
         ver2 = r.json()[0]["manifest"]["assets"]["ver"]
         assert ver2 != ver
+        # Xem trước gói đã có → exists, và vẫn không ghi gì (phiên bản giữ nguyên).
+        r = await client.post(
+            "/admin/skins/preview-package", files={"file": ("p.zip", data)}, headers=admin
+        )
+        assert r.status_code == 200 and r.json()["skins"][0]["exists"] is True
+        assert catalog.get_skin("pen_example").manifest["assets"]["ver"] == ver2  # type: ignore[union-attr]
         st = storage.get_storage()
         assert await st.get(package.storage_key("pen_example", ver, "sfx/capture.webm")) is None
         assert await st.get(package.storage_key("pen_example", ver2, "sfx/capture.webm"))

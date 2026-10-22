@@ -28,6 +28,8 @@ import {
   LuUpload,
 } from "react-icons/lu";
 import { adminCall, Field } from "@/components/admin/admin-screen";
+import { ImportPreviewDialog, type PreviewItem } from "@/components/admin/import-preview-dialog";
+import { SkinCardPreview } from "@/components/admin/skin-card-preview";
 import { SkinPreview } from "@/components/shop/skin-preview";
 import { toaster } from "@/components/ui/toaster";
 import type { SkinManifest } from "@/game/skins/skins";
@@ -433,6 +435,48 @@ type Meta = {
   sort: number;
 };
 
+/** Thẻ xem trước trong hộp sửa: manifest gốc + tên / mô tả / bậc đang gõ. */
+function editedManifest(e: { row: AdminSkin; meta: Meta }): SkinManifest {
+  return {
+    ...(e.row.manifest as unknown as SkinManifest),
+    name: { vi: e.meta.nameVi, en: e.meta.nameEn },
+    description: { vi: e.meta.descVi, en: e.meta.descEn },
+    rarity: e.meta.rarity,
+  };
+}
+
+const MIME: Record<string, string> = {
+  png: "image/png",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  webm: "audio/webm",
+  mp3: "audio/mpeg",
+  ogg: "audio/ogg",
+};
+
+/** Đọc zip ngay trên trình duyệt → blob: URL cho ảnh / tiếng (assets.urls) để xem trước và Thử. */
+async function attachLocalUrls(
+  file: File,
+  items: (PreviewItem & { folder: string })[],
+): Promise<PreviewItem[]> {
+  const { default: JSZip } = await import("jszip");
+  const zip = await JSZip.loadAsync(file);
+  return Promise.all(
+    items.map(async ({ folder, ...it }) => {
+      const urls: Record<string, string> = {};
+      for (const f of it.files) {
+        const entry = zip.file((folder ? `${folder}/` : "") + f.path);
+        if (!entry) continue;
+        const ext = f.path.split(".").pop() ?? "";
+        const blob = new Blob([await entry.async("arraybuffer")], { type: MIME[ext] });
+        urls[f.path] = URL.createObjectURL(blob);
+      }
+      const assets = { ver: "0000000000", files: it.files.map((f) => f.path), urls };
+      return { ...it, manifest: { ...it.manifest, assets } };
+    }),
+  );
+}
+
 function metaOf(r: AdminSkin): Meta {
   const m = r.manifest as { description?: { vi: string; en: string } } & AdminSkin["manifest"];
   return {
@@ -452,6 +496,8 @@ export function AdminSkins() {
   const [tab, setTab] = useState<"pen" | "box">("pen");
   const [editing, setEditing] = useState<{ row: AdminSkin; meta: Meta } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [preview, setPreview] = useState<{ file: File | null; items: PreviewItem[] } | null>(null);
+  const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(
@@ -509,16 +555,19 @@ export function AdminSkins() {
     const { blob, filename } = await adminCall<ApiBlob>("/admin/skins/export", { blob: true });
     downloadBlob(filename === "download" ? "okia-skins.zip" : filename, blob);
   }
-  // Nhập: .zip (một gói hoặc bundle) → multipart; .json (manifest, không file) → như cũ.
-  async function importFile(file: File) {
+  // Chọn / thả file → XEM TRƯỚC (thẻ như trong shop, file, skin sẽ bị ghi đè, Thử trên bàn mẫu)
+  // rồi mới nhập (confirmImport). .zip: máy chủ kiểm tra y như lúc nhập nhưng không ghi
+  // (/preview-package), ảnh / tiếng đọc ngay từ zip trên trình duyệt; .json: manifest không file.
+  async function previewFile(file: File) {
     try {
       if (/\.zip$/i.test(file.name) || /zip/.test(file.type)) {
         const form = new FormData();
         form.append("file", file, file.name);
-        const rows = await adminCall<AdminSkin[]>("/admin/skins/import-package", { form });
-        toaster.success({
-          title: t("skins.importedPackage", { ids: rows.map((r) => r.id).join(", ") }),
-        });
+        const res = await adminCall<{ skins: (PreviewItem & { folder: string })[] }>(
+          "/admin/skins/preview-package",
+          { form },
+        );
+        setPreview({ file, items: await attachLocalUrls(file, res.skins) });
       } else {
         const parsed = JSON.parse(await file.text()) as
           { skins?: unknown[] } | unknown[] | { id?: string };
@@ -528,6 +577,42 @@ export function AdminSkins() {
           : "skins" in parsed && Array.isArray(parsed.skins)
             ? parsed.skins
             : [parsed];
+        const items = skins.map((raw): PreviewItem => {
+          const m = raw as Partial<SkinManifest>;
+          if (!m || !m.id || !m.type || !m.rarity || !m.name?.vi || !m.description?.vi)
+            throw new Error(t("skins.previewBadJson"));
+          const row = rows.find((r) => r.id === m.id);
+          return {
+            manifest: m as SkinManifest,
+            files: [],
+            exists: !!row,
+            replacesDefault: !!row?.manifest.default,
+          };
+        });
+        setPreview({ file: null, items });
+      }
+    } catch (e) {
+      if (!(e instanceof ApiError)) toaster.error({ title: String(e) }); // ApiError đã toast
+    }
+  }
+  function closePreview() {
+    for (const it of preview?.items ?? [])
+      for (const u of Object.values(it.manifest.assets?.urls ?? {})) URL.revokeObjectURL(u);
+    setPreview(null);
+  }
+  async function confirmImport() {
+    if (!preview) return;
+    setBusy(true);
+    try {
+      if (preview.file) {
+        const form = new FormData();
+        form.append("file", preview.file, preview.file.name);
+        const out = await adminCall<AdminSkin[]>("/admin/skins/import-package", { form });
+        toaster.success({
+          title: t("skins.importedPackage", { ids: out.map((r) => r.id).join(", ") }),
+        });
+      } else {
+        const skins = preview.items.map((i) => i.manifest);
         const replace = skins.length > 1 ? window.confirm(t("skins.confirmReplace")) : false;
         await adminCall<AdminSkin[]>("/admin/skins/import", {
           method: "POST",
@@ -535,9 +620,12 @@ export function AdminSkins() {
         });
         toaster.success({ title: t("skins.imported", { n: String(skins.length) }) });
       }
+      closePreview();
       await load();
-    } catch (e) {
-      if (!(e instanceof ApiError)) toaster.error({ title: String(e) }); // ApiError đã toast
+    } catch {
+      /* đã toast */
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -559,7 +647,7 @@ export function AdminSkins() {
         e.preventDefault();
         setDragging(false);
         const f = e.dataTransfer.files?.[0];
-        if (f) void importFile(f);
+        if (f) void previewFile(f);
       }}
     >
       {dragging ? (
@@ -605,7 +693,7 @@ export function AdminSkins() {
           hidden
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) void importFile(f);
+            if (f) void previewFile(f);
             e.target.value = "";
           }}
         />
@@ -684,6 +772,13 @@ export function AdminSkins() {
         ))}
       </SimpleGrid>
 
+      <ImportPreviewDialog
+        items={preview?.items ?? null}
+        busy={busy}
+        onConfirm={() => void confirmImport()}
+        onClose={closePreview}
+      />
+
       <Dialog.Root
         open={!!editing}
         onOpenChange={(e) => {
@@ -706,11 +801,14 @@ export function AdminSkins() {
               <Dialog.Body color="ink" py={4}>
                 {editing ? (
                   <Stack gap={3}>
-                    <HStack align="flex-start">
-                      <Box w="96px" flexShrink={0}>
-                        <SkinPreview skin={editing.row.manifest as unknown as SkinManifest} />
+                    <HStack align="flex-start" gap={3}>
+                      <Box w="190px" flexShrink={0}>
+                        <SkinCardPreview skin={editedManifest(editing)} testId="edit-preview" />
                       </Box>
                       <Stack gap={1}>
+                        <Text fontSize="xs" opacity={0.75}>
+                          {t("skins.editPreviewHint")}
+                        </Text>
                         <Text fontSize="xs" opacity={0.75}>
                           {t("skins.metaOnlyHint")}
                         </Text>

@@ -519,7 +519,16 @@
       "packageFiles": "package · {n} files",
       "files": "Files in package",
       "dropHere": "Drop a .zip / .json file to import",
-      "importedPackage": "Imported package: {ids}."
+      "importedPackage": "Imported package: {ids}.",
+      "previewTitle": "Package preview — {n} skins",
+      "previewHint": "Nothing is written yet. Cards look exactly as in the shop; press Try to see stroke, box, debris and sounds on the sample board straight from the zip. Import when happy.",
+      "previewImport": "Import {n} skins",
+      "previewExists": "Exists — will overwrite",
+      "previewNew": "New",
+      "previewDefault": "Default — replaces current",
+      "previewNoFiles": "No bundled files",
+      "previewBadJson": "JSON file is not a skin manifest (missing id / type / rarity / name / description).",
+      "editPreviewHint": "The card on the left updates as you type — this is what players will see after Save."
     },
     "cfg": {
       "rankedWinLead": "Lead for a ranked win",

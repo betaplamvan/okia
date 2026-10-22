@@ -15,7 +15,7 @@ export function useGameSounds(session: GameSession, skins?: SeatSkins) {
     skinsRef.current = skins;
     // Tiếng của gói skin (ADR-0014): nạp trước để "ting" đầu tiên không trễ.
     for (const pen of skins?.pens ?? [])
-      for (const url of skinAssetUrls(pen).sounds) void audio.loadSfx(url);
+      for (const a of skinAssetUrls(pen).sounds) void audio.loadSfx(a.url, a.ext);
   }, [skins]);
 
   useEffect(() => {
