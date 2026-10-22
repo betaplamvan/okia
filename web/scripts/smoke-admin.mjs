@@ -46,6 +46,8 @@ await page.getByTestId("player-pill").click();
 await page.getByRole("dialog").waitFor();
 if (await page.getByTestId("admin-link").isVisible())
   throw new Error("người thường thấy nút Quản trị");
+if (await page.getByTestId("admin-home-link").isVisible())
+  throw new Error("người thường thấy nút khiên ở trang chủ");
 await page.keyboard.press("Escape");
 await page.goto(base + "/admin", { waitUntil: "networkidle" });
 await page.getByText("chỉ dành cho quản trị viên").waitFor({ timeout: 10000 });
@@ -53,6 +55,7 @@ console.log("người thường: bị chặn ở /admin");
 
 // Admin.
 await devLogin("ducquan@gmail.com");
+await page.getByTestId("admin-home-link").waitFor({ timeout: 10000 }); // nút khiên trang chủ
 await page.getByTestId("player-pill").click();
 await page.getByRole("dialog").waitFor();
 await page.getByTestId("admin-link").click();
