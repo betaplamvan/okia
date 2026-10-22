@@ -361,7 +361,14 @@
     "accepted": "Đã nhận",
     "decline": "Từ chối",
     "cancelOther": "Đối thủ không nhận trận. Bạn vẫn ở hàng chờ.",
-    "cancelTimeout": "Hết giờ chấp nhận. Bấm Tìm trận để xếp hàng lại."
+    "cancelTimeout": "Hết giờ chấp nhận. Bấm Tìm trận để xếp hàng lại.",
+    "vsBot": "Đối thủ: Máy (chờ lâu không có ai hợp) · điểm hạng ½",
+    "botReady": "Máy đã sẵn sàng · còn {s} giây",
+    "pillSearching": "Đang tìm đối thủ…",
+    "pillOpen": "Xem",
+    "lockedTitle": "Đang tìm trận xếp hạng",
+    "lockedBody": "Chơi với máy tạm khóa để không xung đột: ghép được đối thủ là hộp chấp nhận bật lên và vào phòng ngay. Hủy tìm nếu muốn chơi với máy.",
+    "lockedBack": "Về trang xếp hạng"
   },
   "Leaderboard": {
     "title": "Bảng xếp hạng",

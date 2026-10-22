@@ -171,6 +171,8 @@ class MatchFound(Msg):
     mode: str = "ranked"
     expires_at: int  # epoch ms (giờ server)
     accept_seconds: int
+    # Đối thủ là máy (chờ lâu): máy đã chấp nhận sẵn, client vẫn hiện vòng chấp nhận / từ chối.
+    bot: bool = False
 
 
 class MatchUpdate(Msg):

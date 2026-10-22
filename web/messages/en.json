@@ -361,7 +361,14 @@
     "accepted": "Accepted",
     "decline": "Decline",
     "cancelOther": "Your opponent didn't accept. You're still in the queue.",
-    "cancelTimeout": "Accept time ran out. Press Find a match to queue again."
+    "cancelTimeout": "Accept time ran out. Press Find a match to queue again.",
+    "vsBot": "Opponent: Bot (no one suitable in time) · half rank points",
+    "botReady": "Bot is ready · {s}s left",
+    "pillSearching": "Searching for an opponent…",
+    "pillOpen": "Open",
+    "lockedTitle": "Ranked search in progress",
+    "lockedBody": "Playing vs the bot is locked meanwhile: when an opponent is found the accept dialog pops up and you enter the room. Cancel the search to play vs the bot.",
+    "lockedBack": "Back to ranked"
   },
   "Leaderboard": {
     "title": "Leaderboard",

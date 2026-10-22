@@ -13,6 +13,8 @@ type Props = {
   accepted: boolean;
   /** Số người khác đã chấp nhận (0 hoặc 1). */
   others: number;
+  /** Đối thủ là máy (chờ lâu, docs/07): máy đã nhận sẵn, vẫn có thể từ chối. */
+  bot?: boolean;
   onAccept: () => void;
   onDecline: () => void;
 };
@@ -29,6 +31,7 @@ export function AcceptDialog({
   acceptSeconds,
   accepted,
   others,
+  bot = false,
   onAccept,
   onDecline,
 }: Props) {
@@ -125,12 +128,19 @@ export function AcceptDialog({
                     <Text fontSize="sm" opacity={0.8} role="status">
                       {accepted
                         ? t("waitingOther")
-                        : others > 0
-                          ? t("otherAccepted", { s: String(secs) })
-                          : t("acceptWithin", { s: String(secs) })}
+                        : bot
+                          ? t("botReady", { s: String(secs) })
+                          : others > 0
+                            ? t("otherAccepted", { s: String(secs) })
+                            : t("acceptWithin", { s: String(secs) })}
                     </Text>
                   </Stack>
                 </Box>
+                {bot ? (
+                  <Text fontSize="sm" color="ink" opacity={0.85} data-testid="accept-bot">
+                    {t("vsBot")}
+                  </Text>
+                ) : null}
                 <Button
                   variant="sticker"
                   bg="mint"

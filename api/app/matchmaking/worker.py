@@ -53,8 +53,8 @@ async def tick(redis: Redis, hub: Hub) -> int:
                 ),
             )
         n += 1
-    # Chờ quá lâu mà không có ai hợp → ghép với máy (docs/07): mở phòng ngay, không qua vòng chấp
-    # nhận (máy luôn sẵn sàng); điểm hạng cược một nửa.
+    # Chờ quá lâu mà không có ai hợp → ghép với máy (docs/07): cũng qua vòng chấp nhận như người
+    # (máy đã nhận sẵn → client thấy "đối thủ đã sẵn sàng"); nhận → mở phòng, điểm hạng cược ½.
     from app.admin import config as appconfig
 
     cfg_after = appconfig.get("mm_bot_after_seconds")
@@ -65,9 +65,25 @@ async def tick(redis: Redis, hub: Hub) -> int:
                 continue
             if not await q.dequeue(redis, e.user_id):
                 continue
-            room = await rooms.create_vs_bot(redis, e, bot.strength_for_rating(e.mmr, e.rd))
-            await hub.publish_user(e.user_id, m.Matched(room_id=room.id))
-            botplay.schedule(redis, hub, room)
+            name = rooms.BOT_NAME.get(e.locale, rooms.BOT_NAME["vi"])
+            p = await pd.create(
+                redis,
+                e,
+                pd.bot_entry(e, name, now),
+                now,
+                bot_strength=bot.strength_for_rating(e.mmr, e.rd),
+            )
+            await hub.publish_user(
+                e.user_id,
+                m.MatchFound(
+                    match_id=p.id,
+                    mode="ranked",
+                    expires_at=p.expires,
+                    accept_seconds=pd.ACCEPT_SECONDS,
+                    bot=True,
+                ),
+            )
+            await hub.publish_user(e.user_id, m.MatchUpdate(match_id=p.id, accepted=1))
             n += 1
     # Trận chờ quá hạn: ai chưa chấp nhận coi như từ chối.
     for p in await pd.expired(redis, now):
@@ -102,6 +118,11 @@ async def accept(redis: Redis, hub: Hub, user_id: str) -> bool:
             await hub.publish_user(u, m.MatchUpdate(match_id=p.id, accepted=len(p.accepted)))
         return True
     await pd.remove(redis, p)
+    if p.is_bot:
+        room = await rooms.create_vs_bot(redis, p.a, p.bot_strength or 0.65)
+        await hub.publish_user(p.a.user_id, m.Matched(room_id=room.id, mode="ranked"))
+        botplay.schedule(redis, hub, room)
+        return True
     try:
         room = await rooms.create_ranked(redis, p.a, p.b)
     except Exception:  # noqa: BLE001
@@ -127,6 +148,8 @@ async def cancel(
     trả về hàng chờ với thời điểm xếp hàng cũ và nhận `queued` mới."""
     await pd.remove(redis, p)
     for u in p.users:
+        if u == pd.BOT_ID:
+            continue  # máy không xếp hàng, không nhận tin
         culprit = u in by
         requeued = False
         if not culprit:

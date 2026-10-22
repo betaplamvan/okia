@@ -118,6 +118,7 @@ export interface MatchFound {
   mode?: string;
   expiresAt: number;
   acceptSeconds: number;
+  bot?: boolean;
 }
 /**
  * Số người đã chấp nhận thay đổi (để hiện "chờ người chơi khác").

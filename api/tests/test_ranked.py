@@ -298,8 +298,9 @@ def play_vs_bot(ws: WebSocketTestSession, code: str, state: dict[str, Any], seat
 
 
 def test_ghep_may_khi_cho_lau(client: TestClient) -> None:
-    """Một mình chờ quá MM_BOT_AFTER_SECONDS (2 giây ở test) → phòng với máy, chơi hết ván, chốt
-    điểm hạng một nửa, rating ẩn không đổi, lịch sử ghi đối thủ là máy."""
+    """Một mình chờ quá MM_BOT_AFTER_SECONDS (1 giây ở test) → trận chờ với máy (match_found
+    bot=True, máy đã nhận sẵn): từ chối → rời hàng chờ; chấp nhận → phòng với máy, chơi hết ván,
+    chốt điểm hạng một nửa, rating ẩn không đổi, lịch sử ghi đối thủ là máy."""
     from app.admin import config as appconfig
 
     ta, ua = account(client, "donla@example.com")
@@ -308,6 +309,20 @@ def test_ghep_may_khi_cho_lau(client: TestClient) -> None:
     try:
         send(a, t="queue", mode="ranked")
         recv(a, "queued")
+        f = recv(a, "match_found")
+        assert f["bot"] is True and f["acceptSeconds"] > 0
+        assert recv(a, "match_update")["accepted"] == 1  # máy đã sẵn sàng
+        # Từ chối → rời hàng chờ (không xếp lại), không có phòng.
+        send(a, t="match_decline", matchId=f["matchId"])
+        c = recv(a, "match_cancelled")
+        assert c["byMe"] is True and c["requeued"] is False
+        # Tìm lại → lại gặp máy → chấp nhận → matched.
+        send(a, t="queue", mode="ranked")
+        recv(a, "queued")
+        f2 = recv(a, "match_found")
+        assert f2["bot"] is True
+        recv(a, "match_update")
+        send(a, t="match_accept", matchId=f2["matchId"])
         matched = recv(a, "matched")
     finally:
         appconfig._cache.pop("mm_bot_after_seconds", None)

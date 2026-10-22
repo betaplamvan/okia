@@ -1,6 +1,7 @@
-// Smoke ghép máy khi chờ lâu (docs/07): một tài khoản xếp hàng một mình → sau MM_BOT_AFTER_SECONDS
-// (api/.env local: 5) được ghép máy → phòng hiện chip "Máy", máy tự đi, chơi tới hết ván → hộp kết quả
-// có điểm hạng ±12/−8.
+// Smoke ghép máy khi chờ lâu (docs/07): một tài khoản xếp hàng một mình → rời sang trang chủ vẫn
+// thấy cửa sổ thu nhỏ "đang tìm", /play bị khóa → sau MM_BOT_AFTER_SECONDS (api/.env local: 5) hộp
+// chấp nhận bật lên (đối thủ: Máy) ngay trên trang khác → Chơi luôn → phòng hiện chip "Máy", máy tự
+// đi, chơi tới hết ván → hộp kết quả có điểm hạng ±12/−8.
 //   node scripts/smoke-bot.mjs [http://localhost:3000]
 import { chromium } from "playwright";
 
@@ -33,6 +34,17 @@ await page.getByTestId("searching").waitFor({ timeout: 10000 });
 if (/người đang chờ/.test(await page.getByTestId("searching").innerText()))
   throw new Error("vẫn hiện số người chờ");
 console.log("đang tìm: không hiện số người chờ/online");
+// Rời trang: cửa sổ thu nhỏ ở trang chủ, /play bị khóa.
+await page.goto(base + "/", { waitUntil: "networkidle" });
+await page.getByTestId("search-pill").waitFor({ timeout: 10000 });
+await page.goto(base + "/play", { waitUntil: "networkidle" });
+await page.getByTestId("play-locked").waitFor({ timeout: 10000 });
+console.log("rời trang: vẫn tìm (cửa sổ thu nhỏ), /play bị khóa");
+// Ghép máy → hộp chấp nhận ngay tại /play.
+await page.getByTestId("accept-dialog").waitFor({ timeout: 30000 });
+await page.getByTestId("accept-bot").waitFor();
+await page.screenshot({ path: ".shots/bot-accept.png" });
+await page.getByTestId("accept-match").click();
 await page.waitForURL(/\/r\/[A-Z0-9]{6}$/, { timeout: 30000 });
 const botChip = page.getByText("Máy · điểm hạng ½");
 await botChip.waitFor({ timeout: 10000 });
