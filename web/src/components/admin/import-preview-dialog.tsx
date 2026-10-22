@@ -29,7 +29,7 @@ export type PreviewItem = {
 type Props = {
   items: PreviewItem[] | null;
   busy?: boolean;
-  onConfirm: () => void;
+  onConfirm: (replace: boolean) => void;
   onClose: () => void;
 };
 
@@ -40,6 +40,7 @@ const kb = (n: number) => `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`;
 export function ImportPreviewDialog({ items, busy, onConfirm, onClose }: Props) {
   const t = useTranslations("Admin");
   const [trying, setTrying] = useState<SkinManifest | null>(null);
+  const [replace, setReplace] = useState(false);
   return (
     <>
       <Dialog.Root
@@ -107,11 +108,21 @@ export function ImportPreviewDialog({ items, busy, onConfirm, onClose }: Props) 
                       </Stack>
                     ))}
                   </SimpleGrid>
+                  <Button
+                    variant="sticker"
+                    size="sm"
+                    alignSelf="flex-start"
+                    bg={replace ? "coral" : "paper"}
+                    onClick={() => setReplace((v) => !v)}
+                    data-testid="import-replace"
+                  >
+                    {replace ? "☑" : "☐"} {t("skins.previewReplace")}
+                  </Button>
                   <HStack>
                     <Button
                       variant="sticker"
-                      bg="mint"
-                      onClick={onConfirm}
+                      bg={replace ? "coral" : "mint"}
+                      onClick={() => onConfirm(replace)}
                       loading={busy}
                       data-sfx="confirm"
                       data-testid="import-confirm"

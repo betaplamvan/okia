@@ -6,6 +6,7 @@
 //
 //   node scripts/smoke-shop.mjs http://localhost:3000
 import { chromium } from "playwright";
+import { ensureShopSkins } from "./lib/shop-fixtures.mjs";
 
 const [base = "http://localhost:3000"] = process.argv.slice(2);
 const stamp = Date.now().toString(36);
@@ -18,6 +19,9 @@ page.on("console", (m) => {
     problems.push(`[console.error] ${m.text().split("\n")[0].slice(0, 200)}`);
 });
 page.on("pageerror", (e) => problems.push(`[pageerror] ${String(e.message).slice(0, 200)}`));
+
+// Seed chỉ còn skin default → nhập 6 skin fixture qua API admin trước (shared/fixtures/skins/test-skins.json).
+await ensureShopSkins(base.replace(/:\d+$/, ":8000"));
 
 // Khách.
 await page.goto(base + "/shop", { waitUntil: "networkidle" });

@@ -23,3 +23,6 @@ __pycache__/
 
 # Output pipeline asset (xem docs/12-asset.md)
 web/public/assets/
+
+# Sao lưu skin đã gỡ khỏi seed (nhập lại qua admin) — chỉ trên máy dev
+shared/skins/_backup/

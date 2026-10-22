@@ -34,6 +34,7 @@
     "smoke:shop": "node scripts/smoke-shop.mjs",
     "smoke:admin": "node scripts/smoke-admin.mjs",
     "smoke:skin": "node scripts/smoke-skin-package.mjs",
+    "smoke:skin-purge": "node scripts/smoke-skin-purge.mjs",
     "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {

@@ -8,6 +8,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.skins import catalog
+from tests.skin_fixtures import install_test_skins, install_test_skins_sync
 
 SHARED = Path(__file__).resolve().parents[2] / "shared" / "skins"
 
@@ -36,24 +37,24 @@ def test_ban_chep_catalog_khop_shared() -> None:
 
 
 def test_catalog_hop_le() -> None:
+    """Seed chỉ còn hai skin default (ADR-0014): skin khác là tài nguyên nhập qua admin."""
+    seed = {m["id"] for m in catalog.seed_manifests()}
+    assert seed == {"pen_default", "box_default"}
     skins = catalog.all_skins()
-    assert len(skins) >= 15
     for s in skins.values():
         assert s.type in catalog.TYPES and s.rarity in catalog.RARITIES
         assert s.name["vi"] and s.name["en"] and s.description["vi"] and s.description["en"]
     assert catalog.default_loadout() == {"pen": "pen_default", "box": "box_default"}
     assert catalog.get_skin("pen_default").price == {}  # type: ignore[union-attr]
-    assert catalog.get_skin("pen_marker").price == {"lead": 250}  # type: ignore[union-attr]
-    assert catalog.get_skin("pen_gold").price == {"flower": 5}  # type: ignore[union-attr]
-    # Mỗi bậc có ít nhất một skin mỗi loại ở bậc vàng (legendary).
-    assert {s.rarity for s in catalog.by_type("pen")} == set(catalog.RARITIES)
-    assert any(s.rarity == "legendary" for s in catalog.by_type("box"))
+    assert catalog.rarity_price()["uncommon"] == {"lead": 250}
+    assert catalog.rarity_price()["legendary"] == {"flower": 5}
 
 
 # ---------- Shop ----------
 
 
 async def test_mua_trang_bi_va_tu_choi(client: AsyncClient) -> None:
+    await install_test_skins(client)
     tok = await account(client, "an@example.com", lead=700, flower=5)
     me = (await client.get("/me", headers=bearer(tok))).json()
     assert me["loadout"] == {"pen": "pen_default", "box": "box_default"}
@@ -102,6 +103,7 @@ async def test_mua_trang_bi_va_tu_choi(client: AsyncClient) -> None:
 
 
 async def test_khach_chi_xem(client: AsyncClient) -> None:
+    await install_test_skins(client)
     r = await client.post("/auth/guest", json={"deviceId": "device-guest-0123456789"})
     tok = r.json()["accessToken"]
     r = await client.get("/me/skins", headers=bearer(tok))
@@ -122,6 +124,7 @@ def test_loadout_trong_room_state() -> None:
     from app.main import create_app
 
     with TestClient(create_app()) as c:
+        install_test_skins_sync(c)
         ra = c.post("/auth/dev-login", json={"email": "a@example.com", "lead": 300})
         ta = ra.json()["accessToken"]
         c.cookies.clear()

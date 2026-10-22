@@ -25,6 +25,7 @@ import {
   LuFlower,
   LuPencil,
   LuSearch,
+  LuTrash2,
   LuUpload,
 } from "react-icons/lu";
 import { adminCall, Field } from "@/components/admin/admin-screen";
@@ -537,6 +538,13 @@ export function AdminSkins() {
     await adminCall(`/admin/skins/${r.id}`, { method: "DELETE" });
     await load();
   }
+  // Xóa mọi skin không-default (sở hữu giữ nguyên; nhập lại cùng id là có lại).
+  async function purge() {
+    if (!window.confirm(t("skins.confirmPurge"))) return;
+    const r = await adminCall<{ deleted: number }>("/admin/skins/purge", { method: "POST" });
+    toaster.success({ title: t("skins.purged", { n: String(r.deleted) }) });
+    await load();
+  }
   async function toggle(r: AdminSkin) {
     await adminCall<AdminSkin>(`/admin/skins/${r.id}`, {
       method: "PATCH",
@@ -600,20 +608,21 @@ export function AdminSkins() {
       for (const u of Object.values(it.manifest.assets?.urls ?? {})) URL.revokeObjectURL(u);
     setPreview(null);
   }
-  async function confirmImport() {
+  // `replace`: thay toàn bộ catalog — xóa skin không có trong gói (trừ mặc định).
+  async function confirmImport(replace: boolean) {
     if (!preview) return;
     setBusy(true);
     try {
       if (preview.file) {
         const form = new FormData();
         form.append("file", preview.file, preview.file.name);
+        form.append("replace", replace ? "true" : "false");
         const out = await adminCall<AdminSkin[]>("/admin/skins/import-package", { form });
         toaster.success({
           title: t("skins.importedPackage", { ids: out.map((r) => r.id).join(", ") }),
         });
       } else {
         const skins = preview.items.map((i) => i.manifest);
-        const replace = skins.length > 1 ? window.confirm(t("skins.confirmReplace")) : false;
         await adminCall<AdminSkin[]>("/admin/skins/import", {
           method: "POST",
           body: { skins, replace },
@@ -697,6 +706,16 @@ export function AdminSkins() {
             e.target.value = "";
           }}
         />
+        <Button
+          variant="sticker"
+          size="sm"
+          bg="coral"
+          onClick={() => void purge()}
+          disabled={!rows.some((r) => !r.manifest.default)}
+          data-testid="admin-skins-purge"
+        >
+          <LuTrash2 /> {t("skins.purge")}
+        </Button>
         <Text color="cream" fontSize="sm" ms="auto">
           {t("skins.count", { n: String(rows.length) })}
         </Text>
@@ -775,7 +794,7 @@ export function AdminSkins() {
       <ImportPreviewDialog
         items={preview?.items ?? null}
         busy={busy}
-        onConfirm={() => void confirmImport()}
+        onConfirm={(replace) => void confirmImport(replace)}
         onClose={closePreview}
       />
 

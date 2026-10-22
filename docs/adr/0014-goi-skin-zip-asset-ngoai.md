@@ -51,3 +51,7 @@ Người phát triển muốn: sửa / thêm / bỏ skin nhanh; **upload một z
 - (−) Thêm một chỗ phụ thuộc object storage (dev không có S3 → MemoryStorage, mất khi restart;
   production bắt buộc MinIO như ảnh đại diện).
 - Chưa làm: font, nhạc nền, skin bàn trong gói; xem trước ảnh `preview.png` trên thẻ shop.
+
+## Bổ sung 2026-10-22: seed chỉ còn skin default
+
+Repo chỉ giữ hai manifest default làm seed (catalog luôn có mặc định); 20 skin ban đầu được gỡ khỏi seed, sao lưu ở `shared/skins/_backup/` (gitignore) và từ nay là tài nguyên nhập qua admin như mọi gói khác. Lý do: seed chèn lại skin thiếu mỗi lần API khởi động, nên muốn "xóa trên prod" phải gỡ khỏi seed; và hướng mới là mọi skin đi qua admin, không qua deploy. Kèm theo: `POST /admin/skins/purge` (xóa tất cả trừ mặc định, giữ `inventory`), tùy chọn "thay toàn bộ catalog" khi nhập gói, fixture `shared/fixtures/skins/test-skins.json` cho test / smoke.

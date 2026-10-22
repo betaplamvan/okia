@@ -2,6 +2,7 @@
 // ADMIN_EMAILS=ducquank52t1@gmail.com), nút "Quản trị" trong hồ sơ → /admin → 4 tab hoạt động.
 //   node scripts/smoke-admin.mjs [http://localhost:3000]
 import { chromium } from "playwright";
+import { ensureShopSkins } from "./lib/shop-fixtures.mjs";
 
 const [base = "http://localhost:3000"] = process.argv.slice(2);
 const browser = await chromium.launch({ channel: "msedge", headless: true });
@@ -14,6 +15,7 @@ page.on("console", (m) => {
 page.on("pageerror", (e) => problems.push(`[pageerror] ${String(e.message).slice(0, 200)}`));
 
 const apiBase = base.replace(/:\d+$/, ":8000");
+await ensureShopSkins(apiBase); // seed chỉ còn skin default → nhập fixture để có pen_marker
 
 async function devLogin(email) {
   await page.goto(base + "/", { waitUntil: "networkidle" });

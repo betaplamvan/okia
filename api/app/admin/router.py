@@ -10,6 +10,7 @@
 - PATCH /admin/users/{id}                đổi tên hiển thị
 - GET  /admin/skins · PATCH /admin/skins/{id} (metadata) · PUT (manifest JSON) · DELETE
 - GET  /admin/skins/{id}/export (manifest JSON) · GET /admin/skins/{id}/package (zip gói)
+- POST /admin/skins/purge (xóa mọi skin không-default; sở hữu giữ nguyên)
 - GET  /admin/skins/export (bundle zip; ?format=json) · POST /admin/skins/import (JSON)
 - POST /admin/skins/preview-package (xem trước, không ghi) · POST /admin/skins/import-package
   (multipart zip: một gói hoặc bundle — shared/skins/SPEC.md)
@@ -586,9 +587,21 @@ async def skin_delete(skin_id: str, db: Db) -> dict[str, bool]:
     return {"ok": True}
 
 
+@router.post("/skins/purge")
+async def skins_purge(db: Db) -> dict[str, int]:
+    """Xóa mọi skin không-default (kể cả đang tắt) + file đi kèm. Dòng sở hữu trong `inventory`
+    giữ nguyên: nhập lại gói cùng id thì người chơi có lại ngay."""
+    dropped = await _replace_missing(db, set())
+    await db.commit()
+    await catalog.sync_from_db(db)
+    for sid, a in dropped:
+        await _drop_files(sid, a)
+    return {"deleted": len(dropped)}
+
+
 class SkinsImportIn(CamelModel):
     skins: list[dict[str, Any]]
-    # true: xóa những skin không có trong file (trừ default); false: chỉ thêm / ghi đè.
+    # true: xóa những skin không có trong file (default luôn giữ); false: chỉ thêm / ghi đè.
     replace: bool = False
 
 
@@ -608,11 +621,7 @@ async def skins_import(body: SkinsImportIn, db: Db) -> list[AdminSkinOut]:
     ids = {m.get("id") for m in body.skins if isinstance(m, dict)}
     if len(ids) != len(body.skins):
         raise AppError("BAD_SKIN", 400, detail="id trùng trong file")
-    for t in catalog.TYPES:
-        if body.replace and not any(
-            isinstance(m, dict) and m.get("type") == t and m.get("default") for m in body.skins
-        ):
-            raise AppError("BAD_SKIN", 400, detail=f"thiếu skin default cho {t}")
+    # replace: skin default luôn được giữ (không cần có trong file).
     for i, raw in enumerate(body.skins):
         await _put_manifest(db, raw, True, i, None)
     dropped = await _replace_missing(db, {str(i) for i in ids}) if body.replace else []
@@ -675,11 +684,7 @@ async def skins_import_package(
     except package.PackageError as e:
         raise AppError("BAD_SKIN", 400, detail=str(e)[:300]) from e
     ids = {p.manifest["id"] for p in pkgs}
-    if replace:
-        for t in catalog.TYPES:
-            if not any(p.manifest["type"] == t and p.manifest.get("default") for p in pkgs):
-                raise AppError("BAD_SKIN", 400, detail=f"thiếu skin default cho {t}")
-    # Kiểm tra hết trước khi ghi gì (không để nửa bundle).
+    # Kiểm tra hết trước khi ghi gì (không để nửa bundle). replace: default luôn được giữ.
     rows: dict[str, SkinRow | None] = {}
     for p in pkgs:
         rows[p.manifest["id"]] = await db.get(SkinRow, p.manifest["id"])

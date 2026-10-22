@@ -69,6 +69,8 @@ Nguồn sự thật về cấu trúc: **`shared/skins/schema.json`** (JSON Schem
 
 Hiệu ứng chạy liên tục (thở, lửa, trôi, ánh kim) đi qua `app.ticker` của renderer; bật "Giảm hiệu ứng" → tất cả **tĩnh**. Hiệu năng: quầng neon chỉ đổi alpha (không vẽ lại); mỗi cạnh animate vẽ lại tối đa một lần / ~50 ms; hạt lửa dùng pool Graphics (chỉ đổi vị trí / scale / tint), trần 60 hạt.
 
+Các bút / ô dưới đây là bộ ban đầu (nay nằm ngoài repo, nhập qua admin — xem "Seed chỉ còn skin default"):
+
 | Bút | Bậc | `style` | `mine` → `opponent` |
 |---|---|---|---|
 | Bút bi | trắng | `flat` | `#1e4fd8` → `#d8341e` |
@@ -139,6 +141,10 @@ Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt pa
 ## Catalog trong DB (2026-10-22)
 
 Nguồn lúc chạy là bảng `skins` (id, type, rarity, enabled, sort, manifest JSONB). `app/skins/catalog.json` (sinh từ `shared/skins` bằng `pnpm gen:skins`) chỉ còn là **seed**: API khởi động chèn các id chưa có trong DB, không ghi đè bản admin đã sửa. Mỗi tiến trình giữ cache, đọc lại DB mỗi 15 giây (admin sửa thì tiến trình đó cập nhật ngay). Web tải `GET /skins` lúc boot và `registerSkins()` thay bảng tra của engine (bản biên dịch `catalog.data.ts` là dự phòng) — thêm / sửa / tắt skin ở `/admin` không cần deploy. Skin `default` không xóa / tắt / ghi đè bằng bản không-default được; xóa skin khác thì người sở hữu về mặc định. API kiểm tra manifest theo `schema.json` (cùng quy tắc với `gen-skins.mjs`). Giá theo bậc lấy từ thông số admin `rarity_price`.
+
+## Seed chỉ còn skin default (2026-10-22)
+
+`shared/skins/{pen,box}/` chỉ giữ **hai skin default** (seed bắt buộc để catalog luôn có mặc định). 20 skin còn lại (bảng trên) không còn trong repo: chúng là **tài nguyên** nhập qua admin như mọi gói khác — bản sao lưu ở `shared/skins/_backup/` trên máy dev (gitignore; bundle `okia-skins-backup-<ngày>.zip` nhập lại một phát với tùy chọn "thay toàn bộ catalog"). Test / smoke dùng 6 skin trong `shared/fixtures/skins/test-skins.json` (nhập qua `POST /admin/skins/import` lúc chạy). Admin có nút **"Xóa tất cả trừ mặc định"** (`POST /admin/skins/purge`): xóa mọi skin không-default kể cả đang tắt và file đi kèm; dòng sở hữu trong `inventory` giữ nguyên nên nhập lại cùng id là người chơi có lại ngay.
 
 ## Gói skin `.okiaskin.zip` (2026-10-22, ADR-0014)
 

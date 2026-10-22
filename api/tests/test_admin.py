@@ -2,17 +2,15 @@
 thông số."""
 
 import json
-from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
 
 from app.admin import config as appconfig
 from app.skins import catalog
+from tests.skin_fixtures import fixture_manifests, install_test_skins
 
 pytestmark = pytest.mark.usefixtures("_clean")
-
-SHARED = Path(__file__).parents[2] / "shared" / "skins"
 
 
 async def login(client: AsyncClient, email: str) -> dict[str, str]:
@@ -88,7 +86,7 @@ async def test_nguoi_choi_tim_cong_tien_khoa(client: AsyncClient) -> None:
 
 
 def _sample_pen(skin_id: str) -> dict:  # type: ignore[type-arg]
-    src = json.loads((SHARED / "pen" / "pen_marker.json").read_text(encoding="utf-8"))
+    src = json.loads(json.dumps(next(m for m in fixture_manifests() if m["id"] == "pen_marker")))
     src["id"] = skin_id
     src["name"] = {"vi": "Bút test", "en": "Test pen"}
     src["default"] = False
@@ -148,21 +146,48 @@ async def test_skin_them_sua_xoa_export_import(client: AsyncClient) -> None:
             "/admin/skins/import", json={"skins": [_sample_pen(sid)]}, headers=admin
         )
         assert r.status_code == 200 and catalog.get_skin(sid) is not None
-        # Import replace thiếu default → từ chối, không mất gì.
+        # Import replace không cần default trong file: default luôn giữ, skin khác bị xóa.
         r = await client.post(
             "/admin/skins/import",
             json={"skins": [_sample_pen(sid)], "replace": True},
             headers=admin,
         )
-        assert r.status_code == 400 and catalog.get_skin("pen_default") is not None
+        assert r.status_code == 200, r.text
+        assert catalog.get_skin("pen_default") is not None
+        assert {s["id"] for s in r.json()} == {"pen_default", "box_default", sid}
     finally:
         r = await client.delete(f"/admin/skins/{sid}", headers=admin)
         assert r.status_code in (200, 404)
+        await install_test_skins(client, admin)
     assert catalog.get_skin(sid) is None
-    assert {s["id"] for s in (await client.get("/admin/skins", headers=admin)).json()} == before
+    ids = {s["id"] for s in (await client.get("/admin/skins", headers=admin)).json()}
+    assert ids >= {"pen_default", "box_default", "pen_marker"}
+
+
+async def test_xoa_tat_ca_tru_mac_dinh(client: AsyncClient) -> None:
+    await install_test_skins(client)
+    admin = await login(client, "admin@example.com")
+    r = await client.post("/auth/dev-login", json={"email": "mua@example.com", "lead": 300})
+    client.cookies.clear()
+    user = {"Authorization": f"Bearer {r.json()['accessToken']}"}
+    assert (await client.post("/me/skins/pen_marker/buy", headers=user)).status_code == 200
+    assert (await client.post("/admin/skins/purge", headers=user)).status_code == 403
+    r = await client.post("/admin/skins/purge", headers=admin)
+    assert r.status_code == 200 and r.json()["deleted"] >= 6
+    ids = {s["id"] for s in (await client.get("/admin/skins", headers=admin)).json()}
+    assert ids == {"pen_default", "box_default"}
+    assert catalog.get_skin("pen_marker") is None
+    # Kho sở hữu giữ nguyên: nhập lại cùng id là có lại ngay.
+    assert (await client.get("/me/skins", headers=user)).json()["owned"] == [
+        "box_default",
+        "pen_default",
+    ]
+    await install_test_skins(client)
+    assert "pen_marker" in (await client.get("/me/skins", headers=user)).json()["owned"]
 
 
 async def test_thong_so(client: AsyncClient) -> None:
+    await install_test_skins(client)
     admin = await login(client, "admin@example.com")
     r = await client.get("/admin/config", headers=admin)
     assert r.status_code == 200 and r.json()["values"]["ranked_win_lead"] == 30
