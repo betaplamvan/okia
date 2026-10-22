@@ -364,7 +364,41 @@ function fireFlare(seed) {
   return normalize(out, 0.82);
 }
 
+/**
+ * "Ready check" khi ghép được trận (docs/07): lớp đệm trầm dâng lên (hai nốt quãng năm, hơi răng
+ * cưa) + chuông sáng ba nốt đi lên rồi ngân, ~1,4 s — nghe rõ dù đang ở tab / trang khác.
+ */
+function readyCheck() {
+  const durMs = 1400;
+  const n = Math.floor((SR * durMs) / 1000);
+  const out = new Array(n).fill(0);
+  // Đệm: 130,8 Hz (C3) + 196 Hz (G3), răng cưa mềm (5 bội), dâng 0 → 1 trong 350 ms, tắt từ 900 ms.
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    const env = Math.min(1, t / 0.35) * (t < 0.9 ? 1 : Math.exp(-(t - 0.9) * 6));
+    let v = 0;
+    for (const f of [130.81, 196]) {
+      for (let k = 1; k <= 5; k++) v += Math.sin(2 * Math.PI * f * k * t) / (k * 1.6);
+    }
+    out[i] += v * env * 0.11;
+  }
+  // Chuông: C5 → E5 → G5 cách 140 ms, ngân dài; nốt cuối thêm C6 nhỏ.
+  const bells = [
+    [523.25, 0.0, 1.0],
+    [659.25, 0.14, 1.0],
+    [783.99, 0.28, 1.2],
+    [1046.5, 0.3, 0.45],
+  ];
+  for (const [f, at, amp] of bells) {
+    const start = Math.floor(SR * at);
+    const b = bell(f, 1000);
+    for (let i = 0; i < b.length && start + i < n; i++) out[start + i] += b[i] * amp * 0.55;
+  }
+  return normalize(out, 0.9);
+}
+
 const files = {
+  "match_found.wav": readyCheck(),
   "combo.wav": sparkle(71),
   "capture_fire.wav": fireWhoosh(41),
   "combo_fire.wav": fireFlare(43),

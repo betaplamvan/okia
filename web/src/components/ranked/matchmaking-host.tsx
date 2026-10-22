@@ -37,7 +37,7 @@ export function MatchmakingHost() {
   }, [notice, t]);
 
   useEffect(() => {
-    if (search.phase === "found") audio.play("notify", { volume: 0.9 });
+    if (search.phase === "found") audio.play("match_found", { volume: 1 });
   }, [search.phase]);
 
   // Đang tìm (kể cả vừa tải lại trang, trạng thái từ sessionStorage) → giữ WS mở; nối lại thì store

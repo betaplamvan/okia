@@ -368,7 +368,11 @@
     "pillOpen": "Xem",
     "lockedTitle": "Đang tìm trận xếp hạng",
     "lockedBody": "Chơi với máy tạm khóa để không xung đột: ghép được đối thủ là hộp chấp nhận bật lên và vào phòng ngay. Hủy tìm nếu muốn chơi với máy.",
-    "lockedBack": "Về trang xếp hạng"
+    "lockedBack": "Về trang xếp hạng",
+    "botReadyShort": "Máy đã sẵn sàng — bấm Chơi luôn!",
+    "otherAcceptedShort": "Đối thủ đã sẵn sàng — bấm Chơi luôn!",
+    "acceptWithinShort": "Chấp nhận trước khi hết giờ",
+    "secondsLabel": "giây"
   },
   "Leaderboard": {
     "title": "Bảng xếp hạng",
