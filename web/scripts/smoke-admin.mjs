@@ -66,6 +66,7 @@ await page.screenshot({ path: ".shots/admin-stats.png" });
 console.log("thống kê: ok");
 
 await page.getByRole("tab", { name: "Người chơi" }).click();
+await page.getByText(/\d+–\d+ \/ \d+/).waitFor({ timeout: 10000 }); // đếm + phân trang
 await page.getByPlaceholder("Tên, email hoặc id").fill("thuong-smoke");
 await page.getByRole("button", { name: "Tìm" }).click();
 const row = page.getByTestId("admin-users").getByText("thuong-smoke@example.com").first();
@@ -80,11 +81,11 @@ console.log("người chơi: tìm + cộng 25 Ruột chì ok");
 
 await page.getByRole("tab", { name: "Skin" }).click();
 await page.getByText(/\d+ skin trong DB/).waitFor({ timeout: 10000 });
-await page.getByRole("button", { name: "Thêm skin" }).click();
-await page.getByRole("dialog").getByRole("textbox").waitFor();
+await page.getByTestId("admin-skin-pen_marker").getByRole("button", { name: "Sửa" }).click();
+await page.getByRole("dialog").getByText("Tên (vi)").waitFor();
 await page.keyboard.press("Escape");
 await page.screenshot({ path: ".shots/admin-skins.png" });
-console.log("skin: danh sách + hộp thêm ok");
+console.log("skin: lưới + hộp sửa metadata ok");
 
 await page.getByRole("tab", { name: "Thông số" }).click();
 await page.getByText("Ruột chì cho người thắng trận xếp hạng").waitFor({ timeout: 10000 });

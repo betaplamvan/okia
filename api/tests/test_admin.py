@@ -45,9 +45,18 @@ async def test_nguoi_choi_tim_cong_tien_khoa(client: AsyncClient) -> None:
     uid = (await client.get("/me", headers=victim)).json()["id"]
 
     r = await client.get("/admin/users", params={"q": "nan-nhan"}, headers=admin)
-    assert r.status_code == 200 and [u["id"] for u in r.json()] == [uid]
+    assert r.status_code == 200 and [u["id"] for u in r.json()["items"]] == [uid]
+    assert r.json()["total"] == 1
     r = await client.get("/admin/users", params={"q": uid}, headers=admin)
-    assert [u["id"] for u in r.json()] == [uid]
+    assert [u["id"] for u in r.json()["items"]] == [uid]
+    # Mặc định chỉ tài khoản liên kết; khách phải lọc riêng; phân trang có total.
+    await client.post("/auth/guest", json={"deviceId": "guest-admin-00000000"})
+    client.cookies.clear()
+    r = await client.get("/admin/users", params={"limit": 1}, headers=admin)
+    assert r.json()["total"] >= 2 and len(r.json()["items"]) == 1
+    assert all(not u["isGuest"] for u in r.json()["items"])
+    r = await client.get("/admin/users", params={"kind": "guest"}, headers=admin)
+    assert r.json()["total"] >= 1 and all(u["isGuest"] for u in r.json()["items"])
 
     r = await client.post(
         f"/admin/users/{uid}/grant", json={"lead": 500, "flower": 2, "note": "test"}, headers=admin
@@ -112,6 +121,17 @@ async def test_skin_them_sua_xoa_export_import(client: AsyncClient) -> None:
             f"/admin/skins/{sid}", json={"manifest": _sample_pen("pen_khac")}, headers=admin
         )
         assert r.status_code == 400
+        # Sửa metadata (PATCH): tên + bậc đổi, hiệu ứng giữ nguyên; export đơn lẻ trả manifest.
+        r = await client.patch(
+            f"/admin/skins/{sid}",
+            json={"name": {"vi": "Bút đổi tên", "en": "Renamed"}, "rarity": "rare"},
+            headers=admin,
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["manifest"]["name"]["vi"] == "Bút đổi tên" and r.json()["rarity"] == "rare"
+        assert r.json()["manifest"]["pen"] == _sample_pen(sid)["pen"]
+        one = (await client.get(f"/admin/skins/{sid}/export", headers=admin)).json()
+        assert one["id"] == sid and one["forms"]
         # Tắt → biến khỏi catalog nhưng vẫn trong export.
         r = await client.put(
             f"/admin/skins/{sid}",

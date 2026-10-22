@@ -475,10 +475,17 @@
       "unbanned": "Đã mở khóa.",
       "bannedUntil": "Đang khóa tới {date}.",
       "notBanned": "Không bị khóa.",
-      "matches": "10 ván gần nhất"
+      "matches": "10 ván gần nhất",
+      "kind": "Loại tài khoản",
+      "kindAccount": "Tài khoản liên kết",
+      "kindGuest": "Tài khoản khách",
+      "kindAll": "Tất cả",
+      "range": "{from}–{to} / {total}",
+      "page": "Trang {n}/{of}",
+      "prev": "Trước",
+      "next": "Sau"
     },
     "skins": {
-      "add": "Thêm skin",
       "export": "Xuất JSON",
       "import": "Nhập JSON",
       "count": "{n} skin trong DB",
@@ -490,13 +497,23 @@
       "enable": "Bật",
       "delete": "Xóa",
       "editTitle": "Sửa {id}",
-      "editHint": "Manifest đúng định dạng shared/skins/**.json (portable). API kiểm tra id, loại, bậc, tên vi/en, khối pen/box.",
-      "needId": "Manifest cần trường id.",
+      "editHint": "Thẻ = một skin trong DB. Nhập JSON chấp nhận file xuất tất cả hoặc một skin; hiệu ứng chỉ đổi qua nhập JSON.",
       "enabledOn": "Đang bật — bấm để tắt",
       "enabledOff": "Đang tắt — bấm để bật",
       "confirmDelete": "Xóa skin {id}? Người đang sở hữu sẽ về skin mặc định.",
       "confirmReplace": "Thay toàn bộ catalog bằng file này (xóa skin không có trong file, trừ mặc định)? Chọn Hủy để chỉ thêm / ghi đè.",
-      "imported": "Đã nhập {n} skin."
+      "imported": "Đã nhập {n} skin.",
+      "pen": "Bút",
+      "box": "Dấu ăn",
+      "exportOne": "Xuất",
+      "metaOnlyHint": "Chỉ sửa được tên, mô tả, bậc, thứ tự và bật/tắt. Hình nét và hiệu ứng là một phần của manifest: muốn đổi thì xuất JSON, sửa, rồi nhập lại.",
+      "nameVi": "Tên (vi)",
+      "nameEn": "Tên (en)",
+      "descVi": "Mô tả (vi)",
+      "descEn": "Mô tả (en)",
+      "rarity": "Bậc",
+      "sort": "Thứ tự",
+      "enabledLabel": "Trạng thái"
     },
     "cfg": {
       "rankedWinLead": "Ruột chì cho người thắng trận xếp hạng",
@@ -510,6 +527,7 @@
       "checkinRewards": "Thưởng điểm danh 7 ngày",
       "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền.",
       "resetDefaults": "Về mặc định"
-    }
+    },
+    "cancel": "Hủy"
   }
 }

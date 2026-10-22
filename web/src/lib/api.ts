@@ -129,6 +129,8 @@ export type AdminUser = {
   games: number | null;
 };
 
+export type AdminUserPage = { items: AdminUser[]; total: number; limit: number; offset: number };
+
 export type AdminMatch = {
   id: string;
   mode: string;

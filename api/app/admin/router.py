@@ -8,7 +8,8 @@
 - POST /admin/users/{id}/ban             khóa tới ngày (days) / mở khóa (null); thu hồi phiên,
                                          ngắt WS
 - PATCH /admin/users/{id}                đổi tên hiển thị
-- GET  /admin/skins · PUT /admin/skins/{id} · DELETE /admin/skins/{id}
+- GET  /admin/skins · PATCH /admin/skins/{id} (metadata) · PUT (manifest, dùng khi nhập) · DELETE
+- GET  /admin/skins/{id}/export (một skin)
 - GET  /admin/skins/export · POST /admin/skins/import   (JSON đúng định dạng shared/skins)
 - GET  /admin/config · PUT /admin/config (app/admin/config.py)
 """
@@ -168,26 +169,44 @@ async def _user_out(db: AsyncSession, u: User, r: Rating | None = None) -> Admin
     )
 
 
-@router.get("/users", response_model=list[AdminUserOut])
+class AdminUserPage(CamelModel):
+    items: list[AdminUserOut]
+    total: int
+    limit: int
+    offset: int
+
+
+@router.get("/users", response_model=AdminUserPage)
 async def users(
-    db: Db, q: str = Query("", max_length=64), limit: int = Query(30, ge=1, le=100)
-) -> list[AdminUserOut]:
-    stmt = select(User).order_by(User.created_at.desc()).limit(limit)
+    db: Db,
+    q: str = Query("", max_length=64),
+    kind: str = Query("account", pattern="^(account|guest|all)$"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> AdminUserPage:
+    """Danh sách có phân trang. `kind`: account (mặc định — tài khoản liên kết) | guest | all."""
+    base = select(User).where(User.deleted_at.is_(None))
+    if kind == "account":
+        base = base.where(User.is_guest.is_(False))
+    elif kind == "guest":
+        base = base.where(User.is_guest.is_(True))
     q = q.strip()
     if q:
         try:
-            stmt = stmt.where(User.id == uuid.UUID(q))
+            base = base.where(User.id == uuid.UUID(q))
         except ValueError:
             like = f"%{q}%"
-            stmt = stmt.where(or_(User.display_name.ilike(like), User.email.ilike(like)))
+            base = base.where(or_(User.display_name.ilike(like), User.email.ilike(like)))
+    total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one()
+    stmt = base.order_by(User.created_at.desc()).limit(limit).offset(offset)
     found = list((await db.execute(stmt)).scalars())
     season = await rating.current_season(db)
-    out = []
+    items = []
     for u in found:
         r = await rating.get_rating(db, u.id, season.id)
-        out.append(await _user_out(db, u, r))
+        items.append(await _user_out(db, u, r))
     await db.commit()
-    return out
+    return AdminUserPage(items=items, total=total, limit=limit, offset=offset)
 
 
 async def _load_user(db: AsyncSession, user_id: uuid.UUID) -> User:
@@ -413,6 +432,48 @@ async def skin_put(skin_id: str, body: SkinPutIn, db: Db) -> AdminSkinOut:
     await db.commit()
     await catalog.sync_from_db(db)
     return await _skin_out(db, row)
+
+
+class SkinMetaIn(CamelModel):
+    """Chỉ metadata: tên, mô tả, bậc, bật/tắt, thứ tự. Khối hiệu ứng (`pen`/`box`/`forms`/
+    `combo`/`sfx`) chỉ đổi được bằng nhập JSON (portable), không sửa tay trên giao diện."""
+
+    name: dict[str, str] | None = None
+    description: dict[str, str] | None = None
+    rarity: str | None = None
+    enabled: bool | None = None
+    sort: int | None = None
+
+
+@router.patch("/skins/{skin_id}", response_model=AdminSkinOut)
+async def skin_patch(skin_id: str, body: SkinMetaIn, db: Db) -> AdminSkinOut:
+    row = await db.get(SkinRow, skin_id)
+    if row is None:
+        raise AppError("NOT_FOUND", 404)
+    m = dict(row.manifest)
+    if body.name is not None:
+        m["name"] = body.name
+    if body.description is not None:
+        m["description"] = body.description
+    if body.rarity is not None:
+        m["rarity"] = body.rarity
+    m = _validate_manifest(m, skin_id)
+    enabled = row.enabled if body.enabled is None else body.enabled
+    if m["default"] and not enabled:
+        raise AppError("SKIN_DEFAULT_PROTECTED", 409)
+    row = await _upsert(db, m, enabled, body.sort)
+    await db.commit()
+    await catalog.sync_from_db(db)
+    return await _skin_out(db, row)
+
+
+@router.get("/skins/{skin_id}/export")
+async def skin_export(skin_id: str, db: Db) -> dict[str, Any]:
+    """Một skin, cùng định dạng file shared/skins/<type>/<id>.json."""
+    row = await db.get(SkinRow, skin_id)
+    if row is None:
+        raise AppError("NOT_FOUND", 404)
+    return row.manifest
 
 
 @router.delete("/skins/{skin_id}")
