@@ -72,7 +72,10 @@ for (const [k, z] of zips.entries()) {
   const pv = page.getByTestId("import-preview");
   await pv.waitFor({ timeout: 15000 });
   const id = k === 0 ? "pen_example" : "box_example";
-  await pv.getByTestId(`preview-skin-${id}`).getByText(/Mới|Đã có/).waitFor();
+  await pv
+    .getByTestId(`preview-skin-${id}`)
+    .getByText(/Mới|Đã có/)
+    .waitFor();
   if (!/\.(svg|png|webm) · \d/.test(await pv.innerText())) problems.push("xem trước thiếu file");
   if (k === 0) {
     // Thử trên bàn mẫu với ảnh / tiếng đọc từ zip (blob:), chưa nhập.
