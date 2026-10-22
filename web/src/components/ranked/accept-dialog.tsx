@@ -19,7 +19,7 @@ type Props = {
   onDecline: () => void;
 };
 
-const R = 92;
+const R = 110;
 const CIRC = 2 * Math.PI * R;
 
 // Hộp chấp nhận trận (docs/07 — Chấp nhận trận): vòng đếm ngược theo giờ server, "Chơi luôn!" to,
@@ -71,19 +71,19 @@ export function AcceptDialog({
             <Dialog.Body color="ink" py={6}>
               <Stack gap={4} align="center">
                 {/* Vòng đếm ngược: viền paper + vòng màu rút dần theo thời gian còn lại. */}
-                <Box position="relative" w="220px" h="220px">
-                  <svg viewBox="0 0 220 220" width="220" height="220" aria-hidden="true">
+                <Box position="relative" w="260px" h="260px">
+                  <svg viewBox="0 0 260 260" width="260" height="260" aria-hidden="true">
                     <circle
-                      cx="110"
-                      cy="110"
+                      cx="130"
+                      cy="130"
                       r={R}
                       fill="#fffcf2"
                       stroke="#1a2826"
                       strokeWidth="3"
                     />
                     <circle
-                      cx="110"
-                      cy="110"
+                      cx="130"
+                      cy="130"
                       r={R}
                       fill="none"
                       stroke={
@@ -93,12 +93,12 @@ export function AcceptDialog({
                       strokeLinecap="round"
                       strokeDasharray={CIRC}
                       strokeDashoffset={CIRC * (1 - frac)}
-                      transform="rotate(-90 110 110)"
+                      transform="rotate(-90 130 130)"
                       style={{ transition: "stroke-dashoffset 0.1s linear, stroke 0.3s" }}
                     />
                     <circle
-                      cx="110"
-                      cy="110"
+                      cx="130"
+                      cy="130"
                       r={R - 9}
                       fill="none"
                       stroke="#1a2826"
@@ -112,17 +112,12 @@ export function AcceptDialog({
                     align="center"
                     justify="center"
                     gap={1}
-                    px={6}
+                    px={9}
                   >
                     <Box fontSize="3xl" color="ink" lineHeight="1">
                       <LuSwords />
                     </Box>
-                    <Text
-                      fontSize="2xl"
-                      fontWeight="700"
-                      lineHeight="1.1"
-                      textTransform="uppercase"
-                    >
+                    <Text fontSize="xl" fontWeight="700" lineHeight="1.1" textTransform="uppercase">
                       {t("foundTitle")}
                     </Text>
                     <Text fontSize="sm" opacity={0.8} role="status">
