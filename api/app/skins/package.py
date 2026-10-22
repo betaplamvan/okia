@@ -152,6 +152,19 @@ def _sniff(path: str, data: bytes) -> None:
         raise PackageError(f"{path}: quá {limit // 1024} KB")
 
 
+def _read_capped(zf: zipfile.ZipFile, info: zipfile.ZipInfo, cap: int) -> bytes:
+    """Đọc một entry nhưng không quá `cap` byte sau giải nén (zip khai gian kích thước / zip bomb
+    không làm phình bộ nhớ); quá trần → PackageError."""
+    try:
+        with zf.open(info) as f:
+            data = f.read(cap + 1)
+    except (zipfile.BadZipFile, RuntimeError, OSError) as e:
+        raise PackageError(f"{info.filename}: không đọc được ({type(e).__name__})") from e
+    if len(data) > cap:
+        raise PackageError(f"{info.filename}: quá {cap // 1024} KB")
+    return data
+
+
 def _check_path(rel: str) -> str:
     """Đường dẫn trong một gói (sau khi bỏ thư mục chứa): asset đúng chuẩn hoặc file bỏ qua."""
     if rel.lower() in IGNORED:
@@ -213,13 +226,13 @@ def parse(data: bytes, *, allow_default: bool = False) -> list[Package]:
             key = _check_path(rel)
             if not key:
                 continue
-            blob = zf.read(info)
+            blob = _read_capped(zf, info, MAX_AUDIO if key.startswith("sfx/") else MAX_IMAGE)
             _sniff(key, blob)
             files[key] = blob
         if len(files) > MAX_FILES:
             raise PackageError(f"{folder or 'gói'}: quá {MAX_FILES} file")
         try:
-            raw = json.loads(zf.read(members["skin.json"]).decode("utf-8"))
+            raw = json.loads(_read_capped(zf, members["skin.json"], 256 * 1024).decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as e:
             raise PackageError(f"{folder or ''}skin.json không phải JSON hợp lệ") from e
         if isinstance(raw, dict):
