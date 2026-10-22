@@ -26,6 +26,9 @@ async def tick(redis: Redis, hub: Hub) -> int:
     """Một vòng ghép; trả số cặp đã ghép. Gọi được từ test."""
     now = q.now_ms()
     n = 0
+    # Mục ma (không ping quá 60 s: API restart, rớt mạng) → bỏ trước khi ghép.
+    for u in await q.purge_stale(redis, now):
+        log.info("bỏ khỏi hàng chờ (không thấy ping): %s", u)
     waiting = await q.entries(redis)
     # Lưu ý: không thoát sớm khi hàng chờ trống — trận chờ quá hạn vẫn phải được hủy.
     for a, b in q.pair_up(waiting, now) if waiting else []:

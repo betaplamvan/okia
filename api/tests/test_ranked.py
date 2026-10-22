@@ -443,6 +443,34 @@ def test_tu_choi_va_het_gio_tran_cho(client: TestClient) -> None:
     assert recv(a, "queued")["since"] == since_a
 
 
+async def test_muc_ma_trong_hang_cho_bi_bo_truoc_khi_ghep() -> None:
+    """API restart / rớt mạng không kịp đóng WS → mục trong hàng chờ còn nhưng không ping nữa:
+    worker bỏ mục ấy trước khi ghép (người thật không bị ghép với "ma" rồi chờ 10 s vô ích)."""
+    from app.matchmaking import pending as pd
+    from app.matchmaking import worker as mmw
+    from app.ws.hub import Hub
+
+    r = aioredis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+    try:
+        now = q.now_ms()
+        ghost = q.Entry("ghost", "Ma", 1500, 350, now - 50_000)
+        old = q.Entry("old", "Cũ", 1500, 350, now - 50_000)
+        live = q.Entry("live", "Sống", 1500, 350, now - 50_000)
+        for e in (ghost, old, live):
+            await q.enqueue(r, e)
+        await r.zadd(q.ONLINE_KEY, {"old": now - q.STALE_MS - 1000, "live": now - 5_000})
+        assert sorted(await q.purge_stale(r, now)) == ["ghost", "old"]
+        assert [e.user_id for e in await q.entries(r)] == ["live"]
+        # Trong tick: còn một mình → không ghép với ai, không có trận chờ.
+        await r.zadd(q.ONLINE_KEY, {"live": q.now_ms()})
+        await mmw.tick(r, Hub(r))
+        assert [e.user_id for e in await q.entries(r)] == ["live"]
+        assert await pd.of_user(r, "live") is None
+    finally:
+        await r.flushdb()
+        await r.aclose()
+
+
 # ---------- Service: chốt trận lệch, mùa mới, BXH ----------
 
 

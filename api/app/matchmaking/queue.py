@@ -125,6 +125,25 @@ async def leave_online(redis: Redis, user_id: str) -> None:
     await redis.zrem(ONLINE_KEY, user_id)
 
 
+# Mục "ma" trong hàng chờ: người không còn kết nối (API restart khi deploy, rớt mạng không kịp
+# đóng WS) nhưng mục trong Redis vẫn còn. Ping client mỗi 20 s cập nhật `online`; quá STALE_MS không
+# thấy → bỏ khỏi hàng chờ trước khi ghép, kẻo người thật bị ghép với ma, chờ 10 s chấp nhận vô ích.
+STALE_MS = 60_000
+
+
+async def purge_stale(redis: Redis, now: int | None = None) -> list[str]:
+    """Bỏ khỏi hàng chờ những người không thấy ping quá STALE_MS. Trả về danh sách user_id."""
+    now = now_ms() if now is None else now
+    ids = [e.user_id for e in await entries(redis)]
+    if not ids:
+        return []
+    scores = await redis.zmscore(ONLINE_KEY, ids)
+    gone = [u for u, sc in zip(ids, scores, strict=True) if sc is None or sc < now - STALE_MS]
+    for u in gone:
+        await dequeue(redis, u)
+    return gone
+
+
 async def online_count(redis: Redis) -> int:
     now = now_ms()
     await redis.zremrangebyscore(ONLINE_KEY, "-inf", now - ONLINE_WINDOW_MS)

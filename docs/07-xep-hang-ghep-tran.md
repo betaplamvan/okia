@@ -59,7 +59,7 @@ Worker nền (`api/app/matchmaking/worker.py`, một bản duy nhất nhờ `loc
 
 Client hiện hộp thoại với **vòng đếm ngược tròn** (giờ server), nút **Chơi luôn!** và **Từ chối**. Cả hai `match_accept` → tạo `room:{id}` (`mode = ranked`, map ngẫu nhiên, 30 giây/lượt, bắt đầu ngay) và gửi `matched`. Một người từ chối, hết giờ (worker quét `mm:pending` mỗi giây) hoặc rớt mạng → `match_cancelled` cho cả hai: người gây hủy rời hàng chờ; người kia được **trả về hàng chờ với thời điểm xếp hàng cũ** (không mất chỗ) và nhận `queued` mới. Người đã chấp nhận thấy "Đang chờ người chơi khác"; người chưa nhận thấy "Đối thủ đã sẵn sàng". Đang có trận chờ thì không xếp hàng lại được (`MATCH_PENDING`). Code: `api/app/matchmaking/pending.py`, `worker.accept/decline/cancel`, `web/src/components/ranked/accept-dialog.tsx`.
 
-Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự gửi `queue` lại khi nối lại.
+Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự gửi `queue` lại khi nối lại. **Mục "ma"** (2026-10-22): API restart khi deploy hoặc rớt mạng không kịp đóng WS để lại mục trong Redis dù người đã đi; worker bỏ khỏi hàng chờ mọi mục không thấy ping quá 60 giây (`queue.purge_stale`, ping client mỗi 20 giây cập nhật `online`) trước khi ghép — trước đây người thật bị ghép với ma, chờ hộp chấp nhận 10 giây vô ích rồi mới được xếp lại và (đã chờ lâu) ghép máy ngay, trông như "ghép máy vẫn hiện đếm ngược chấp nhận".
 
 ### Ghép máy khi chờ lâu (2026-10-22)
 
