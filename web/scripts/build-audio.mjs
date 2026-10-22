@@ -5,6 +5,7 @@
 //
 //   node scripts/build-audio.mjs
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,6 +53,16 @@ const rawIn = ["-f", "s16le", "-ar", String(SR), "-ac", "1", "-i", raw];
 run([...rawIn, "-c:a", "libopus", "-b:a", "64k", join(OUT, "core.webm")]);
 run([...rawIn, "-c:a", "libmp3lame", "-b:a", "96k", join(OUT, "core.mp3")]);
 writeFileSync(join(OUT, "core.json"), JSON.stringify({ sprite }, null, 2) + "\n");
+// Phiên bản sprite = băm nội dung webm: audio-manager gắn ?v= vào URL → thêm tiếng mới là CDN /
+// trình duyệt tải bản mới ngay (header /assets cache 1 giờ + CDN 1 ngày). File này được commit.
+const ver = createHash("sha256")
+  .update(require("node:fs").readFileSync(join(OUT, "core.webm")))
+  .digest("hex")
+  .slice(0, 8);
+writeFileSync(
+  join(root, "web/src/game/audio/sprite-version.json"),
+  JSON.stringify({ ver }, null, 2) + "\n",
+);
 require("node:fs").rmSync(raw);
 console.log(
   `sprite: ${sources.length} tiếng, ${(cursor / 1000).toFixed(1)}s → core.webm / core.mp3 / core.json`,

@@ -10,9 +10,12 @@
  */
 import type { Howl as HowlType } from "howler";
 import { getAudioSettings, subscribeAudioSettings, type AudioSettings } from "./audio-settings";
+import spriteVersion from "./sprite-version.json";
 
 type SpriteMap = Record<string, [number, number]>;
 const BASE = "/assets/audio";
+/** ?v=<băm sprite> (scripts/build-audio.mjs): sprite đổi là URL đổi, không dính cache CDN. */
+const V = `?v=${spriteVersion.ver}`;
 const DRAW_VARIANTS = ["draw_01", "draw_02", "draw_03"];
 const isUrl = (name: string) => /^(https?:)?\/\//.test(name) || name.startsWith("/");
 
@@ -39,11 +42,12 @@ class AudioManager {
     this.initPromise = (async () => {
       const [{ Howl }, manifest] = await Promise.all([
         import("howler"),
-        fetch(`${BASE}/core.json`).then((r) => (r.ok ? r.json() : { sprite: {} })),
+        fetch(`${BASE}/core.json${V}`).then((r) => (r.ok ? r.json() : { sprite: {} })),
       ]);
       const sprite = (manifest as { sprite: SpriteMap }).sprite;
       this.sfx = new Howl({
-        src: [`${BASE}/core.webm`, `${BASE}/core.mp3`],
+        src: [`${BASE}/core.webm${V}`, `${BASE}/core.mp3${V}`],
+        format: ["webm", "mp3"], // URL có query → Howler không đoán được đuôi
         sprite,
         preload: true,
       });

@@ -368,11 +368,7 @@
     "pillOpen": "Open",
     "lockedTitle": "Ranked search in progress",
     "lockedBody": "Playing vs the bot is locked meanwhile: when an opponent is found the accept dialog pops up and you enter the room. Cancel the search to play vs the bot.",
-    "lockedBack": "Back to ranked",
-    "botReadyShort": "Bot is ready — press Play now!",
-    "otherAcceptedShort": "Opponent is ready — press Play now!",
-    "acceptWithinShort": "Accept before time runs out",
-    "secondsLabel": "seconds"
+    "lockedBack": "Back to ranked"
   },
   "Leaderboard": {
     "title": "Leaderboard",

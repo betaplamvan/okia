@@ -141,7 +141,7 @@ Thiết bị bật "Giảm hiệu ứng" (`prefers-reduced-motion`) → tắt pa
 
 ## Âm thanh
 
-- **Audio sprite** (một file `core.webm` + `core.mp3` dự phòng) qua Howler; `web/scripts/build-audio.mjs` gộp `shared/audio/core/*` + `shared/audio/ui/*`, chạy trước `dev`/`build`. Mọi tiếng trong game tổng hợp bởi `scripts/synth-sfx.mjs` (tất định, có seed); nguồn ngoài ghi ở [credits.md](credits.md).
+- **Audio sprite** (một file `core.webm` + `core.mp3` dự phòng) qua Howler; URL kèm `?v=<băm sprite>` (`src/game/audio/sprite-version.json` do build-audio ghi, commit) để thêm tiếng mới không dính cache CDN / trình duyệt (header `/assets` cache 1 giờ + CDN 1 ngày); `web/scripts/build-audio.mjs` gộp `shared/audio/core/*` + `shared/audio/ui/*`, chạy trước `dev`/`build`. Mọi tiếng trong game tổng hợp bởi `scripts/synth-sfx.mjs` (tất định, có seed); nguồn ngoài ghi ở [credits.md](credits.md).
 - **Ghép được trận** (docs/07): `match_found` — "ready check" tổng hợp (đệm trầm dâng + chuông C5-E5-G5), 1,4 s; 5 giây cuối hộp chấp nhận gõ `count` mỗi giây.
 - **Bộ tiếng theo bút:** `capture` (ting mặc định), `capture_soft` (chì/sáp), `capture_marker` (dạ), `capture_ink` (mực "ục"), `capture_chalk` (gõ phấn), `capture_neon` (blip sóng vuông), `capture_bell` (chuông), `capture_fire` (whoosh lửa); `combo` (lấp lánh mặc định), `combo_ink`, `combo_chalk`, `combo_neon`, `combo_bell`, `combo_fire` (bùng lửa + rumble + lách tách).
 - **Combo:** ô thứ `n` trong một lượt phát `capture` của bút với `rate = 1 + 0.08 × (n−1)` (tối đa 1.6); từ ô thứ 2 phát thêm `combo` (`rate = 1 + 0.06 × (n−2)`, tối đa 1.5). Hai tiếng là của **bút người vừa đi** (`use-game-sounds.ts` đọc `SeatSkins`).
