@@ -4,21 +4,26 @@
 - GET  /me/skins         skin sở hữu + loadout + ví
 - POST /me/skins/{id}/buy  mua lẻ (tài khoản thật)
 - PUT  /me/loadout       trang bị (tài khoản thật)
+- GET  /skins/assets/{id}/{ver}/{path}  file của gói skin (ADR-0014), immutable
 """
 
 from __future__ import annotations
 
+import re
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import storage
 from app.auth.deps import account_user, current_user
 from app.auth.schemas import CamelModel
 from app.db import get_db
 from app.economy import wallet
+from app.errors import AppError
 from app.models import User
-from app.skins import catalog, service
+from app.skins import catalog, package, service
 
 router = APIRouter(tags=["skins"])
 Db = Annotated[AsyncSession, Depends(get_db)]
@@ -77,6 +82,28 @@ async def my_skins(db: AsyncSession, user: User) -> MySkinsOut:
 @router.get("/skins", response_model=list[SkinOut])
 async def skins() -> list[SkinOut]:
     return [skin_out(s) for s in catalog.all_skins().values()]
+
+
+VER_RE = re.compile(r"^[a-f0-9]{10}$")
+
+
+@router.get("/skins/assets/{skin_id}/{ver}/{path:path}", include_in_schema=False)
+async def skin_asset(skin_id: str, ver: str, path: str) -> Response:
+    """Ảnh / tiếng của gói skin, khóa theo phiên bản nội dung → cache vĩnh viễn (CDN, trình
+    duyệt). SVG được phục vụ với CSP chặn script (phòng mở trực tiếp trên origin API)."""
+    if not (catalog.ID_RE.match(skin_id) and VER_RE.match(ver) and package.ASSET_RE.match(path)):
+        raise AppError("NOT_FOUND", 404)
+    data = await storage.get_storage().get(package.storage_key(skin_id, ver, path))
+    if data is None:
+        raise AppError("NOT_FOUND", 404)
+    headers = {
+        "Cache-Control": storage.CACHE_IMMUTABLE,
+        "X-Content-Type-Options": "nosniff",
+        "Access-Control-Allow-Origin": "*",
+    }
+    if path.endswith(".svg"):
+        headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'"
+    return Response(content=data, media_type=package.media_type(path), headers=headers)
 
 
 @router.get("/me/skins", response_model=MySkinsOut, tags=["me"])

@@ -37,7 +37,11 @@ export type ApiInit = {
   token?: string | null;
   locale?: string;
   query?: Record<string, string>;
+  /** Tải file (zip xuất skin…): trả `ApiBlob` thay vì JSON. */
+  blob?: boolean;
 };
+
+export type ApiBlob = { blob: Blob; filename: string };
 
 export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -55,6 +59,11 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     });
   } catch {
     throw new ApiError("NETWORK", "", 0);
+  }
+  if (init.blob && res.ok) {
+    const cd = res.headers.get("content-disposition") ?? "";
+    const m = /filename="?([^";]+)"?/.exec(cd);
+    return { blob: await res.blob(), filename: m?.[1] ?? "download" } as T;
   }
   const text = await res.text();
   const data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
@@ -161,10 +170,12 @@ export type AdminSkin = {
   sort: number;
   owners: number;
   updatedAt: string;
-  manifest: { id: string; name?: { vi: string; en: string }; default?: boolean } & Record<
-    string,
-    unknown
-  >;
+  manifest: {
+    id: string;
+    name?: { vi: string; en: string };
+    default?: boolean;
+    assets?: { ver: string; files: string[]; base?: string };
+  } & Record<string, unknown>;
 };
 
 export type AdminConfigValues = {

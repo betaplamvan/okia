@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "box_example",
+  "type": "box",
+  "rarity": "epic",
+  "name": { "vi": "Dấu tên lửa", "en": "Rocket Stamp" },
+  "description": {
+    "vi": "Ô đã ăn in hình tên lửa nhỏ, nhuộm theo màu bút; vụn là ngôi sao bốn cánh. Gói mẫu.",
+    "en": "Captured boxes get a little rocket stamp in the pen's colour; four-point star debris. Template package."
+  },
+  "author": "Ô Kìa",
+  "license": "CC0-1.0",
+  "box": {
+    "effect": "image",
+    "image": "box/stamp.svg",
+    "tint": true,
+    "scale": 0.9,
+    "alpha": 0.95,
+    "particles": "image",
+    "particleImage": "particles/shape.svg"
+  }
+}

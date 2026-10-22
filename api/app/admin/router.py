@@ -8,9 +8,11 @@
 - POST /admin/users/{id}/ban             khóa tới ngày (days) / mở khóa (null); thu hồi phiên,
                                          ngắt WS
 - PATCH /admin/users/{id}                đổi tên hiển thị
-- GET  /admin/skins · PATCH /admin/skins/{id} (metadata) · PUT (manifest, dùng khi nhập) · DELETE
-- GET  /admin/skins/{id}/export (một skin)
-- GET  /admin/skins/export · POST /admin/skins/import   (JSON đúng định dạng shared/skins)
+- GET  /admin/skins · PATCH /admin/skins/{id} (metadata) · PUT (manifest JSON) · DELETE
+- GET  /admin/skins/{id}/export (manifest JSON) · GET /admin/skins/{id}/package (zip gói)
+- GET  /admin/skins/export (bundle zip; ?format=json) · POST /admin/skins/import (JSON)
+- POST /admin/skins/preview-package (xem trước, không ghi) · POST /admin/skins/import-package
+  (multipart zip: một gói hoặc bundle — shared/skins/SPEC.md)
 - GET  /admin/config · PUT /admin/config (app/admin/config.py)
 """
 
@@ -20,12 +22,14 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi.responses import JSONResponse, Response
 from pydantic import Field
 from redis.asyncio import Redis
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import storage
 from app.admin import config as appconfig
 from app.auth import service as auth_service
 from app.auth import ws_cache
@@ -41,7 +45,7 @@ from app.matchmaking import queue as mmq
 from app.models import Inventory, Match, Rating, User, Wallet
 from app.models.admin import SkinRow
 from app.rating import service as rating
-from app.skins import catalog
+from app.skins import catalog, package
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(admin_user)])
 Db = Annotated[AsyncSession, Depends(get_db)]
@@ -387,21 +391,80 @@ async def skins(db: Db) -> list[AdminSkinOut]:
     return [await _skin_out(db, r) for r in rows]
 
 
+async def _files_of(r: SkinRow) -> dict[str, bytes]:
+    """File asset của một skin gói (đọc từ object storage); skin JSON thuần → rỗng."""
+    a = r.manifest.get("assets") or {}
+    st = storage.get_storage()
+    out: dict[str, bytes] = {}
+    for f in a.get("files", []):
+        blob = await st.get(package.storage_key(r.id, a["ver"], f))
+        if blob is not None:
+            out[f] = blob
+    return out
+
+
+async def _drop_files(skin_id: str, assets: dict[str, Any] | None) -> None:
+    """Dọn asset phiên bản cũ sau khi DB đã đổi; lỗi storage không làm hỏng thao tác."""
+    if not assets or not assets.get("files"):
+        return
+    st = storage.get_storage()
+    for f in assets["files"]:
+        try:
+            await st.delete(package.storage_key(skin_id, assets["ver"], f))
+        except AppError:
+            pass
+
+
+def _zip_response(data: bytes, name: str) -> Response:
+    return Response(
+        data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
 @router.get("/skins/export")
-async def skins_export(db: Db) -> dict[str, Any]:
-    """Portable: cùng định dạng shared/skins (danh sách manifest), kể cả skin đang tắt."""
-    rows = (await db.execute(select(SkinRow).order_by(SkinRow.sort, SkinRow.id))).scalars()
-    return {"skins": [r.manifest for r in rows]}
+async def skins_export(db: Db, format: str = Query("zip", pattern="^(zip|json)$")) -> Response:
+    """Portable, kể cả skin đang tắt. `zip` (mặc định): bundle mỗi skin một thư mục
+    `<id>/skin.json` + asset — nhập lại được nguyên vẹn (SPEC.md). `json`: chỉ manifest
+    (skin gói thì thiếu file, chỉ để xem)."""
+    rows = list((await db.execute(select(SkinRow).order_by(SkinRow.sort, SkinRow.id))).scalars())
+    if format == "json":
+        return JSONResponse({"skins": [package.portable(r.manifest) for r in rows]})
+    items = [(r.manifest, await _files_of(r)) for r in rows]
+    return _zip_response(
+        package.build_bundle(items), f"okia-skins-{datetime.now(UTC):%Y-%m-%d}.zip"
+    )
 
 
-def _validate_manifest(raw: dict[str, Any], skin_id: str | None = None) -> dict[str, Any]:
+def _validate_manifest(
+    raw: dict[str, Any],
+    skin_id: str | None = None,
+    *,
+    files: set[str] | None = None,
+) -> dict[str, Any]:
+    """Admin được giữ `default` (seed / bundle xuất ra); `_guard_default` chặn làm mất skin
+    mặc định. Lỗi → BAD_SKIN kèm mô tả ngắn."""
     try:
-        m = catalog.SkinManifestIn.model_validate(raw)
-    except ValueError as e:
+        m = package.validate_manifest(raw, files, allow_default=True)
+    except package.PackageError as e:
         raise AppError("BAD_SKIN", 400, detail=str(e)[:300]) from e
-    if skin_id is not None and m.id != skin_id:
+    if skin_id is not None and m["id"] != skin_id:
         raise AppError("BAD_SKIN", 400, detail="id trong manifest khác id trên URL")
-    return m.model_dump()
+    return m
+
+
+def _guard_default(row: SkinRow | None, m: dict[str, Any], enabled: bool) -> None:
+    """Mỗi loại luôn còn đúng skin mặc định: không tắt, không ghi đè bằng bản không-default,
+    không thêm default thứ hai."""
+    is_default_row = bool(row and row.manifest.get("default"))
+    if m.get("default"):
+        if not enabled or (row is not None and not is_default_row):
+            raise AppError("SKIN_DEFAULT_PROTECTED", 409)
+        if row is None:
+            raise AppError("BAD_SKIN", 400, detail="chỉ seed trong repo mới thêm được skin default")
+    elif is_default_row:
+        raise AppError("SKIN_DEFAULT_PROTECTED", 409)
 
 
 async def _upsert(db: AsyncSession, m: dict[str, Any], enabled: bool, sort: int | None) -> SkinRow:
@@ -423,12 +486,32 @@ async def _upsert(db: AsyncSession, m: dict[str, Any], enabled: bool, sort: int 
     return row
 
 
+def _keep_assets(row: SkinRow | None, m: dict[str, Any]) -> dict[str, Any]:
+    """Manifest JSON (không kèm file) của một skin gói đang có: giữ nguyên asset đã lưu."""
+    a = row.manifest.get("assets") if row else None
+    if a and package.refs(m):
+        return {**m, "assets": {"ver": a["ver"], "files": list(a["files"])}}
+    return m
+
+
+async def _put_manifest(
+    db: AsyncSession, raw: dict[str, Any], enabled: bool, sort: int | None, skin_id: str | None
+) -> SkinRow:
+    """Nhập / ghi đè một manifest JSON (không có file): tham chiếu asset chỉ hợp lệ khi skin ấy
+    đã là gói trong DB (giữ file cũ)."""
+    rid = raw.get("id") if isinstance(raw, dict) else None
+    row = await db.get(SkinRow, rid) if isinstance(rid, str) else None
+    have = set((row.manifest.get("assets") or {}).get("files", [])) if row else set()
+    if isinstance(raw, dict):
+        raw = {k: v for k, v in raw.items() if k != "assets"}
+    m = _keep_assets(row, _validate_manifest(raw, skin_id, files=have))
+    _guard_default(row, m, enabled)
+    return await _upsert(db, m, enabled, sort)
+
+
 @router.put("/skins/{skin_id}", response_model=AdminSkinOut)
 async def skin_put(skin_id: str, body: SkinPutIn, db: Db) -> AdminSkinOut:
-    m = _validate_manifest(body.manifest, skin_id)
-    if m["default"] and not body.enabled:
-        raise AppError("SKIN_DEFAULT_PROTECTED", 409)
-    row = await _upsert(db, m, body.enabled, body.sort)
+    row = await _put_manifest(db, body.manifest, body.enabled, body.sort, skin_id)
     await db.commit()
     await catalog.sync_from_db(db)
     return await _skin_out(db, row)
@@ -436,7 +519,7 @@ async def skin_put(skin_id: str, body: SkinPutIn, db: Db) -> AdminSkinOut:
 
 class SkinMetaIn(CamelModel):
     """Chỉ metadata: tên, mô tả, bậc, bật/tắt, thứ tự. Khối hiệu ứng (`pen`/`box`/`forms`/
-    `combo`/`sfx`) chỉ đổi được bằng nhập JSON (portable), không sửa tay trên giao diện."""
+    `combo`/`sfx`) và file chỉ đổi được bằng nhập gói / JSON, không sửa tay trên giao diện."""
 
     name: dict[str, str] | None = None
     description: dict[str, str] | None = None
@@ -457,10 +540,12 @@ async def skin_patch(skin_id: str, body: SkinMetaIn, db: Db) -> AdminSkinOut:
         m["description"] = body.description
     if body.rarity is not None:
         m["rarity"] = body.rarity
-    m = _validate_manifest(m, skin_id)
+    assets = m.pop("assets", None)
+    m = _validate_manifest(m, skin_id, files=set(assets["files"]) if assets else None)
+    if assets:
+        m["assets"] = assets
     enabled = row.enabled if body.enabled is None else body.enabled
-    if m["default"] and not enabled:
-        raise AppError("SKIN_DEFAULT_PROTECTED", 409)
+    _guard_default(row, m, enabled)
     row = await _upsert(db, m, enabled, body.sort)
     await db.commit()
     await catalog.sync_from_db(db)
@@ -469,11 +554,21 @@ async def skin_patch(skin_id: str, body: SkinMetaIn, db: Db) -> AdminSkinOut:
 
 @router.get("/skins/{skin_id}/export")
 async def skin_export(skin_id: str, db: Db) -> dict[str, Any]:
-    """Một skin, cùng định dạng file shared/skins/<type>/<id>.json."""
+    """Manifest JSON của một skin (không kèm file — skin gói dùng /package)."""
     row = await db.get(SkinRow, skin_id)
     if row is None:
         raise AppError("NOT_FOUND", 404)
-    return row.manifest
+    return package.portable(row.manifest)
+
+
+@router.get("/skins/{skin_id}/package")
+async def skin_package(skin_id: str, db: Db) -> Response:
+    """Gói `<id>.okiaskin.zip` (skin.json + asset) — sửa rồi nhập lại được."""
+    row = await db.get(SkinRow, skin_id)
+    if row is None:
+        raise AppError("NOT_FOUND", 404)
+    data = package.build(row.manifest, await _files_of(row))
+    return _zip_response(data, f"{skin_id}.okiaskin.zip")
 
 
 @router.delete("/skins/{skin_id}")
@@ -483,9 +578,11 @@ async def skin_delete(skin_id: str, db: Db) -> dict[str, bool]:
         raise AppError("NOT_FOUND", 404)
     if row.manifest.get("default"):
         raise AppError("SKIN_DEFAULT_PROTECTED", 409)
+    assets = row.manifest.get("assets")
     await db.delete(row)
     await db.commit()
     await catalog.sync_from_db(db)
+    await _drop_files(skin_id, assets)
     return {"ok": True}
 
 
@@ -495,25 +592,120 @@ class SkinsImportIn(CamelModel):
     replace: bool = False
 
 
+async def _replace_missing(db: AsyncSession, ids: set[str]) -> list[tuple[str, Any]]:
+    """Chế độ thay toàn bộ: xóa skin không có trong file (trừ default). Trả asset cần dọn."""
+    dropped: list[tuple[str, Any]] = []
+    for r in list((await db.execute(select(SkinRow))).scalars()):
+        if r.id not in ids and not r.manifest.get("default"):
+            dropped.append((r.id, r.manifest.get("assets")))
+            await db.delete(r)
+    return dropped
+
+
 @router.post("/skins/import", response_model=list[AdminSkinOut])
 async def skins_import(body: SkinsImportIn, db: Db) -> list[AdminSkinOut]:
-    manifests = [_validate_manifest(raw) for raw in body.skins]
-    ids = {m["id"] for m in manifests}
-    if len(ids) != len(manifests):
+    """Nhập danh sách manifest JSON (không file). Skin gói đang có trong DB giữ file cũ."""
+    ids = {m.get("id") for m in body.skins if isinstance(m, dict)}
+    if len(ids) != len(body.skins):
         raise AppError("BAD_SKIN", 400, detail="id trùng trong file")
     for t in catalog.TYPES:
-        if body.replace and not any(m["type"] == t and m["default"] for m in manifests):
+        if body.replace and not any(
+            isinstance(m, dict) and m.get("type") == t and m.get("default") for m in body.skins
+        ):
             raise AppError("BAD_SKIN", 400, detail=f"thiếu skin default cho {t}")
-    for i, m in enumerate(manifests):
-        await _upsert(db, m, True, i)
-    if body.replace:
-        rows = (await db.execute(select(SkinRow))).scalars()
-        for r in list(rows):
-            if r.id not in ids and not r.manifest.get("default"):
-                await db.delete(r)
+    for i, raw in enumerate(body.skins):
+        await _put_manifest(db, raw, True, i, None)
+    dropped = await _replace_missing(db, {str(i) for i in ids}) if body.replace else []
     await db.commit()
     await catalog.sync_from_db(db)
+    for sid, a in dropped:
+        await _drop_files(sid, a)
     return await skins(db)
+
+
+class PreviewSkinOut(CamelModel):
+    manifest: dict[str, Any]
+    folder: str
+    files: list[dict[str, Any]]
+    exists: bool
+    replaces_default: bool
+
+
+class PackagePreviewOut(CamelModel):
+    skins: list[PreviewSkinOut]
+
+
+@router.post("/skins/preview-package", response_model=PackagePreviewOut)
+async def skins_preview_package(db: Db, file: Annotated[UploadFile, File()]) -> PackagePreviewOut:
+    """Xem trước: kiểm tra gói y hệt lúc nhập (schema, file, bảo vệ default) nhưng KHÔNG ghi gì.
+    Trả manifest, file đi kèm (tên, cỡ), thư mục trong zip, skin nào đã có (sẽ ghi đè)."""
+    data = await file.read(package.MAX_ZIP + 1)
+    try:
+        pkgs = package.parse(data, allow_default=True)
+    except package.PackageError as e:
+        raise AppError("BAD_SKIN", 400, detail=str(e)[:300]) from e
+    out: list[PreviewSkinOut] = []
+    for p in pkgs:
+        row = await db.get(SkinRow, p.manifest["id"])
+        _guard_default(row, p.manifest, True)
+        out.append(
+            PreviewSkinOut(
+                manifest=p.manifest,
+                folder=p.folder,
+                files=[{"path": k, "size": len(v)} for k, v in sorted(p.files.items())],
+                exists=row is not None,
+                replaces_default=bool(row and row.manifest.get("default")),
+            )
+        )
+    return PackagePreviewOut(skins=out)
+
+
+@router.post("/skins/import-package", response_model=list[AdminSkinOut])
+async def skins_import_package(
+    db: Db,
+    file: Annotated[UploadFile, File()],
+    replace: Annotated[bool, Form()] = False,
+) -> list[AdminSkinOut]:
+    """Nhập gói zip (một skin hoặc bundle nhiều thư mục — SPEC.md). File ghi lên object storage
+    dưới phiên bản theo nội dung; manifest trong DB mang `assets` {ver, files}. Trả về các skin
+    vừa nhập."""
+    data = await file.read(package.MAX_ZIP + 1)
+    try:
+        pkgs = package.parse(data, allow_default=True)
+    except package.PackageError as e:
+        raise AppError("BAD_SKIN", 400, detail=str(e)[:300]) from e
+    ids = {p.manifest["id"] for p in pkgs}
+    if replace:
+        for t in catalog.TYPES:
+            if not any(p.manifest["type"] == t and p.manifest.get("default") for p in pkgs):
+                raise AppError("BAD_SKIN", 400, detail=f"thiếu skin default cho {t}")
+    # Kiểm tra hết trước khi ghi gì (không để nửa bundle).
+    rows: dict[str, SkinRow | None] = {}
+    for p in pkgs:
+        rows[p.manifest["id"]] = await db.get(SkinRow, p.manifest["id"])
+        _guard_default(rows[p.manifest["id"]], p.manifest, True)
+    st = storage.get_storage()
+    old: list[tuple[str, Any]] = []
+    out: list[SkinRow] = []
+    for i, p in enumerate(pkgs):
+        m = dict(p.manifest)
+        if p.files:
+            ver = package.version(m, p.files)
+            for path, blob in p.files.items():
+                key = package.storage_key(m["id"], ver, path)
+                await st.put(key, blob, package.media_type(path))
+            m["assets"] = {"ver": ver, "files": sorted(p.files)}
+        row = rows[m["id"]]
+        prev = row.manifest.get("assets") if row else None
+        if prev and prev.get("ver") != (m.get("assets") or {}).get("ver"):
+            old.append((m["id"], prev))
+        out.append(await _upsert(db, m, True, i if len(pkgs) > 1 else None))
+    dropped = await _replace_missing(db, ids) if replace else []
+    await db.commit()
+    await catalog.sync_from_db(db)
+    for sid, a in old + dropped:
+        await _drop_files(sid, a)
+    return [await _skin_out(db, r) for r in out]
 
 
 # ---------- Thông số ----------

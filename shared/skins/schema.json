@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://okia.io.vn/skins/schema-v1.json",
+  "title": "Ô Kìa — manifest skin (skin.json) v1",
+  "description": "Một skin bút (pen) hoặc dấu ăn ô (box). Nguồn sự thật cho gen-skins.mjs, API (nhập gói) và công cụ sinh skin. Đọc kèm SPEC.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "rarity", "name", "description"],
+  "properties": {
+    "schema": { "const": 1, "description": "Phiên bản định dạng. Luôn 1." },
+    "id": {
+      "type": "string",
+      "pattern": "^(pen|box)_[a-z0-9_]{2,44}$",
+      "description": "Định danh duy nhất, tiền tố theo loại: pen_… hoặc box_…"
+    },
+    "type": { "enum": ["pen", "box"] },
+    "rarity": {
+      "enum": ["common", "uncommon", "rare", "epic", "legendary"],
+      "description": "Bậc hiếm: trắng · xanh lá · xanh lam · tím · vàng. Giá bán suy từ bậc (không ghi trong manifest)."
+    },
+    "name": { "$ref": "#/$defs/i18n" },
+    "description": { "$ref": "#/$defs/i18n" },
+    "default": {
+      "type": "boolean",
+      "description": "Skin mặc định (miễn phí, ai cũng có). Chỉ seed trong repo dùng; gói nhập từ ngoài không được đặt true."
+    },
+    "author": { "type": "string", "maxLength": 80 },
+    "license": { "type": "string", "maxLength": 120 },
+    "forms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mine", "opponent"],
+      "properties": {
+        "mine": {
+          "$ref": "#/$defs/form",
+          "description": "Hình thái tông LẠNH: nét của mình."
+        },
+        "opponent": {
+          "$ref": "#/$defs/form",
+          "description": "Hình thái tông NÓNG: nét đối thủ. Màu chính phải khác mine."
+        }
+      }
+    },
+    "pen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["style", "width"],
+      "properties": {
+        "style": {
+          "enum": [
+            "flat",
+            "twotone",
+            "gradient",
+            "neon",
+            "brush",
+            "fire",
+            "rainbow",
+            "metal"
+          ]
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 3,
+          "description": "Hệ số bề dày so với nét mặc định."
+        },
+        "alpha": { "type": "number", "minimum": 0.1, "maximum": 1 },
+        "jitter": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Hệ số run tay (1 = mặc định)."
+        },
+        "cap": { "enum": ["round", "square"] },
+        "taper": {
+          "type": "boolean",
+          "description": "Nét mảnh ở hai đầu, dày ở giữa."
+        },
+        "dash": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 0.05, "maximum": 4 },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Nét đứt [đoạn vẽ, đoạn hở] theo tỷ lệ ô."
+        },
+        "grain": { "enum": ["graphite", "wax"] },
+        "halo": { "type": "boolean" },
+        "texture": {
+          "$ref": "#/$defs/imageRef",
+          "description": "Ảnh lặp (tile) phủ LÊN nét: pen/<tên>.png|webp|svg trong gói. Vùng đục nhuộm màu `color2` của hình thái (vẽ trắng), vùng trong suốt để lộ màu nét."
+        },
+        "textureScale": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 4,
+          "description": "Tỷ lệ ảnh lặp (1 = 1 px ảnh ≈ 1 px màn)."
+        }
+      }
+    },
+    "combo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["style", "particles", "shakeFrom"],
+      "properties": {
+        "style": {
+          "enum": ["sticker", "ink", "chalk", "neon", "sparkle", "fire"],
+          "description": "Kiểu chữ COMBO."
+        },
+        "particles": { "$ref": "#/$defs/particles" },
+        "particleImage": {
+          "$ref": "#/$defs/imageRef",
+          "description": "Bắt buộc khi particles = image: particles/<tên>.svg|png|webp."
+        },
+        "shakeFrom": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Combo từ mốc này bàn bắt đầu rung."
+        }
+      }
+    },
+    "sfx": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capture", "combo"],
+      "properties": {
+        "capture": {
+          "$ref": "#/$defs/sfxRef",
+          "description": "Tiếng ăn ô (cao dần theo combo)."
+        },
+        "combo": {
+          "$ref": "#/$defs/sfxRef",
+          "description": "Tiếng COMBO từ ô thứ 2 trong lượt."
+        }
+      }
+    },
+    "box": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effect", "alpha", "particles"],
+      "properties": {
+        "effect": {
+          "enum": [
+            "hatch",
+            "fill",
+            "crosshatch",
+            "dots",
+            "scribble",
+            "star",
+            "stamp",
+            "heart",
+            "seal",
+            "flower",
+            "flame",
+            "image"
+          ]
+        },
+        "alpha": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 1,
+          "description": "Độ đậm hình tô (image: alpha của ảnh)."
+        },
+        "particles": { "$ref": "#/$defs/particles" },
+        "particleImage": { "$ref": "#/$defs/imageRef" },
+        "image": {
+          "$ref": "#/$defs/imageRef",
+          "description": "Bắt buộc khi effect = image: box/<tên>.svg|png|webp, hình vuông, nền trong suốt."
+        },
+        "tint": {
+          "type": "boolean",
+          "description": "image: nhuộm ảnh theo màu bút người ăn (mặc định true). false = giữ màu gốc của ảnh."
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 1.2,
+          "description": "image: cỡ ảnh so với ô (mặc định 0.9)."
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "description": "Do máy chủ ghi khi nhập gói (vị trí file đã lưu). Không tự viết trong gói.",
+      "additionalProperties": false,
+      "required": ["ver", "files"],
+      "properties": {
+        "ver": { "type": "string", "pattern": "^[a-f0-9]{10}$" },
+        "files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assetRef" },
+          "maxItems": 24
+        },
+        "base": { "type": "string" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "pen" } } },
+      "then": {
+        "required": ["forms", "pen", "combo", "sfx"],
+        "not": { "required": ["box"] }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "box" } } },
+      "then": {
+        "required": ["box"],
+        "not": {
+          "anyOf": [
+            { "required": ["pen"] },
+            { "required": ["forms"] },
+            { "required": ["combo"] },
+            { "required": ["sfx"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "box": {
+            "properties": { "effect": { "const": "image" } },
+            "required": ["effect"]
+          }
+        },
+        "required": ["box"]
+      },
+      "then": { "properties": { "box": { "required": ["image"] } } }
+    },
+    {
+      "if": {
+        "properties": {
+          "box": {
+            "properties": { "particles": { "const": "image" } },
+            "required": ["particles"]
+          }
+        },
+        "required": ["box"]
+      },
+      "then": { "properties": { "box": { "required": ["particleImage"] } } }
+    },
+    {
+      "if": {
+        "properties": {
+          "combo": {
+            "properties": { "particles": { "const": "image" } },
+            "required": ["particles"]
+          }
+        },
+        "required": ["combo"]
+      },
+      "then": { "properties": { "combo": { "required": ["particleImage"] } } }
+    },
+    {
+      "if": {
+        "properties": {
+          "pen": {
+            "properties": { "style": { "enum": ["rainbow", "metal"] } },
+            "required": ["style"]
+          }
+        },
+        "required": ["pen"]
+      },
+      "then": {
+        "properties": {
+          "forms": {
+            "properties": {
+              "mine": { "required": ["colors"] },
+              "opponent": { "required": ["colors"] }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "i18n": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vi", "en"],
+      "properties": {
+        "vi": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "en": { "type": "string", "minLength": 1, "maxLength": 160 }
+      }
+    },
+    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color"],
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/hex",
+          "description": "Màu chính: nét, ô đã ăn, vụn."
+        },
+        "color2": {
+          "$ref": "#/$defs/hex",
+          "description": "Màu cuối gradient (gradient, brush, fire, halo phấn)."
+        },
+        "colors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/hex" },
+          "minItems": 2,
+          "maxItems": 8,
+          "description": "Mốc màu nhiều điểm (rainbow, metal)."
+        },
+        "glow": {
+          "$ref": "#/$defs/hex",
+          "description": "Quầng sáng (neon, metal); màu chữ COMBO kiểu neon/sparkle."
+        },
+        "core": {
+          "$ref": "#/$defs/hex",
+          "description": "Lõi sáng giữa nét (neon, fire)."
+        },
+        "accent": {
+          "$ref": "#/$defs/hex",
+          "description": "Chấm sáp (grain = wax)."
+        }
+      }
+    },
+    "particles": {
+      "enum": ["paper", "ink", "chalk", "spark", "star", "heart", "image"],
+      "description": "Loại vụn bắn ra khi ăn ô / COMBO. image = dùng ảnh particleImage."
+    },
+    "imageRef": {
+      "type": "string",
+      "pattern": "^(box|particles|pen)/[a-z0-9_\\-]{1,40}\\.(svg|png|webp)$"
+    },
+    "audioRef": {
+      "type": "string",
+      "pattern": "^sfx/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg)$"
+    },
+    "assetRef": {
+      "type": "string",
+      "pattern": "^(sfx|box|particles|pen)/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg|svg|png|webp)$"
+    },
+    "sfxRef": {
+      "description": "Tên tiếng có sẵn trong engine (capture, capture_bell, capture_chalk, capture_fire, capture_ink, capture_marker, capture_neon, capture_soft, combo, combo_bell, combo_chalk, combo_fire, combo_ink, combo_neon) HOẶC file trong gói: sfx/<tên>.webm|mp3|ogg.",
+      "anyOf": [
+        { "type": "string", "pattern": "^[a-z0-9_]{1,40}$" },
+        { "$ref": "#/$defs/audioRef" }
+      ]
+    }
+  }
+}

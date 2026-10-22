@@ -189,6 +189,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 ### M2.8 Engine skin phía client
 - [x] **P2-16** `web/src/game/skins/` + `BoardRenderer.setSkins`: nét theo bút (bề dày, mờ, run tay, đầu nét, nét đứt, thanh đậm, quầng sáng, cầu vồng), kiểu chữ COMBO, loại vụn, mốc rung; bộ tiếng `capture`/`combo` riêng từng bút (11 tiếng tổng hợp mới trong `synth-sfx.mjs`)
 - [x] **P2-17** Thư viện hiệu ứng ô: `hatch`, `fill`, `crosshatch`, `dots`, `scribble`, `star`, `stamp`, `heart`, `seal`. *Còn:* trang `/dev/skins` (hộp "Thử" trong shop đã thay vai trò xem trước)
+- [x] **P2-28** Gói skin `.okiaskin.zip` ([ADR-0014](adr/0014-goi-skin-zip-asset-ngoai.md), 2026-10-22): chuẩn `shared/skins/schema.json` + `SPEC.md` + gói mẫu; API `package.py` (giải nén an toàn, schema, storage `skins/{id}/{ver}`, `GET /skins/assets/…`), admin nhập gói / bundle (kéo thả), xuất gói / bundle; engine `box.effect: image`, `particles: image`, `pen.texture`, tiếng trong gói; CLI `pnpm skin:pack` / `skin:validate`; tests `test_skin_package.py`, `schema.test.ts`, smoke `pnpm smoke:skin`
 
 ### M2.9 Shop
 - [x] **P2-18** `/shop` responsive (2 cột điện thoại, 3–4 desktop): tab Bút / Ô, năm bậc hiếm theo màu trắng–xanh lá–xanh lam–tím–vàng, mua bằng Ruột chì (bậc vàng: Hoa điểm tốt), ví ở đầu trang, lối vào từ trang chủ và hồ sơ. *Còn:* shop xoay vòng theo ngày

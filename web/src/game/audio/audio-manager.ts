@@ -3,6 +3,8 @@
  * scripts/build-audio.mjs sinh) và nhạc nền loop. Chỉ chạy ở trình duyệt; howler được import động.
  *
  * - Hiệu ứng: play(name) / playDraw() / playCapture(combo) — cao độ tăng dần theo combo.
+ * - Tiếng của gói skin (ADR-0014): file lẻ theo URL, nạp trước bằng loadSfx(); lỗi tải → rơi về
+ *   tiếng mặc định trong sprite.
  * - Nhạc nền: chỉ bắt đầu sau cử chỉ đầu tiên của người dùng (chính sách autoplay), fade in.
  * - Theo dõi store cài đặt để bật/tắt và chỉnh âm lượng ngay lập tức.
  */
@@ -12,6 +14,13 @@ import { getAudioSettings, subscribeAudioSettings, type AudioSettings } from "./
 type SpriteMap = Record<string, [number, number]>;
 const BASE = "/assets/audio";
 const DRAW_VARIANTS = ["draw_01", "draw_02", "draw_03"];
+const isUrl = (name: string) => /^(https?:)?\/\//.test(name) || name.startsWith("/");
+
+/** Tiếng ngoài sprite (gói skin): một Howl mỗi URL; `ok` null = đang nạp, false = lỗi. */
+interface ExtraSfx {
+  howl: HowlType;
+  ok: boolean | null;
+}
 
 class AudioManager {
   private sfx: HowlType | null = null;
@@ -21,6 +30,7 @@ class AudioManager {
   private unlocked = false;
   private unsubscribe: (() => void) | null = null;
   private lastDraw = -1;
+  private extra = new Map<string, ExtraSfx>();
 
   /** Gọi một lần ở client (AudioProvider). An toàn khi gọi nhiều lần. */
   init(): Promise<void> {
@@ -54,7 +64,40 @@ class AudioManager {
 
   private applySettings(s: AudioSettings) {
     if (this.sfx) this.sfx.mute(!s.sfxOn);
+    for (const e of this.extra.values()) e.howl.mute(!s.sfxOn);
     this.syncMusic(s);
+  }
+
+  /** Nạp trước một tiếng ngoài sprite (URL trong gói skin). Gọi lại nhiều lần vô hại. */
+  async loadSfx(url: string, ext?: string): Promise<void> {
+    if (typeof window === "undefined" || !isUrl(url) || this.extra.has(url)) return;
+    const { Howl } = await import("howler");
+    if (this.extra.has(url)) return;
+    const entry: ExtraSfx = {
+      // blob: URL (xem trước gói ở admin) không có đuôi → Howler cần `format`.
+      howl: new Howl({ src: [url], preload: true, ...(ext ? { format: [ext] } : {}) }),
+      ok: null,
+    };
+    entry.howl.once("load", () => {
+      entry.ok = true;
+    });
+    entry.howl.once("loaderror", () => {
+      entry.ok = false;
+    });
+    entry.howl.mute(!getAudioSettings().sfxOn);
+    this.extra.set(url, entry);
+  }
+
+  /** Phát tiếng ngoài sprite; false nếu chưa nạp / lỗi (caller dùng tiếng mặc định). */
+  private playExtra(url: string, opts: { rate?: number; volume?: number }): boolean {
+    const e = this.extra.get(url);
+    if (!e || e.ok === false) return false;
+    const s = getAudioSettings();
+    if (!s.sfxOn) return true;
+    const id = e.howl.play();
+    if (opts.rate) e.howl.rate(opts.rate, id);
+    e.howl.volume(s.sfxVolume * (opts.volume ?? 1), id);
+    return true;
   }
 
   private pauseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -124,15 +167,20 @@ class AudioManager {
     return sprite && name in sprite ? name : fallback;
   }
 
-  /** "Ting" ăn ô (tiếng của skin bút, docs/08): ô thứ n trong lượt cao hơn, tối đa ×1.6. */
+  /**
+   * "Ting" ăn ô (tiếng của skin bút, docs/08): ô thứ n trong lượt cao hơn, tối đa ×1.6.
+   * `sprite` là tên trong sprite hoặc URL file của gói skin.
+   */
   playCapture(combo: number, sprite = "capture"): void {
     const rate = Math.min(1.6, 1 + 0.08 * Math.max(0, combo - 1));
+    if (isUrl(sprite) && this.playExtra(sprite, { rate })) return;
     this.play(this.spriteOr(sprite, "capture"), { rate });
   }
 
   /** Tiếng COMBO (ô thứ n ≥ 2 trong lượt), theo skin bút: cao dần, tối đa ×1.5. */
   playCombo(combo: number, sprite = "combo"): void {
     const rate = Math.min(1.5, 1 + 0.06 * Math.max(0, combo - 2));
+    if (isUrl(sprite) && this.playExtra(sprite, { rate, volume: 0.85 })) return;
     this.play(this.spriteOr(sprite, "combo"), { rate, volume: 0.85 });
   }
 
@@ -149,6 +197,8 @@ class AudioManager {
     this.unsubscribe?.();
     this.sfx?.unload();
     this.music?.unload();
+    for (const e of this.extra.values()) e.howl.unload();
+    this.extra.clear();
     this.sfx = null;
     this.music = null;
     this.initPromise = null;

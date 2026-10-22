@@ -40,7 +40,7 @@
     "MATCH_PENDING": "Bạn đang có trận chờ chấp nhận.",
     "FORBIDDEN": "Bạn không có quyền này.",
     "BAD_REQUEST": "Yêu cầu không hợp lệ.",
-    "BAD_SKIN": "Manifest skin không hợp lệ.",
+    "BAD_SKIN": "Skin không hợp lệ: {detail}",
     "SKIN_DEFAULT_PROTECTED": "Không thể xóa hay tắt skin mặc định.",
     "BAD_CONFIG_KEY": "Thông số không tồn tại.",
     "BAD_CONFIG_VALUE": "Giá trị thông số không hợp lệ."

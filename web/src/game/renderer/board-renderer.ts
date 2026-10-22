@@ -7,8 +7,10 @@
 import type { GameResult, GameSession } from "../controller";
 import { edgeCount, edgeEndpoints, horizontalEdgeCount, VOID, type Player } from "../rules";
 import {
+  assetUrl,
   penForm,
   seatSkins,
+  skinAssetUrls,
   type BoxSkin,
   type Particles,
   type PenForm,
@@ -21,6 +23,7 @@ type Pixi = typeof import("pixi.js");
 type Gsap = typeof import("gsap").gsap;
 type Graphics = InstanceType<Pixi["Graphics"]>;
 type Container = InstanceType<Pixi["Container"]>;
+type Texture = InstanceType<Pixi["Texture"]>;
 
 /** Hình thái màu của bút đã đổi hex → số để vẽ nhanh (docs/08 — "forms"). */
 interface RForm {
@@ -254,6 +257,8 @@ export class BoardRenderer {
   private flamePool: Graphics[] = [];
   private emberPool: Graphics[] = [];
   private spawnAcc = 0;
+  /** Lượt nạp ảnh gói skin gần nhất (bỏ kết quả cũ khi đổi skin giữa chừng). */
+  private assetGen = 0;
   private readonly formCache = new WeakMap<PenForm, RForm>();
   private readonly tick = () => this.onTick();
   private previewEdge: number | null = null;
@@ -305,6 +310,43 @@ export class BoardRenderer {
     if (same) return;
     this.skins = skins;
     if (this.session && this.geo) this.redrawAllPieces();
+    void this.loadAssets();
+  }
+
+  /**
+   * Ảnh của gói skin (ADR-0014: hình ô, vụn, ảnh lặp nét) nạp qua Assets rồi vẽ lại; trước khi
+   * nạp xong, ô / nét dùng hình dự phòng (gạch chéo, nét trơn). Ảnh lỗi → giữ dự phòng.
+   */
+  private async loadAssets() {
+    const all = [...this.skins.pens, ...this.skins.boxes].flatMap((s) => skinAssetUrls(s).images);
+    const seen = new Set<string>();
+    const missing = all.filter(
+      (a) => !seen.has(a.url) && !!seen.add(a.url) && !this.px.Assets.cache.has(a.url),
+    );
+    if (missing.length === 0) return;
+    const gen = ++this.assetGen;
+    await Promise.all(
+      missing.map((a) =>
+        this.px.Assets.load<Texture>({
+          src: a.url,
+          alias: a.url,
+          // blob: URL (xem trước ở admin) không có đuôi → chỉ rõ bộ nạp; SVG raster hóa ×2.
+          loadParser: a.ext === "svg" ? "loadSVG" : "loadTextures",
+          data: { resolution: a.ext === "svg" ? 2 : 1 },
+        })
+          .then((t) => {
+            t.source.addressMode = "repeat"; // ảnh lặp dọc nét
+          })
+          .catch(() => undefined),
+      ),
+    );
+    if (this.destroyed || gen !== this.assetGen) return;
+    if (this.session && this.geo) this.redrawAllPieces();
+  }
+
+  /** Ảnh đã nạp theo URL (null = không có / chưa nạp / lỗi). */
+  private texture(url: string | null): Texture | null {
+    return url && this.px.Assets.cache.has(url) ? this.px.Assets.get<Texture>(url) : null;
   }
 
   /** Bật/tắt chạm hai lần (bàn 7×7 trên màn hình hẹp) mà không tạo lại renderer. */
@@ -678,6 +720,9 @@ export class BoardRenderer {
       return gfx;
     };
     const join = "round" as const;
+    // Ảnh lặp của gói skin (ADR-0014): lớp phủ trên nét, vùng đục nhuộm `color2`, vùng trong suốt
+    // để lộ màu nét; chưa nạp → nét trơn.
+    const tex = p.texture ? this.texture(assetUrl(pen, p.texture)) : null;
 
     // --- Lớp dưới. Quầng neon vẽ alpha 1 rồi "thở" bằng under.alpha (không vẽ lại mỗi khung).
     switch (style) {
@@ -774,6 +819,19 @@ export class BoardRenderer {
       main.stroke({ width, color: form.color, alpha: a, cap, join });
     } else {
       line(main).stroke({ width, color: form.color, alpha: a, cap, join });
+    }
+    if (tex) {
+      const ts = p.textureScale ?? 1;
+      line(over).stroke({
+        width: width * (p.taper || style === "brush" ? 0.9 : 1),
+        texture: tex,
+        matrix: new this.px.Matrix().scale(ts, ts),
+        textureSpace: "global",
+        color: form.color2,
+        alpha: 0.95 * a,
+        cap,
+        join,
+      });
     }
 
     // --- Lớp trên.
@@ -1114,7 +1172,15 @@ export class BoardRenderer {
     if (piece.live && !this.opts.reducedMotion) this.liveBoxes.push(piece);
     if (!animate) return;
     built.animate();
-    this.burst(center.x, center.y, form.color, skin.box.particles);
+    this.burst(
+      center.x,
+      center.y,
+      form.color,
+      skin.box.particles,
+      10,
+      1,
+      this.texture(assetUrl(skin, skin.box.particleImage)),
+    );
     // Bút lửa: ô bùng cháy.
     if (pen.pen.style === "fire") this.flameBurst(center.x, center.y, form, 9);
   }
@@ -1142,10 +1208,39 @@ export class BoardRenderer {
         return this.boxFlower(ctx);
       case "flame":
         return this.boxFlame(ctx);
+      case "image":
+        return this.boxImage(skin, ctx);
       case "hatch":
       default:
         return this.boxHatch(ctx, false);
     }
+  }
+
+  /**
+   * Ảnh của gói skin in vào ô (ADR-0014): vừa khung `scale` × ô, nhuộm màu bút người ăn trừ khi
+   * `tint: false`, nghiêng nhẹ tất định theo ô; hiện bằng cú đập như con dấu. Chưa nạp ảnh → gạch
+   * chéo, vẽ lại khi nạp xong (loadAssets).
+   */
+  private boxImage(skin: BoxSkin, ctx: BoxCtx): BoxBuilt {
+    const tex = this.texture(assetUrl(skin, skin.box.image));
+    if (!tex) return this.boxHatch(ctx, false);
+    const { inner, box, color, size, alpha } = ctx;
+    const sp = new this.px.Sprite(tex);
+    sp.anchor.set(0.5);
+    const k = (size * (skin.box.scale ?? 0.9)) / Math.max(tex.width, tex.height);
+    sp.scale.set(k);
+    if (skin.box.tint !== false) sp.tint = color;
+    sp.alpha = alpha;
+    sp.rotation = ((hash01(box * 7 + 1) * 2 - 1) * 6 * Math.PI) / 180;
+    inner.addChild(sp);
+    return {
+      animate: () => {
+        sp.alpha = 0;
+        sp.scale.set(k * 1.5);
+        this.gsap.to(sp, { alpha, duration: 0.1 });
+        this.gsap.to(sp.scale, { x: k, y: k, duration: 0.28, ease: "back.out(2)" });
+      },
+    };
   }
 
   /**
@@ -1696,7 +1791,8 @@ export class BoardRenderer {
 
   /**
    * Vụn bắn ra từ ô vừa ăn theo loại của skin (docs/08): `paper` chữ nhật giấy có trọng lực,
-   * `ink` giọt mực, `chalk` bụi phấn trắng, `spark` tia điện không rơi, `star` sao vàng, `heart` tim nhỏ.
+   * `ink` giọt mực, `chalk` bụi phấn trắng, `spark` tia điện không rơi, `star` sao vàng, `heart` tim nhỏ,
+   * `image` ảnh của gói skin (`image`, nhuộm màu bút; chưa nạp → giấy).
    */
   private burst(
     x: number,
@@ -1705,8 +1801,10 @@ export class BoardRenderer {
     kind: Particles = "paper",
     count = 10,
     spread = 1,
+    image: Texture | null = null,
   ) {
     if (this.opts.reducedMotion) return;
+    if (kind === "image" && !image) kind = "paper";
     const g = this.geo!;
     const layer = this.layers.fx;
     const palettes: Record<Particles, number[]> = {
@@ -1716,43 +1814,61 @@ export class BoardRenderer {
       spark: [color, this.colors.accent, 0xffffff, color],
       star: [this.colors.accent, this.colors.accent, this.colors.paper, color],
       heart: [color, color, blend(color, 0xffffff, 0.45), this.colors.paper],
+      image: [color, color, 0xffffff, color],
     };
     const palette = palettes[kind];
-    const parts: { s: InstanceType<Pixi["Graphics"]>; vx: number; vy: number; rot: number }[] = [];
+    const parts: { s: Container; vx: number; vy: number; rot: number }[] = [];
     const speed = g.cell * (kind === "spark" ? 2.4 : 1.6) * spread;
     const n = kind === "spark" || kind === "chalk" ? Math.round(count * 1.4) : count;
     for (let i = 0; i < n; i++) {
-      const s = new this.px.Graphics();
       const c = palette[i % palette.length];
       const w = g.cell * (0.08 + Math.random() * 0.1);
       const h = g.cell * (0.05 + Math.random() * 0.06);
-      switch (kind) {
-        case "ink":
-          s.circle(0, 0, g.cell * (0.03 + Math.random() * 0.05)).fill({ color: c, alpha: 0.85 });
-          break;
-        case "chalk":
-          s.rect(-h / 2, -h / 2, h, h).fill({ color: c, alpha: 0.8 });
-          break;
-        case "spark":
-          s.moveTo(-w * 0.8, 0)
-            .lineTo(w * 0.8, 0)
-            .stroke({ width: Math.max(1.5, h * 0.5), color: c });
-          break;
-        case "star":
-          s.star(0, 0, 5, h * 1.1, h * 0.5)
-            .fill(c)
-            .stroke({ width: 1, color: this.colors.ink, alpha: 0.6 });
-          break;
-        case "heart":
-          this.heartPath(s, h * 0.9)
-            .fill(c)
-            .stroke({ width: 1, color: this.colors.ink, alpha: 0.5 });
-          break;
-        case "paper":
-        default:
-          s.roundRect(-w / 2, -h / 2, w, h, h * 0.3)
-            .fill(c)
-            .stroke({ width: 1, color: this.colors.ink, alpha: 0.7 });
+      let s: Container;
+      if (kind === "image" && image) {
+        const sp = new this.px.Sprite(image);
+        sp.anchor.set(0.5);
+        sp.scale.set(
+          (g.cell * (0.14 + Math.random() * 0.12)) / Math.max(image.width, image.height),
+        );
+        sp.tint = c;
+        s = sp;
+      } else {
+        const gfx = new this.px.Graphics();
+        s = gfx;
+        switch (kind) {
+          case "ink":
+            gfx
+              .circle(0, 0, g.cell * (0.03 + Math.random() * 0.05))
+              .fill({ color: c, alpha: 0.85 });
+            break;
+          case "chalk":
+            gfx.rect(-h / 2, -h / 2, h, h).fill({ color: c, alpha: 0.8 });
+            break;
+          case "spark":
+            gfx
+              .moveTo(-w * 0.8, 0)
+              .lineTo(w * 0.8, 0)
+              .stroke({ width: Math.max(1.5, h * 0.5), color: c });
+            break;
+          case "star":
+            gfx
+              .star(0, 0, 5, h * 1.1, h * 0.5)
+              .fill(c)
+              .stroke({ width: 1, color: this.colors.ink, alpha: 0.6 });
+            break;
+          case "heart":
+            this.heartPath(gfx, h * 0.9)
+              .fill(c)
+              .stroke({ width: 1, color: this.colors.ink, alpha: 0.5 });
+            break;
+          case "paper":
+          default:
+            gfx
+              .roundRect(-w / 2, -h / 2, w, h, h * 0.3)
+              .fill(c)
+              .stroke({ width: 1, color: this.colors.ink, alpha: 0.7 });
+        }
       }
       s.position.set(x, y);
       s.rotation = Math.random() * Math.PI;
@@ -1810,7 +1926,15 @@ export class BoardRenderer {
     text.scale.set(0.2);
     text.rotation = (Math.random() - 0.5) * (skin.combo.style === "ink" ? 0.5 : 0.3);
     this.layers.fx.addChild(text);
-    this.burst(x, y, penColor, skin.combo.particles, 6 + combo * 2, 1.4);
+    this.burst(
+      x,
+      y,
+      penColor,
+      skin.combo.particles,
+      6 + combo * 2,
+      1.4,
+      this.texture(assetUrl(skin, skin.combo.particleImage)),
+    );
     if (skin.combo.style === "sparkle") this.burst(x, y, penColor, "star", 8, 1.8);
     if (skin.combo.style === "fire") {
       this.burst(x, y, form.color2, "spark", 6, 1.6);

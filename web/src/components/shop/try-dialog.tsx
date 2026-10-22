@@ -9,7 +9,7 @@ import { useGameSounds } from "@/components/play/use-game-sounds";
 import { nextLastTurn, type GameSession } from "@/game/controller";
 import { createGameForMap } from "@/game/maps";
 import { applyMove, type Player } from "@/game/rules";
-import { seatSkins, type SkinManifest } from "@/game/skins/skins";
+import { seatSkins, type BoxSkin, type PenSkin, type SkinManifest } from "@/game/skins/skins";
 import { useAuth } from "@/stores/auth";
 
 // Kịch bản trên bàn 3×3 (24 cạnh), hai ghế thay nhau đi để thấy cả hai hình thái của bút (ghế 0 =
@@ -55,7 +55,11 @@ export function TryDialog({ skin, onClose }: Props) {
 
   const skins = useMemo(() => {
     const mine = { ...loadout, ...(skin ? { [skin.type]: skin.id } : {}) };
-    return seatSkins(mine, mine);
+    const base = seatSkins(mine, mine);
+    // Skin chưa có trong catalog (xem trước gói ở admin): dùng thẳng manifest được truyền.
+    if (!skin) return base;
+    if (skin.type === "pen") return { ...base, pens: [skin, skin] as [PenSkin, PenSkin] };
+    return { ...base, boxes: [skin, skin] as [BoxSkin, BoxSkin] };
   }, [skin, loadout]);
   useGameSounds(session, skins);
 

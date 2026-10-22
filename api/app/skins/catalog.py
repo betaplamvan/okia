@@ -1,9 +1,11 @@
 """Catalog skin (docs/08).
 
-Nguồn lúc chạy là bảng `skins` trong DB (quản trị ở trang admin, portable JSON: export/import
-nguyên định dạng shared/skins/**.json). Bản chép app/skins/catalog.json (sinh bởi
-web/scripts/gen-skins.mjs từ shared/skins) chỉ còn vai trò **seed**: lúc khởi động, id nào chưa có
-trong DB thì được chèn. Tests/test_skins.py vẫn báo đỏ nếu bản chép lệch nguồn.
+Nguồn lúc chạy là bảng `skins` trong DB (quản trị ở trang admin; portable: gói zip
+`<id>.okiaskin.zip` theo shared/skins/SPEC.md — app/skins/package.py — hoặc JSON manifest không
+kèm file). Manifest trong DB có thể mang `assets` {ver, files}; khi đưa ra client được gắn thêm
+`assets.base` (asset_base) để client tải ảnh / tiếng của gói. Bản chép app/skins/catalog.json
+(sinh bởi web/scripts/gen-skins.mjs từ shared/skins) chỉ còn vai trò **seed**: lúc khởi động, id
+nào chưa có trong DB thì được chèn. Tests/test_skins.py vẫn báo đỏ nếu bản chép lệch nguồn.
 
 Mỗi tiến trình giữ cache trong bộ nhớ (hàm sync `all_skins()` dùng ở nhiều chỗ); `refresh_loop`
 đọc lại DB mỗi REFRESH_SECONDS, admin sửa thì tiến trình đó cập nhật ngay.
@@ -21,7 +23,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -74,40 +75,17 @@ class Skin:
         return {} if self.default else rarity_price()[self.rarity]
 
 
-class SkinManifestIn(BaseModel):
-    """Kiểm tra tối thiểu một manifest (admin thêm/sửa/import). Trường khác giữ nguyên (renderer
-    client đọc `pen`/`box`); web/scripts/gen-skins.mjs kiểm tra sâu hơn cho nguồn trong repo."""
+def asset_base(skin_id: str, ver: str) -> str:
+    """URL gốc của asset gói skin: API tự phục vụ (GET /skins/assets/…, Cache-Control immutable)."""
+    from app.config import get_settings
 
-    model_config = ConfigDict(extra="allow")
-
-    id: str = Field(pattern=ID_RE.pattern)
-    type: SkinType
-    rarity: Rarity
-    name: dict[str, str]
-    description: dict[str, str]
-    default: bool = False
-    pen: dict[str, Any] | None = None
-    box: dict[str, Any] | None = None
-    forms: dict[str, Any] | None = None  # bút: hai hình thái mine / opponent (docs/08)
-
-    @model_validator(mode="after")
-    def _check(self) -> SkinManifestIn:
-        for d, label in ((self.name, "name"), (self.description, "description")):
-            if not d.get("vi") or not d.get("en"):
-                raise ValueError(f"{label} cần cả vi và en")
-        if self.type == "pen" and not isinstance(self.pen, dict):
-            raise ValueError("skin bút cần khối `pen`")
-        if self.type == "box" and not isinstance(self.box, dict):
-            raise ValueError("skin ô cần khối `box`")
-        forms = self.forms if isinstance(self.forms, dict) else {}
-        if self.type == "pen" and not (
-            isinstance(forms.get("mine"), dict) and isinstance(forms.get("opponent"), dict)
-        ):
-            raise ValueError("skin bút cần `forms.mine` và `forms.opponent`")
-        return self
+    return f"{get_settings().api_base_url.rstrip('/')}/skins/assets/{skin_id}/{ver}"
 
 
 def _to_skin(m: dict[str, Any]) -> Skin:
+    a = m.get("assets")
+    if isinstance(a, dict) and a.get("files"):
+        m = {**m, "assets": {**a, "base": asset_base(m["id"], a["ver"])}}
     return Skin(
         id=m["id"],
         type=m["type"],

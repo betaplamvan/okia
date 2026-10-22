@@ -3,7 +3,7 @@
 ## Nguyên tắc
 
 - **Ưu tiên vẽ bằng code**, rồi đến SVG, cuối cùng mới là raster. Phong cách "bút trên giấy" cho phép phần lớn hình ảnh được tạo thủ tục, co giãn mọi độ phân giải, đổi màu theo skin tức thì.
-- **Giai đoạn 0 không phụ thuộc asset ngoài:** skin mặc định và âm thanh tạm được tạo bằng code/SVG/tổng hợp. Asset thật thay dần sau.
+- **Giai đoạn 0 không phụ thuộc asset ngoài:** skin mặc định và âm thanh tạm được tạo bằng code/SVG/tổng hợp. Asset thật thay dần sau — từ 2026-10-22 qua **gói skin zip** nhập ở admin ([ADR-0014](adr/0014-goi-skin-zip-asset-ngoai.md), chuẩn `shared/skins/SPEC.md`), không cần deploy.
 - **Mọi asset ngoài phải có giấy phép rõ** và được ghi vào `docs/credits.md` ngay khi thêm (tên, tác giả, nguồn, giấy phép).
 - Không dùng tên, logo, kiểu dáng đặc trưng của thương hiệu thật (xem [10](10-phap-ly.md#nội-dung--thương-hiệu)).
 

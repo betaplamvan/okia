@@ -139,7 +139,7 @@ async def test_skin_them_sua_xoa_export_import(client: AsyncClient) -> None:
             headers=admin,
         )
         assert r.status_code == 200 and catalog.get_skin(sid) is None
-        exp = (await client.get("/admin/skins/export", headers=admin)).json()
+        exp = (await client.get("/admin/skins/export?format=json", headers=admin)).json()
         assert any(m["id"] == sid for m in exp["skins"])
         # Skin default không xóa / tắt được.
         assert (await client.delete("/admin/skins/pen_default", headers=admin)).status_code == 409
