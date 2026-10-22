@@ -11,6 +11,7 @@ on:
       - "api/**"
       - "shared/fixtures/**"
       - "shared/maps/**"
+      - "shared/skins/**"
       - ".github/workflows/api.yml"
       - ".github/actions/api-ci/**"
       - "deploy/deploy-container.sh"
@@ -19,6 +20,7 @@ on:
       - "api/**"
       - "shared/fixtures/**"
       - "shared/maps/**"
+      - "shared/skins/**"
       - ".github/workflows/api.yml"
       - ".github/actions/api-ci/**"
   workflow_dispatch:
