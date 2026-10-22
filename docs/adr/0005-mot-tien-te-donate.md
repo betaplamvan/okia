@@ -28,3 +28,7 @@ ADR-0002 xây hai loại tiền và khóa tiền cao cấp chờ cổng thanh to
 ## Bổ sung 2026-10-23: trang donate và nhận biết tiền vào
 
 Trang `/donate` với VietQR sinh tại client, bảng cảm ơn tự động từ webhook SePay (biến động số dư ngân hàng Việt Nam; không dùng Ko-fi hay nền tảng quốc tế) — xem [docs/10 — Donate](../10-phap-ly.md#donate). Giữ nguyên nguyên tắc: không đổi lấy gì trong game, không hiện số tiền, tên chỉ hiện khi người ủng hộ tự ghi. Không dùng API ngân hàng không chính thức (giả lập app) và không dùng MoMo/ZaloPay Business (cần đăng ký kinh doanh).
+
+## Bổ sung 2026-10-23 (b): quảng cáo + ủng hộ bỏ quảng cáo vĩnh viễn
+
+Theo yêu cầu chủ dự án, học bố cục noitu.fun: game sẽ tích hợp quảng cáo; ủng hộ qua VietQR (bắt buộc liên kết Google trước, nội dung `OKIA <mã tài khoản>`) → `users.ad_free_at` (bỏ quảng cáo vĩnh viễn, `UserOut.adFree`) + Trống Đồng Tri Ân trong hồ sơ; bảng mạnh thường quân hiện avatar + tên tài khoản (mỗi người một dòng, không gói, không số tiền). Vẫn không bán tiền / skin / lợi thế. Rủi ro pháp lý ghi ở docs/10 — Donate.

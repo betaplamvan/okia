@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import String, select
+from sqlalchemy import String, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,17 +103,30 @@ async def record(
     except IntegrityError:
         await db.rollback()
         return None
+    # Ủng hộ có mã tài khoản → bỏ quảng cáo vĩnh viễn + Trống Đồng Tri Ân (lần đầu ghi mốc).
+    if user is not None and user.ad_free_at is None:
+        user.ad_free_at = received_at
     return d
 
 
-async def thanks(db: AsyncSession, limit: int = 100) -> list[Donation]:
-    """Bảng cảm ơn: mới nhất trước, chỉ giao dịch có tên và không bị ẩn."""
+async def supporters(db: AsyncSession, limit: int = 100) -> list[tuple[User, int]]:
+    """Mạnh thường quân: mỗi tài khoản một dòng (ủng hộ qua mã tài khoản, không bị ẩn), xếp theo
+    tổng VND giảm dần rồi lần mới nhất — số tiền không ra public, chỉ để xếp thứ tự."""
+    total = func.sum(Donation.amount).label("total")
+    latest = func.max(Donation.received_at).label("latest")
+    sub = (
+        select(Donation.user_id, total, latest)
+        .where(Donation.hidden.is_(False), Donation.user_id.is_not(None))
+        .group_by(Donation.user_id)
+        .subquery()
+    )
     rows = (
         await db.execute(
-            select(Donation)
-            .where(Donation.hidden.is_(False), Donation.donor_name.is_not(None))
-            .order_by(Donation.received_at.desc())
+            select(User, sub.c.total)
+            .join(sub, sub.c.user_id == User.id)
+            .where(User.deleted_at.is_(None))
+            .order_by(sub.c.total.desc(), sub.c.latest.desc())
             .limit(limit)
         )
-    ).scalars()
-    return list(rows)
+    ).all()
+    return [(u, int(tot)) for u, tot in rows]

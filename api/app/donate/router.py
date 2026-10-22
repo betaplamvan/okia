@@ -40,23 +40,28 @@ class BankOut(CamelModel):
     account_name: str
 
 
-class ThanksOut(CamelModel):
+class SupporterOut(CamelModel):
+    user_id: uuid.UUID
     name: str
-    month: str  # YYYY-MM (giờ VN)
+    avatar_url: str | None
     mine: bool = False
 
 
 class DonateOut(CamelModel):
+    # Chỉ tài khoản đã liên kết Google mới thấy tài khoản nhận (bắt buộc liên kết trước khi có QR).
     bank: BankOut | None
-    # Mã gợi ý cho nội dung chuyển khoản của người đã đăng nhập (OKIA <code>).
+    # Nội dung chuyển khoản của người đã đăng nhập: OKIA <code> (6 ký tự hex đầu của user id).
     my_code: str | None
-    thanks: list[ThanksOut]
+    supporters: list[SupporterOut]
     count: int
 
 
 @router.get("/donate", response_model=DonateOut)
 async def donate_info(db: Db, user: Annotated[User | None, Depends(optional_user)]) -> DonateOut:
+    from app.economy.router import avatar_url_for
+
     s = get_settings()
+    linked = user is not None and not user.is_guest
     bank = (
         BankOut(
             bin=s.donate_bank_bin,
@@ -64,26 +69,28 @@ async def donate_info(db: Db, user: Annotated[User | None, Depends(optional_user
             account_no=s.donate_account_no,
             account_name=s.donate_account_name,
         )
-        if s.donate_bank_bin and s.donate_account_no
+        if linked and s.donate_bank_bin and s.donate_account_no
         else None
     )
-    vn = ZoneInfo("Asia/Ho_Chi_Minh")
-    rows = await service.thanks(db)
+    rows = await service.supporters(db)
     total = (
         await db.execute(
-            select(func.count()).select_from(Donation).where(Donation.hidden.is_(False))
+            select(func.count(func.distinct(Donation.user_id))).where(
+                Donation.hidden.is_(False), Donation.user_id.is_not(None)
+            )
         )
     ).scalar_one()
     return DonateOut(
         bank=bank,
-        my_code=service.user_code(user.id) if user and not user.is_guest else None,
-        thanks=[
-            ThanksOut(
-                name=d.donor_name or "",
-                month=d.received_at.astimezone(vn).strftime("%Y-%m"),
-                mine=bool(user and d.user_id == user.id),
+        my_code=service.user_code(user.id) if linked and user else None,
+        supporters=[
+            SupporterOut(
+                user_id=u.id,
+                name=u.display_name,
+                avatar_url=avatar_url_for(u),
+                mine=bool(user and u.id == user.id),
             )
-            for d in rows
+            for u, _ in rows
         ],
         count=int(total),
     )

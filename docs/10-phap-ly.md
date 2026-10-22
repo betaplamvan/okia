@@ -11,7 +11,7 @@
 
 ## Donate
 
-- Donate là **tặng cho tự nguyện**, không phải mua hàng: người ủng hộ **không nhận bất kỳ thứ gì trong game** (không huy hiệu, không Ruột chì, không skin). Trao vật phẩm đổi lấy tiền sẽ biến thành bán hàng và kéo theo nghĩa vụ giấy phép, thuế và bảo vệ người tiêu dùng.
+- ~~Donate là tặng cho tự nguyện, người ủng hộ không nhận bất kỳ thứ gì trong game.~~ **Đổi quyết định 2026-10-23 (chủ dự án):** game sẽ có quảng cáo; ủng hộ (mức nào cũng được, tối thiểu 10.000đ) → tài khoản **bỏ quảng cáo vĩnh viễn** + huy hiệu kỷ niệm **Trống Đồng Tri Ân** trong hồ sơ (không có giá trị trong game, không bán). Lưu ý rủi ro đã nêu: trao quyền lợi đổi tiền gần với "bán gói" hơn là quà tặng → nếu doanh thu đáng kể, cân nhắc đăng ký kinh doanh và kê khai thuế; vẫn **không** bán Ruột chì / skin / lợi thế chơi.
 - Trang donate ghi rõ: tiền ủng hộ dùng để trang trải chi phí vận hành; không hoàn lại; không có quyền lợi kèm theo.
 - Nhận qua tài khoản cá nhân (VietQR/MoMo) là hợp lệ với cá nhân. Nếu tổng donate lớn, thu nhập cá nhân có thể phải kê khai thuế — hỏi kế toán/luật sư khi tới mức đó.
 - Nền tảng quốc tế (Buy Me a Coffee, Ko-fi) có điều khoản riêng về rút tiền về Việt Nam; kiểm tra trước khi đặt link.

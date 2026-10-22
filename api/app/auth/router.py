@@ -69,6 +69,7 @@ def to_user_out(user: User) -> UserOut:
         email_verified=user.email_verified_at is not None,
         is_guest=user.is_guest,
         is_admin=is_admin(user),
+        ad_free=user.ad_free_at is not None,
         locale=user.locale,  # type: ignore[arg-type]
         created_at=user.created_at,
         identities=[
