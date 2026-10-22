@@ -75,7 +75,8 @@
     "about": "Giới thiệu",
     "privacy": "Chính sách",
     "terms": "Điều khoản",
-    "tagline": "Làm ở Việt Nam, miễn phí cho mọi người."
+    "tagline": "Làm ở Việt Nam, miễn phí cho mọi người.",
+    "donate": "Ủng hộ"
   },
   "About": {
     "title": "Về Ô Kìa",
@@ -437,7 +438,8 @@
       "stats": "Thống kê",
       "users": "Người chơi",
       "skins": "Skin",
-      "config": "Thông số"
+      "config": "Thông số",
+      "donations": "Ủng hộ"
     },
     "rarity": {
       "common": "Trắng",
@@ -554,6 +556,43 @@
       "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền.",
       "resetDefaults": "Về mặc định"
     },
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "donations": {
+      "summary": "{n} giao dịch · tổng {sum}đ (VND)",
+      "hint": "Giao dịch về từ webhook SePay (biến động số dư ngân hàng). Bảng cảm ơn công khai chỉ hiện tên; dòng không có tên là ẩn danh — có thể đặt tên nếu người ủng hộ yêu cầu. Ẩn để gỡ khỏi bảng.",
+      "time": "Lúc",
+      "source": "Nguồn",
+      "amount": "Số tiền",
+      "content": "Nội dung",
+      "name": "Tên hiện",
+      "anonymous": "ẩn danh",
+      "linked": "có tài khoản",
+      "rename": "Đặt tên",
+      "hide": "Ẩn",
+      "show": "Hiện"
+    }
+  },
+  "Donate": {
+    "title": "Ủng hộ",
+    "intro": "Ô Kìa miễn phí và không có quảng cáo. Nếu bạn thích trò chơi, một ly trà đá giúp trả tiền máy chủ. Hoàn toàn tự nguyện, không hoàn lại, không đổi lấy bất cứ thứ gì trong game.",
+    "bankTitle": "Chuyển khoản (VietQR)",
+    "customAmount": "Số khác",
+    "namePlaceholder": "Tên muốn hiện trên bảng cảm ơn (tùy chọn)",
+    "codeHint": "Nội dung có mã {code} của tài khoản bạn: bảng cảm ơn sẽ tự ghi tên bạn.",
+    "bank": "Ngân hàng",
+    "accountNo": "Số tài khoản",
+    "accountName": "Chủ tài khoản",
+    "note": "Nội dung",
+    "amount": "Số tiền",
+    "noteHint": "Quét mã bằng app ngân hàng là có sẵn số tiền và nội dung. Giữ nguyên chữ OKIA ở đầu nội dung để tên lên bảng cảm ơn trong vài phút.",
+    "noBank": "Trang ủng hộ chưa được cấu hình.",
+    "legal": "Tiền ủng hộ là quà tặng tự nguyện cho người làm game, dùng để trang trải chi phí vận hành. Không có quyền lợi kèm theo và không hoàn lại.",
+    "thanksTitle": "Cảm ơn",
+    "thanksCount": "{n} lượt",
+    "thanksEmpty": "Chưa có ai. Bạn có thể là người đầu tiên!",
+    "thanksHint": "Chỉ hiện tên do người ủng hộ tự ghi trong nội dung chuyển khoản; không hiện số tiền.",
+    "you": "bạn",
+    "copied": "Đã chép {what}.",
+    "copyFailed": "Không chép được, hãy chọn và sao chép tay."
   }
 }

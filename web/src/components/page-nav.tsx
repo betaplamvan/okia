@@ -21,6 +21,7 @@ const TITLES = {
   privacy: "Privacy.title",
   terms: "Terms.title",
   admin: "Admin.title",
+  donate: "Donate.title",
 } as const;
 
 function useSection(): { home: boolean; title: string | null } {

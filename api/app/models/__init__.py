@@ -5,6 +5,7 @@ Import tất cả model ở đây để Alembic autogenerate nhìn thấy đủ 
 
 from app.models.admin import AppConfig, SkinRow
 from app.models.base import Base
+from app.models.donate import Donation
 from app.models.economy import Checkin, QuestProgress, Wallet, WalletLedger
 from app.models.match import Match
 from app.models.rating import Rating, Season
@@ -16,6 +17,7 @@ __all__ = [
     "AuthIdentity",
     "Base",
     "Checkin",
+    "Donation",
     "Inventory",
     "Loadout",
     "Match",

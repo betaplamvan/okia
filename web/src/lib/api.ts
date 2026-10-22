@@ -162,6 +162,29 @@ export type AdminUserDetail = AdminUser & {
   matches: AdminMatch[];
 };
 
+// ---------- Ủng hộ (docs/10 — Donate) ----------
+
+export type DonateOut = {
+  bank: { bin: string; name: string; accountNo: string; accountName: string } | null;
+  myCode: string | null;
+  thanks: { name: string; month: string; mine: boolean }[];
+  count: number;
+};
+
+export type AdminDonation = {
+  id: string;
+  provider: string;
+  externalId: string;
+  amount: number;
+  currency: string;
+  content: string;
+  donorName: string | null;
+  userId: string | null;
+  receivedAt: string;
+  hidden: boolean;
+};
+export type AdminDonationPage = { items: AdminDonation[]; total: number; sumVnd: number };
+
 export type AdminSkin = {
   id: string;
   type: string;

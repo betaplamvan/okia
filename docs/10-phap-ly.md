@@ -17,6 +17,8 @@
 - Nền tảng quốc tế (Buy Me a Coffee, Ko-fi) có điều khoản riêng về rút tiền về Việt Nam; kiểm tra trước khi đặt link.
 - Danh sách cảm ơn chỉ hiện tên do người ủng hộ **tự đăng ký**; không công khai số tiền của từng người.
 
+**Đã làm (2026-10-23, P4-01):** trang `/donate` (`web/src/components/donate/donate-screen.tsx`) sinh **VietQR tại chỗ** (`web/src/lib/vietqr.ts`, chuẩn NAPAS EMVCo, CRC-16) với số tiền chọn sẵn và nội dung `OKIA <tên>`; người đã đăng nhập dùng `OKIA <mã 6 ký tự>` (6 ký tự hex đầu của user id) để bảng cảm ơn tự ghi tên tài khoản và tô "bạn" — vẫn không nhận gì trong game. Tài khoản nhận cấu hình bằng `DONATE_BANK_BIN / DONATE_BANK_NAME / DONATE_ACCOUNT_NO / DONATE_ACCOUNT_NAME` (public qua `GET /donate`). **Biết tiền vào tự động:** chỉ SePay (quyết định 2026-10-23, không Ko-fi / nền tảng quốc tế): webhook `POST /donate/webhook/sepay` (SePay đọc sao kê ngân hàng, header `Authorization: Apikey <SEPAY_API_KEY>`, chỉ `transferType = in`, trùng id bỏ qua) ghi vào bảng `donations` (`api/app/donate/`, số tiền chỉ admin thấy). Nội dung không có mẫu `OKIA` → ghi nhưng ẩn danh. Admin tab **Ủng hộ**: đặt tên hiện / ẩn từng dòng (`GET/PATCH /admin/donations`). Cấu hình trên SePay: URL webhook `https://api.okia.io.vn/donate/webhook/sepay`, kiểu xác thực API Key.
+
 ## Dữ liệu cá nhân
 
 - **Nghị định 13/2023/NĐ-CP** về bảo vệ dữ liệu cá nhân.

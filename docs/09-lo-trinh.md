@@ -28,7 +28,7 @@
 | 2A. Ghép trận & xếp hạng | 8 / 9 | P2-06 ("Chơi với máy" qua phòng server có thưởng) |
 | 2B. Kinh tế & skin | 12 / 20 | P2-13 (dàn xếp), P2-20/21 (pipeline asset, 3 bộ sưu tập), P2-22…26 (thành tựu, EXP, rương, tủ đồ, vật phẩm tiêu hao) |
 | 3. Lan truyền & vận hành | 0 / 12 | — |
-| 4. Donate | 0 / 3 | — |
+| 4. Donate | 1 / 3 | P4-02 (minh bạch chi phí), P4-03 (lời mời ở màn kết thúc) |
 
 **Đã làm ngoài kế hoạch** (không có mã việc): chấp nhận trận kiểu LoL (vòng đếm ngược 20 giây), huy hiệu hạng dạng khiên + danh hiệu Trạng nguyên top 100, skin bút hai hình thái (mình / đối thủ) + dấu ăn v2, hộp "Quà mỗi ngày" riêng, trang chủ ba nút + bảng hiệu tên miền, hồ sơ theo bố cục noitu (tủ trưng bày tạm = bút, dấu ăn, hạng), tiếng bấm chung cho mọi nút, đo tải thật trên minisforum + bỏ trần fd / 2 worker / cache đường nối WS / giới hạn chống lạm dụng ([02](02-kien-truc.md#triển-khai)); ghép máy khi chờ lâu (độ mạnh theo rating ẩn, điểm hạng ½) và bot alpha-beta khó hơn; trang quản trị `/admin` (thống kê, người chơi, skin, thông số); catalog skin trong DB; lọc mục "ma" trong hàng chờ; sửa combo online cộng đôi; tiếng "ready check" khi ghép trận.
 
@@ -240,6 +240,6 @@ Theo [03 — Cá tính bot](03-luat-choi.md#cá-tính-bot-llm).
 
 Không có thanh toán, không bán gì ([ADR-0005](adr/0005-mot-tien-te-donate.md)). Làm sau beta công khai, khi đã có người chơi thật.
 
-- [ ] **P4-01** Trang `/donate` (vi/en): lời cảm ơn, VietQR + MoMo + một kênh quốc tế, cấu hình trong `web/src/config/donate.ts`; ghi rõ không có quyền lợi trong game ([10](10-phap-ly.md#donate))
+- [x] **P4-01** (2026-10-23, VietQR sinh tại chỗ; MoMo / Ko-fi bỏ, chỉ SePay; bảng cảm ơn tự động qua webhook SePay; admin tab Ủng hộ; smoke `pnpm smoke:donate`) Trang `/donate` (vi/en): lời cảm ơn, VietQR + MoMo + một kênh quốc tế, cấu hình trong `web/src/config/donate.ts`; ghi rõ không có quyền lợi trong game ([10](10-phap-ly.md#donate))
 - [ ] **P4-02** Phần minh bạch chi phí vận hành hằng tháng; danh sách cảm ơn tự đăng ký (tùy chọn)
 - [ ] **P4-03** Lời mời donate ở màn hình kết thúc: tối đa một lần, sau ≥ 20 ván, tắt được
