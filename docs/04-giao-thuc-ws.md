@@ -15,7 +15,8 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `room_leave` | `roomId` | Rời phòng đang chờ (xóa phòng) hoặc phòng đã kết thúc |
 | `move` | `roomId`, `edge`, `seq` | Vẽ cạnh. `seq` = `moveNo` client đang thấy |
 | `resign` | `roomId` | Đầu hàng |
-| `emote` | `roomId`, `id` | Biểu cảm nhanh (danh sách cố định, không chat tự do) |
+| `emote` | `roomId`, `id` | Biểu cảm nhanh — `id` trong danh sách cố định `EMOTES` (messages.py); sai → `BAD_MESSAGE`; 1 lần / 2 giây ([08](08-skin.md#đồ-ném--biểu-cảm-trong-trận-2026-10-24)) |
+| `throw` | `roomId`, `id` | Ném đồ: `id` = skin loại throw mình sở hữu (`UNKNOWN_ITEM` / `NOT_OWNED`); chung giới hạn với emote |
 | `ping` | — | Giữ kết nối, mỗi 20 giây |
 | `chat_watch` / `chat_unwatch` | — | Mở / đóng khung chat tổng → bắt đầu / ngừng nhận `chat_msg` ([15](15-chat.md)) |
 
@@ -34,7 +35,8 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `moved` | `roomId`, `by`, `edge`, `captured[]`, `scores`, `turn`, `moveNo`, `deadline`, `reason: "player"\|"timeout"` | Một nước đi đã được chấp nhận |
 | `game_over` | `roomId`, `winner: 0\|1\|null`, `scores`, `reason: "complete"\|"resign"\|"afk"`, `ranked?` | Kết thúc ván. Trận xếp hạng: `ranked = { points[], pointsDelta[], ranks[], rewards[], placementLeft[] }` theo ghế (null nếu server không chốt được) |
 | `opponent_status` | `roomId`, `online: bool` | Đối thủ rớt mạng / quay lại |
-| `emote` | `roomId`, `by`, `id` | Biểu cảm của đối thủ |
+| `emote` | `roomId`, `by`, `id` | Biểu cảm — dội cho CẢ HAI ghế (kể cả người gửi) |
+| `throw_out` | `roomId`, `by`, `id` | Đồ ném — dội cho cả hai ghế; client vẽ món bay từ chip `by` sang chip kia |
 | `bot_say` | `roomId`, `text`, `event` | Lời thoại của bot (LLM hoặc câu soạn sẵn), hiện dạng bong bóng |
 | `match_review` | `matchId`, `text`, `keyMove?` | Nhận xét sau ván với bot; `keyMove` = số thứ tự nước sai quan trọng nhất để client tô sáng |
 | `error` | `code`, `message`, `ref?` | Lỗi; `code` ổn định để client tự dịch, `message` đã dịch theo locale; `ref` gắn với tin nhắn gây lỗi |
@@ -69,6 +71,8 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `BAD_MESSAGE` | JSON không đúng schema |
 | `INVALID_BOARD` | `room_create` với id map không có trong bể (hoặc map ẩn ở production) |
 | `UNSUPPORTED` | Tính năng chưa có (`queue` với `mode: "casual"`) |
+| `UNKNOWN_ITEM`, `NOT_OWNED` | `throw` với id không phải đồ ném / chưa mua |
+| `GAME_OVER` (ref `emote`/`throw`) | Ván đã kết thúc, không còn tương tác |
 
 **Triển khai (M1.4–M1.7):** model Pydantic ở `api/app/ws/messages.py`; `uv run python -m scripts.export_ws_schema` xuất `shared/ws-schema.json`; `pnpm gen:ws` sinh `web/src/game/ws-types.ts`. Token sai → đóng với code **4401** trước khi accept; client refresh rồi nối lại. Presence: hash `presence:{room}` đếm số kết nối mỗi user; về 0 → `opponent_status(false)`. Khi socket đóng, phần dọn dẹp chạy trong task được shield để server tắt handler cũng không mất `opponent_status`.
 

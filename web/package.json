@@ -39,6 +39,7 @@
     "smoke:ads": "node scripts/smoke-ads.mjs",
     "smoke:chat": "node scripts/smoke-chat.mjs",
     "smoke:config": "node scripts/smoke-config.mjs",
+    "smoke:interact": "node scripts/smoke-interact.mjs",
     "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {

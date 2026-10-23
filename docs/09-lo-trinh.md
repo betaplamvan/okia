@@ -220,7 +220,7 @@ Chỉ có `web/`, chưa có backend. Mục đích: kiểm chứng cảm giác "�
 Không có thứ tự cố định; chọn theo dữ liệu thực tế.
 
 - [ ] **P3-01** Bảo mật tài khoản nâng cao: trang "Thiết bị đang đăng nhập" thu hồi từng phiên; nhà cung cấp OAuth thứ hai nếu cần (không quay lại mật khẩu, ADR-0011)
-- [ ] **P3-02** Biểu cảm nhanh trong trận (`emote`)
+- [x] **P3-02** Biểu cảm nhanh + đồ ném trong trận (2026-10-24, [08](08-skin.md#đồ-ném--biểu-cảm-trong-trận-2026-10-24)): 8 biểu cảm cố định, skin loại `throw` (8 món seed, mua trong Shop theo bậc, không trang bị), WS `emote`/`throw` dội cho cả hai ghế + giới hạn 1/2 giây, lớp phủ bay–trúng–rung–tiếng, máy đáp lại biểu cảm khi chơi với máy; smoke `pnpm smoke:interact`
 - [ ] **P3-03** Job kết thúc mùa: reset mềm, phát thưởng theo `peak_tier`
 - [~] **P3-04** (phần đầu 2026-10-22: `/admin` thống kê, người chơi, skin portable, thông số — [13](13-xac-thuc.md#admin-2026-10-22); *chưa:* `match_flags`, sửa nội dung) Trang admin tối giản: tra cứu người chơi, cấp vật phẩm, khóa tài khoản, xem xét `match_flags`, sửa nội dung `{vi, en}`
 - [ ] **P3-05** PostHog: phễu chơi ván đầu, retention D1/D7 (tách theo ngôn ngữ)

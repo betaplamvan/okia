@@ -18,6 +18,9 @@ import { afterFinishedGame, useInterstitialOpen } from "@/components/ads/adsense
 import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
 import { MapPicker, ShowLastMoveToggle, useMapName } from "@/components/play/map-picker";
+import { InteractionBar } from "@/components/play/interaction-bar";
+import { InteractionLayer } from "@/components/play/interaction-layer";
+import { useCatalog } from "@/stores/catalog";
 import { PlayerChip } from "@/components/play/player-chip";
 import {
   adaptAfterResult,
@@ -30,7 +33,7 @@ import { useGameSounds } from "@/components/play/use-game-sounds";
 import { audio } from "@/game/audio/audio-manager";
 import { LocalBotController, type GameResult } from "@/game/controller";
 import { DEFAULT_MAP_ID } from "@/game/maps";
-import { seatSkins } from "@/game/skins/skins";
+import { allThrows, seatSkins } from "@/game/skins/skins";
 import type { RendererEvent } from "@/game/renderer/board-renderer";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/stores/auth";
@@ -77,6 +80,21 @@ export function PlayScreen() {
   const session = useSyncExternalStore(subscribe, getSession, getSession);
 
   const onSelectEdge = useCallback((edge: number) => controller.play(edge), [controller]);
+
+  // Tương tác trong trận (docs/08 — Đồ ném): đồ ném mình có = default + đã mua (tài khoản thật).
+  const ownedIds = useAuth((s) => s.skins?.owned);
+  const loadSkins = useAuth((s) => s.loadSkins);
+  const me = useAuth((s) => s.user);
+  const catalogLive = useCatalog((s) => s.skins);
+  useEffect(() => {
+    if (me && !me.isGuest && !ownedIds) void loadSkins().catch(() => undefined);
+  }, [me, ownedIds, loadSkins]);
+  const throwItems = useMemo(
+    () => allThrows().filter((t) => t.default || ownedIds?.includes(t.id)),
+    // catalogLive: catalog từ API tới sau → tính lại.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ownedIds, catalogLive],
+  );
   const onRendererEvent = useCallback((e: RendererEvent) => {
     if (e.type === "count") audio.playCount(e.n);
     else setSettled(e.result);
@@ -158,9 +176,11 @@ export function PlayScreen() {
 
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
+      <InteractionLayer source={controller} />
       <GameLayout
         me={
           <PlayerChip
+            hudSeat={human}
             icon={<LuUser />}
             name={t("you")}
             score={youScore}
@@ -170,6 +190,7 @@ export function PlayScreen() {
         }
         opponent={
           <PlayerChip
+            hudSeat={bot}
             icon={<LuBot />}
             name={t("bot")}
             score={botScore}
@@ -208,6 +229,12 @@ export function PlayScreen() {
         }
         controls={
           <Stack gap={3}>
+            <InteractionBar
+              items={throwItems}
+              disabled={!!result}
+              onEmote={(id) => controller.emote(id)}
+              onThrow={(id) => controller.throwItem(id)}
+            />
             <HStack justify="center" gap={2} flexWrap="wrap">
               <Text color="cream" fontWeight="700" data-testid="map-name">
                 {tm("current", { name: mapName(session.mapId) })}

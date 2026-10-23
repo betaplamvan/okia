@@ -21,10 +21,22 @@ type Props = {
   onTry: () => void;
   onBuy: () => void;
   onEquip: () => void;
+  /** Loại không trang bị (đồ ném): sở hữu là xong, không có nút Trang bị. */
+  equippable?: boolean;
 };
 
 // Thẻ skin trong shop (docs/06 — Shop): xem trước, tên, bậc hiếm (màu), giá, Thử / Mua / Trang bị.
-export function SkinCard({ skin, owned, equipped, canBuy, busy, onTry, onBuy, onEquip }: Props) {
+export function SkinCard({
+  skin,
+  owned,
+  equipped,
+  canBuy,
+  busy,
+  onTry,
+  onBuy,
+  onEquip,
+  equippable = true,
+}: Props) {
   const t = useTranslations("Shop");
   const locale = useLocale();
   const name = locale === "en" ? skin.name.en : skin.name.vi;
@@ -80,7 +92,11 @@ export function SkinCard({ skin, owned, equipped, canBuy, busy, onTry, onBuy, on
           <LuEye /> {t("try")}
         </Button>
       </HStack>
-      {equipped ? (
+      {!equippable && (owned || skin.default) ? (
+        <Button variant="sticker" size="sm" bg="paper" disabled>
+          <LuCheck /> {t("ready")}
+        </Button>
+      ) : equipped ? (
         <Button variant="sticker" size="sm" bg="paper" disabled>
           <LuCheck /> {t("equipped")}
         </Button>

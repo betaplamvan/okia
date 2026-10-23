@@ -76,10 +76,23 @@ class Resign(Msg):
     room_id: str
 
 
+# Biểu cảm nhanh trong trận (docs/04): danh sách cố định, không chat tự do. Web giữ bản sao
+# (web/src/game/interactions.ts) để hiện emoji.
+EMOTES: tuple[str, ...] = ("hi", "gg", "lol", "wow", "cry", "angry", "think", "fire")
+
+
 class Emote(Msg):
     t: Literal["emote"]
     room_id: str
     id: str = Field(max_length=32)
+
+
+class Throw(Msg):
+    """Ném đồ vào đối thủ (docs/08 — Đồ ném): `id` = skin loại throw mình sở hữu."""
+
+    t: Literal["throw"]
+    room_id: str
+    id: str = Field(max_length=48)
 
 
 class Ping(Msg):
@@ -107,6 +120,7 @@ ClientMsg = Annotated[
     | Move
     | Resign
     | Emote
+    | Throw
     | Ping
     | ChatWatch
     | ChatUnwatch,
@@ -274,6 +288,13 @@ class EmoteOut(Msg):
     id: str
 
 
+class ThrowOut(Msg):
+    t: Literal["throw_out"] = "throw_out"
+    room_id: str
+    by: Seat
+    id: str
+
+
 class BotSay(Msg):
     t: Literal["bot_say"] = "bot_say"
     room_id: str
@@ -342,6 +363,7 @@ ServerMsg = Annotated[
     | GameOver
     | OpponentStatus
     | EmoteOut
+    | ThrowOut
     | BotSay
     | MatchReview
     | Error

@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { RewardChips, useRewardLabel, WalletChips } from "@/components/economy/wallet-chips";
 import { SkinCard, useSkinName } from "@/components/shop/skin-card";
+import { ThrowTryDialog } from "@/components/shop/throw-try-dialog";
 import { TryDialog } from "@/components/shop/try-dialog";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
@@ -126,7 +127,7 @@ export function ShopScreen() {
 
         <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value as SkinType)} variant="plain">
           <Tabs.List gap={2} justifyContent="center" flexWrap="wrap">
-            {(["pen", "box"] as const).map((key) => (
+            {(["pen", "box", "throw"] as const).map((key) => (
               <Tabs.Trigger
                 key={key}
                 value={key}
@@ -140,22 +141,23 @@ export function ShopScreen() {
                 fontFamily="hand"
                 fontSize="lg"
               >
-                {key === "pen" ? t("pens") : t("boxes")}
+                {key === "pen" ? t("pens") : key === "box" ? t("boxes") : t("throws")}
               </Tabs.Trigger>
             ))}
           </Tabs.List>
         </Tabs.Root>
         <Text textAlign="center" color="cream" opacity={0.8} fontSize="sm" mt={-2}>
-          {tab === "pen" ? t("penHint") : t("boxHint")}
+          {tab === "pen" ? t("penHint") : tab === "box" ? t("boxHint") : t("throwHint")}
         </Text>
 
         <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} gap={{ base: 3, md: 4 }}>
           {sorted.map((skin) => (
             <SkinCard
               key={skin.id}
+              equippable={skin.type !== "throw"}
               skin={skin}
               owned={!!skin.default || owned.has(skin.id)}
-              equipped={loadout?.[skin.type] === skin.id}
+              equipped={skin.type !== "throw" && loadout?.[skin.type] === skin.id}
               canBuy={canBuy}
               busy={busy === skin.id}
               onTry={() => setTrying(skin)}
@@ -166,7 +168,11 @@ export function ShopScreen() {
         </SimpleGrid>
       </Stack>
 
-      <TryDialog skin={trying} onClose={() => setTrying(null)} />
+      <TryDialog skin={trying?.type === "throw" ? null : trying} onClose={() => setTrying(null)} />
+      <ThrowTryDialog
+        skin={trying?.type === "throw" ? trying : null}
+        onClose={() => setTrying(null)}
+      />
 
       <Dialog.Root
         role="alertdialog"

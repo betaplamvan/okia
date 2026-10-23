@@ -15,12 +15,14 @@ export const MAX_ZIP = 3 * 1024 * 1024;
 export const MAX_FILES = 24;
 export const MAX_AUDIO = 400 * 1024;
 export const MAX_IMAGE = 300 * 1024;
-export const ASSET_RE = /^(sfx|box|particles|pen)\/[a-z0-9_-]{1,40}\.(webm|mp3|ogg|svg|png|webp)$/;
+export const ASSET_RE =
+  /^(sfx|box|particles|pen|throw)\/[a-z0-9_-]{1,40}\.(webm|mp3|ogg|svg|png|webp)$/;
 const DIR_EXTS = {
   sfx: ["webm", "mp3", "ogg"],
   box: ["svg", "png", "webp"],
   particles: ["svg", "png", "webp"],
   pen: ["svg", "png", "webp"],
+  throw: ["svg", "png", "webp"],
 };
 const IGNORED = new Set([
   "readme.md",
@@ -39,6 +41,7 @@ const REF_PATHS = [
   ["box", "particleImage"],
   ["sfx", "capture"],
   ["sfx", "combo"],
+  ["throw", "image"],
 ];
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });

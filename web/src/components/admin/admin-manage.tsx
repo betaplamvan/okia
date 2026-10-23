@@ -540,7 +540,7 @@ function metaOf(r: AdminSkin): Meta {
 export function AdminSkins() {
   const t = useTranslations("Admin");
   const [rows, setRows] = useState<AdminSkin[]>([]);
-  const [tab, setTab] = useState<"pen" | "box">("pen");
+  const [tab, setTab] = useState<"pen" | "box" | "throw">("pen");
   const [editing, setEditing] = useState<{ row: AdminSkin; meta: Meta } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState<{ file: File | null; items: PreviewItem[] } | null>(null);
@@ -724,7 +724,7 @@ export function AdminSkins() {
         </Box>
       ) : null}
       <HStack flexWrap="wrap">
-        {(["pen", "box"] as const).map((k) => (
+        {(["pen", "box", "throw"] as const).map((k) => (
           <Button
             key={k}
             variant="sticker"

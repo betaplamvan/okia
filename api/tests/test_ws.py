@@ -286,3 +286,77 @@ def test_room_create_board_khong_hop_le(
     monkeypatch.setattr(get_settings(), "env", "production")
     send(a, t="room_create", board="3x3", turnSeconds=30)
     assert recv(a, "error")["code"] == "INVALID_BOARD"
+
+
+# ---------- Biểu cảm & đồ ném (docs/08 — Đồ ném, 2026-10-24) ----------
+
+
+def test_bieu_cam_va_nem_do(client: TestClient) -> None:
+    """Biểu cảm phải thuộc danh sách cố định; đồ ném phải là skin loại throw mình có (default ai
+    cũng có; món khác → NOT_OWNED); cả hai dội lại cho CẢ HAI ghế; giãn cách 2 giây; ván xong thì
+    không còn tương tác."""
+    import redis.asyncio as aioredis
+
+    ta = guest(client, "device-emote-a-0123")
+    tb = guest(client, "device-emote-b-0123")
+    a = open_ws(client, ta)
+    b = open_ws(client, tb)
+    recv(a, "welcome")
+    recv(b, "welcome")
+    send(a, t="room_create", board="3x3", turnSeconds=None)
+    code = recv(a, "room_state")["roomId"]
+    send(b, t="room_join", roomId=code)
+    recv(b, "room_state")
+    rs = recv(a, "room_state")
+    seat_a = next(p["seat"] for p in rs["players"] if p["userId"] == rs["players"][0]["userId"])
+    assert seat_a in (0, 1)
+
+    # Id lạ → BAD_MESSAGE; id đúng → cả hai nhận `emote` với ghế người gửi.
+    send(a, t="emote", roomId=code, id="dance")
+    assert recv(a, "error")["code"] == "BAD_MESSAGE"
+    send(a, t="emote", roomId=code, id="hi")
+    ea = recv(a, "emote")
+    eb = recv(b, "emote")
+    assert ea == eb and ea["id"] == "hi" and ea["by"] in (0, 1)
+
+    # Giãn cách 2 giây: tin thứ hai ngay sau → RATE_LIMITED (ref = emote).
+    send(a, t="emote", roomId=code, id="gg")
+    e = recv(a, "error")
+    assert e["code"] == "RATE_LIMITED" and e["ref"] == "emote"
+
+    async def unthrottle() -> None:
+        r = aioredis.from_url(os.environ["REDIS_URL"])
+        try:
+            for key in await r.keys("rl:interact:*"):
+                await r.delete(key)
+        finally:
+            await r.aclose()
+
+    asyncio.run(unthrottle())
+    # Đồ ném: món mặc định ai cũng ném được; món chưa mua → NOT_OWNED; id lạ → UNKNOWN_ITEM.
+    send(b, t="throw", roomId=code, id="throw_paper")
+    tb_out = recv(b, "throw_out")
+    ta_out = recv(a, "throw_out")
+    assert ta_out == tb_out and ta_out["id"] == "throw_paper" and ta_out["by"] != ea["by"]
+    asyncio.run(unthrottle())
+    send(b, t="throw", roomId=code, id="throw_bomb")
+    assert recv(b, "error")["code"] == "NOT_OWNED"
+    send(b, t="throw", roomId=code, id="throw_nope")
+    assert recv(b, "error")["code"] == "UNKNOWN_ITEM"
+    send(b, t="throw", roomId="ZZZZZZ", id="throw_paper")
+    assert recv(b, "error")["code"] == "ROOM_NOT_FOUND"
+
+    # Người ngoài phòng không ném được vào phòng.
+    tc = guest(client, "device-emote-c-0123")
+    c = open_ws(client, tc)
+    recv(c, "welcome")
+    send(c, t="throw", roomId=code, id="throw_paper")
+    assert recv(c, "error")["code"] == "ROOM_NOT_FOUND"
+
+    # Ván xong → GAME_OVER.
+    send(a, t="resign", roomId=code)
+    recv(a, "game_over")
+    recv(b, "game_over")
+    asyncio.run(unthrottle())
+    send(b, t="emote", roomId=code, id="gg")
+    assert recv(b, "error")["code"] == "GAME_OVER"

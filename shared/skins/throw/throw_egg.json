@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "throw_egg",
+  "type": "throw",
+  "rarity": "uncommon",
+  "name": {
+    "vi": "Trứng gà",
+    "en": "Egg"
+  },
+  "description": {
+    "vi": "Trứng tươi, vỡ ra chảy lòng vàng.",
+    "en": "A fresh egg that cracks and drips yolk."
+  },
+  "throw": {
+    "icon": "egg",
+    "splat": "crack",
+    "color": "#ffd93d",
+    "color2": "#fff6c2"
+  }
+}

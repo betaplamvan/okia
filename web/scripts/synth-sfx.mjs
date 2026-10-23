@@ -397,8 +397,20 @@ function readyCheck() {
   return normalize(out, 0.9);
 }
 
+/** Tiếng đồ ném (docs/08 — Đồ ném): ném (vút xuống) và trúng theo hiệu ứng. */
+function whoosh() {
+  return sequence([slide(1100, 260, 220, { decay: 9, attack: 20 })], 10);
+}
+
 const files = {
   "match_found.wav": readyCheck(),
+  "throw.wav": whoosh(),
+  "hit_splat.wav": sequence([blob(303), tap(305)], 40),
+  "hit_crack.wav": sequence([tap(311), slide(520, 180, 260, { decay: 7 })], 30),
+  "hit_explode.wav": sequence([knock(313), fireFlare(317)], 20),
+  "hit_bounce.wav": sequence([knock(331), pop(720), pop(540)], 90),
+  "hit_petals.wav": sparkle(337),
+  "hit_confetti.wav": sequence([pop(900), arpeggio([783.99, 987.77, 1174.66, 1567.98], 70, 5)], 30),
   "combo.wav": sparkle(71),
   "capture_fire.wav": fireWhoosh(41),
   "combo_fire.wav": fireFlare(43),

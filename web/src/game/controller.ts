@@ -3,6 +3,7 @@
  * - LocalBotController (giai đoạn 0): người chơi vs bot ngay trong trình duyệt.
  * - NetworkController (giai đoạn 1): phòng đấu qua WebSocket, cùng giao diện này.
  */
+import { botReply, type EmoteId, type Interaction } from "./interactions";
 import { chooseMove } from "./bot";
 import { createGameForMap, DEFAULT_MAP_ID, resolveMapId } from "./maps";
 import { applyMove, winner, type GameState, type Player } from "./rules";
@@ -78,6 +79,12 @@ export interface OnlineInfo {
 export interface GameController {
   getSession(): GameSession;
   subscribe(listener: () => void): () => void;
+  /** Biểu cảm nhanh (docs/08 — Đồ ném). Trả false nếu không gửi được (ván xong, chưa vào ghế…). */
+  emote(id: EmoteId): boolean;
+  /** Ném đồ (skin loại throw mình có) vào đối thủ. */
+  throwItem(id: string): boolean;
+  /** Nhận tương tác của cả hai ghế (lớp phủ InteractionLayer vẽ). */
+  subscribeInteractions(cb: (e: Interaction) => void): () => void;
   /** Nước đi của người chơi. Trả false nếu không hợp lệ / không phải lượt. */
   play(edge: number): boolean;
   resign(): void;
@@ -115,6 +122,8 @@ export class LocalBotController implements GameController {
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
+  private interactionListeners = new Set<(e: Interaction) => void>();
+  private replyTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(opts: Partial<LocalBotOptions> = {}) {
     this.opts = { ...DEFAULTS, ...opts };
@@ -218,6 +227,42 @@ export class LocalBotController implements GameController {
     this.scheduleBot();
   }
 
+  // ---------- Tương tác (docs/08 — Đồ ném): client-side, máy đáp lại bằng biểu cảm ----------
+
+  emote(id: EmoteId): boolean {
+    if (this.session.result) return false;
+    this.emitInteraction({ kind: "emote", by: this.session.human, id });
+    return true;
+  }
+
+  throwItem(id: string): boolean {
+    if (this.session.result) return false;
+    this.emitInteraction({ kind: "throw", by: this.session.human, id });
+    return true;
+  }
+
+  subscribeInteractions(cb: (e: Interaction) => void): () => void {
+    this.interactionListeners.add(cb);
+    return () => this.interactionListeners.delete(cb);
+  }
+
+  private emitInteraction(e: Interaction) {
+    for (const l of this.interactionListeners) l(e);
+    if (e.by !== this.session.human) return;
+    const reply = botReply(e, this.opts.random);
+    if (this.replyTimer) clearTimeout(this.replyTimer);
+    if (!reply) return;
+    this.replyTimer = setTimeout(
+      () => {
+        this.replyTimer = null;
+        if (this.destroyed || this.session.result) return;
+        for (const l of this.interactionListeners)
+          l({ kind: "emote", by: this.session.bot, id: reply });
+      },
+      800 + this.opts.random() * 600,
+    );
+  }
+
   /** Map người chơi đã chọn (có thể là "random"); map đang chơi nằm ở session.mapId. */
   get mapChoice(): string {
     return this.opts.mapId;
@@ -236,6 +281,8 @@ export class LocalBotController implements GameController {
   private clearTimer() {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    if (this.replyTimer) clearTimeout(this.replyTimer);
+    this.replyTimer = null;
   }
 
   /** Tạm dừng bot (khi component unmount tạm thời, ví dụ StrictMode ở dev). */
@@ -254,5 +301,6 @@ export class LocalBotController implements GameController {
   destroy(): void {
     this.pause();
     this.listeners.clear();
+    this.interactionListeners.clear();
   }
 }

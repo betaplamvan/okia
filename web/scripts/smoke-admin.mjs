@@ -91,8 +91,17 @@ console.log("skin: lưới + hộp sửa metadata ok");
 
 await page.getByRole("tab", { name: "Thông số" }).click();
 await page.getByText("Ruột chì cho người thắng trận xếp hạng").waitFor({ timeout: 10000 });
-await page.getByRole("button", { name: "Lưu" }).first().click();
-await page.getByText("Đã lưu").waitFor({ timeout: 10000 });
+// Lưu chỉ bật khi có thay đổi (2026-10-23): đổi 30 → 31 rồi trả về 30.
+const lead = page.getByTestId("cfg-ranked_win_lead");
+const before = await lead.inputValue();
+await lead.selectText();
+await lead.pressSequentially(String(Number(before) + 1));
+await page.getByTestId("cfg-save").click();
+await page.getByText("Đã lưu").first().waitFor({ timeout: 10000 });
+await lead.selectText();
+await lead.pressSequentially(before);
+await page.getByTestId("cfg-save").click();
+await page.getByText("Đã lưu").first().waitFor({ timeout: 10000 });
 await page.screenshot({ path: ".shots/admin-config.png" });
 console.log("thông số: lưu ok");
 

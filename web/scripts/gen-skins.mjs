@@ -1,4 +1,4 @@
-// Gom manifest skin shared/skins/{pen,box}/<id>.json (nguồn chuẩn, docs/08) thành catalog cho hai phía:
+// Gom manifest skin shared/skins/{pen,box,throw}/<id>.json (nguồn chuẩn, docs/08) thành catalog cho hai phía:
 //   - web/src/game/skins/catalog.data.ts  (bundle client không import được file ngoài web/)
 //   - api/app/skins/catalog.json          (image api build với context api/, không thấy shared/)
 //   - api/app/skins/schema.json           (bản chép shared/skins/schema.json cho API kiểm tra gói)
@@ -14,7 +14,7 @@ import { PackageError, SCHEMA_PATH, refs, validateManifest } from "./lib/skin-sc
 
 const at = (p) => fileURLToPath(new URL(p, import.meta.url));
 const SRC = at("../../shared/skins/");
-const TYPES = ["pen", "box"];
+const TYPES = ["pen", "box", "throw"];
 
 const fail = (msg) => {
   console.error("manifest lỗi: " + msg);

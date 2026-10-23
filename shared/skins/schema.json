@@ -2,34 +2,68 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://okia.io.vn/skins/schema-v1.json",
   "title": "Ô Kìa — manifest skin (skin.json) v1",
-  "description": "Một skin bút (pen) hoặc dấu ăn ô (box). Nguồn sự thật cho gen-skins.mjs, API (nhập gói) và công cụ sinh skin. Đọc kèm SPEC.md.",
+  "description": "Một skin bút (pen), dấu ăn ô (box) hoặc đồ ném (throw — vật phẩm ném vào đối thủ trong trận, chỉ hình + tiếng). Nguồn sự thật cho gen-skins.mjs, API (nhập gói) và công cụ sinh skin. Đọc kèm SPEC.md.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "type", "rarity", "name", "description"],
+  "required": [
+    "id",
+    "type",
+    "rarity",
+    "name",
+    "description"
+  ],
   "properties": {
-    "schema": { "const": 1, "description": "Phiên bản định dạng. Luôn 1." },
+    "schema": {
+      "const": 1,
+      "description": "Phiên bản định dạng. Luôn 1."
+    },
     "id": {
       "type": "string",
-      "pattern": "^(pen|box)_[a-z0-9_]{2,44}$",
-      "description": "Định danh duy nhất, tiền tố theo loại: pen_… hoặc box_…"
+      "pattern": "^(pen|box|throw)_[a-z0-9_]{2,44}$",
+      "description": "Định danh duy nhất, tiền tố theo loại: pen_…, box_… hoặc throw_…"
     },
-    "type": { "enum": ["pen", "box"] },
+    "type": {
+      "enum": [
+        "pen",
+        "box",
+        "throw"
+      ]
+    },
     "rarity": {
-      "enum": ["common", "uncommon", "rare", "epic", "legendary"],
+      "enum": [
+        "common",
+        "uncommon",
+        "rare",
+        "epic",
+        "legendary"
+      ],
       "description": "Bậc hiếm: trắng · xanh lá · xanh lam · tím · vàng. Giá bán suy từ bậc (không ghi trong manifest)."
     },
-    "name": { "$ref": "#/$defs/i18n" },
-    "description": { "$ref": "#/$defs/i18n" },
+    "name": {
+      "$ref": "#/$defs/i18n"
+    },
+    "description": {
+      "$ref": "#/$defs/i18n"
+    },
     "default": {
       "type": "boolean",
       "description": "Skin mặc định (miễn phí, ai cũng có). Chỉ seed trong repo dùng; gói nhập từ ngoài không được đặt true."
     },
-    "author": { "type": "string", "maxLength": 80 },
-    "license": { "type": "string", "maxLength": 120 },
+    "author": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "license": {
+      "type": "string",
+      "maxLength": 120
+    },
     "forms": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mine", "opponent"],
+      "required": [
+        "mine",
+        "opponent"
+      ],
       "properties": {
         "mine": {
           "$ref": "#/$defs/form",
@@ -44,7 +78,10 @@
     "pen": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["style", "width"],
+      "required": [
+        "style",
+        "width"
+      ],
       "properties": {
         "style": {
           "enum": [
@@ -64,27 +101,47 @@
           "maximum": 3,
           "description": "Hệ số bề dày so với nét mặc định."
         },
-        "alpha": { "type": "number", "minimum": 0.1, "maximum": 1 },
+        "alpha": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        },
         "jitter": {
           "type": "number",
           "minimum": 0,
           "maximum": 3,
           "description": "Hệ số run tay (1 = mặc định)."
         },
-        "cap": { "enum": ["round", "square"] },
+        "cap": {
+          "enum": [
+            "round",
+            "square"
+          ]
+        },
         "taper": {
           "type": "boolean",
           "description": "Nét mảnh ở hai đầu, dày ở giữa."
         },
         "dash": {
           "type": "array",
-          "items": { "type": "number", "minimum": 0.05, "maximum": 4 },
+          "items": {
+            "type": "number",
+            "minimum": 0.05,
+            "maximum": 4
+          },
           "minItems": 2,
           "maxItems": 2,
           "description": "Nét đứt [đoạn vẽ, đoạn hở] theo tỷ lệ ô."
         },
-        "grain": { "enum": ["graphite", "wax"] },
-        "halo": { "type": "boolean" },
+        "grain": {
+          "enum": [
+            "graphite",
+            "wax"
+          ]
+        },
+        "halo": {
+          "type": "boolean"
+        },
         "texture": {
           "$ref": "#/$defs/imageRef",
           "description": "Ảnh lặp (tile) phủ LÊN nét: pen/<tên>.png|webp|svg trong gói. Vùng đục nhuộm màu `color2` của hình thái (vẽ trắng), vùng trong suốt để lộ màu nét."
@@ -100,13 +157,26 @@
     "combo": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["style", "particles", "shakeFrom"],
+      "required": [
+        "style",
+        "particles",
+        "shakeFrom"
+      ],
       "properties": {
         "style": {
-          "enum": ["sticker", "ink", "chalk", "neon", "sparkle", "fire"],
+          "enum": [
+            "sticker",
+            "ink",
+            "chalk",
+            "neon",
+            "sparkle",
+            "fire"
+          ],
           "description": "Kiểu chữ COMBO."
         },
-        "particles": { "$ref": "#/$defs/particles" },
+        "particles": {
+          "$ref": "#/$defs/particles"
+        },
         "particleImage": {
           "$ref": "#/$defs/imageRef",
           "description": "Bắt buộc khi particles = image: particles/<tên>.svg|png|webp."
@@ -122,7 +192,10 @@
     "sfx": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["capture", "combo"],
+      "required": [
+        "capture",
+        "combo"
+      ],
       "properties": {
         "capture": {
           "$ref": "#/$defs/sfxRef",
@@ -137,7 +210,11 @@
     "box": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["effect", "alpha", "particles"],
+      "required": [
+        "effect",
+        "alpha",
+        "particles"
+      ],
       "properties": {
         "effect": {
           "enum": [
@@ -161,8 +238,12 @@
           "maximum": 1,
           "description": "Độ đậm hình tô (image: alpha của ảnh)."
         },
-        "particles": { "$ref": "#/$defs/particles" },
-        "particleImage": { "$ref": "#/$defs/imageRef" },
+        "particles": {
+          "$ref": "#/$defs/particles"
+        },
+        "particleImage": {
+          "$ref": "#/$defs/imageRef"
+        },
         "image": {
           "$ref": "#/$defs/imageRef",
           "description": "Bắt buộc khi effect = image: box/<tên>.svg|png|webp, hình vuông, nền trong suốt."
@@ -183,36 +264,201 @@
       "type": "object",
       "description": "Do máy chủ ghi khi nhập gói (vị trí file đã lưu). Không tự viết trong gói.",
       "additionalProperties": false,
-      "required": ["ver", "files"],
+      "required": [
+        "ver",
+        "files"
+      ],
       "properties": {
-        "ver": { "type": "string", "pattern": "^[a-f0-9]{10}$" },
+        "ver": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{10}$"
+        },
         "files": {
           "type": "array",
-          "items": { "$ref": "#/$defs/assetRef" },
+          "items": {
+            "$ref": "#/$defs/assetRef"
+          },
           "maxItems": 24
         },
-        "base": { "type": "string" }
+        "base": {
+          "type": "string"
+        }
+      }
+    },
+    "throw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "icon",
+        "splat"
+      ],
+      "properties": {
+        "icon": {
+          "enum": [
+            "paper",
+            "tomato",
+            "egg",
+            "flower",
+            "slipper",
+            "cake",
+            "bomb",
+            "confetti",
+            "image"
+          ],
+          "description": "Hình vật phẩm vẽ sẵn trong engine, hoặc `image` = ảnh throw/<tên>.svg|png|webp trong gói."
+        },
+        "image": {
+          "$ref": "#/$defs/imageRef",
+          "description": "Bắt buộc khi icon = image: throw/<tên>, hình vuông, nền trong suốt."
+        },
+        "splat": {
+          "enum": [
+            "splat",
+            "crack",
+            "explode",
+            "bounce",
+            "petals",
+            "confetti"
+          ],
+          "description": "Hiệu ứng khi trúng chip đối thủ: bắn toé (cà chua) · nứt chảy (trứng) · nổ (bom) · nảy bật (dép, giấy) · cánh hoa · pháo giấy."
+        },
+        "color": {
+          "$ref": "#/$defs/hex",
+          "description": "Màu chính của vệt bắn toé / hạt (mặc định theo icon)."
+        },
+        "color2": {
+          "$ref": "#/$defs/hex"
+        },
+        "sfx": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "throw": {
+              "$ref": "#/$defs/throwSfxRef"
+            },
+            "hit": {
+              "$ref": "#/$defs/throwSfxRef"
+            }
+          },
+          "description": "Tiếng ném / trúng; bỏ trống → theo splat."
+        }
       }
     }
   },
   "allOf": [
     {
-      "if": { "properties": { "type": { "const": "pen" } } },
+      "if": {
+        "properties": {
+          "type": {
+            "const": "pen"
+          }
+        }
+      },
       "then": {
-        "required": ["forms", "pen", "combo", "sfx"],
-        "not": { "required": ["box"] }
+        "required": [
+          "forms",
+          "pen",
+          "combo",
+          "sfx"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "box"
+              ]
+            },
+            {
+              "required": [
+                "throw"
+              ]
+            }
+          ]
+        }
       }
     },
     {
-      "if": { "properties": { "type": { "const": "box" } } },
+      "if": {
+        "properties": {
+          "type": {
+            "const": "box"
+          }
+        }
+      },
       "then": {
-        "required": ["box"],
+        "required": [
+          "box"
+        ],
         "not": {
           "anyOf": [
-            { "required": ["pen"] },
-            { "required": ["forms"] },
-            { "required": ["combo"] },
-            { "required": ["sfx"] }
+            {
+              "required": [
+                "pen"
+              ]
+            },
+            {
+              "required": [
+                "forms"
+              ]
+            },
+            {
+              "required": [
+                "combo"
+              ]
+            },
+            {
+              "required": [
+                "sfx"
+              ]
+            },
+            {
+              "required": [
+                "throw"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "throw"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "throw"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "pen"
+              ]
+            },
+            {
+              "required": [
+                "forms"
+              ]
+            },
+            {
+              "required": [
+                "combo"
+              ]
+            },
+            {
+              "required": [
+                "sfx"
+              ]
+            },
+            {
+              "required": [
+                "box"
+              ]
+            }
           ]
         }
       }
@@ -221,55 +467,150 @@
       "if": {
         "properties": {
           "box": {
-            "properties": { "effect": { "const": "image" } },
-            "required": ["effect"]
+            "properties": {
+              "effect": {
+                "const": "image"
+              }
+            },
+            "required": [
+              "effect"
+            ]
           }
         },
-        "required": ["box"]
+        "required": [
+          "box"
+        ]
       },
-      "then": { "properties": { "box": { "required": ["image"] } } }
+      "then": {
+        "properties": {
+          "box": {
+            "required": [
+              "image"
+            ]
+          }
+        }
+      }
     },
     {
       "if": {
         "properties": {
           "box": {
-            "properties": { "particles": { "const": "image" } },
-            "required": ["particles"]
+            "properties": {
+              "particles": {
+                "const": "image"
+              }
+            },
+            "required": [
+              "particles"
+            ]
           }
         },
-        "required": ["box"]
+        "required": [
+          "box"
+        ]
       },
-      "then": { "properties": { "box": { "required": ["particleImage"] } } }
+      "then": {
+        "properties": {
+          "box": {
+            "required": [
+              "particleImage"
+            ]
+          }
+        }
+      }
     },
     {
       "if": {
         "properties": {
           "combo": {
-            "properties": { "particles": { "const": "image" } },
-            "required": ["particles"]
+            "properties": {
+              "particles": {
+                "const": "image"
+              }
+            },
+            "required": [
+              "particles"
+            ]
           }
         },
-        "required": ["combo"]
+        "required": [
+          "combo"
+        ]
       },
-      "then": { "properties": { "combo": { "required": ["particleImage"] } } }
+      "then": {
+        "properties": {
+          "combo": {
+            "required": [
+              "particleImage"
+            ]
+          }
+        }
+      }
     },
     {
       "if": {
         "properties": {
           "pen": {
-            "properties": { "style": { "enum": ["rainbow", "metal"] } },
-            "required": ["style"]
+            "properties": {
+              "style": {
+                "enum": [
+                  "rainbow",
+                  "metal"
+                ]
+              }
+            },
+            "required": [
+              "style"
+            ]
           }
         },
-        "required": ["pen"]
+        "required": [
+          "pen"
+        ]
       },
       "then": {
         "properties": {
           "forms": {
             "properties": {
-              "mine": { "required": ["colors"] },
-              "opponent": { "required": ["colors"] }
+              "mine": {
+                "required": [
+                  "colors"
+                ]
+              },
+              "opponent": {
+                "required": [
+                  "colors"
+                ]
+              }
             }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "throw": {
+            "properties": {
+              "icon": {
+                "const": "image"
+              }
+            },
+            "required": [
+              "icon"
+            ]
+          }
+        },
+        "required": [
+          "throw"
+        ]
+      },
+      "then": {
+        "properties": {
+          "throw": {
+            "required": [
+              "image"
+            ]
           }
         }
       }
@@ -279,17 +620,33 @@
     "i18n": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["vi", "en"],
+      "required": [
+        "vi",
+        "en"
+      ],
       "properties": {
-        "vi": { "type": "string", "minLength": 1, "maxLength": 160 },
-        "en": { "type": "string", "minLength": 1, "maxLength": 160 }
+        "vi": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        }
       }
     },
-    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
     "form": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["color"],
+      "required": [
+        "color"
+      ],
       "properties": {
         "color": {
           "$ref": "#/$defs/hex",
@@ -301,7 +658,9 @@
         },
         "colors": {
           "type": "array",
-          "items": { "$ref": "#/$defs/hex" },
+          "items": {
+            "$ref": "#/$defs/hex"
+          },
           "minItems": 2,
           "maxItems": 8,
           "description": "Mốc màu nhiều điểm (rainbow, metal)."
@@ -321,12 +680,20 @@
       }
     },
     "particles": {
-      "enum": ["paper", "ink", "chalk", "spark", "star", "heart", "image"],
+      "enum": [
+        "paper",
+        "ink",
+        "chalk",
+        "spark",
+        "star",
+        "heart",
+        "image"
+      ],
       "description": "Loại vụn bắn ra khi ăn ô / COMBO. image = dùng ảnh particleImage."
     },
     "imageRef": {
       "type": "string",
-      "pattern": "^(box|particles|pen)/[a-z0-9_\\-]{1,40}\\.(svg|png|webp)$"
+      "pattern": "^(box|particles|pen|throw)/[a-z0-9_\\-]{1,40}\\.(svg|png|webp)$"
     },
     "audioRef": {
       "type": "string",
@@ -334,13 +701,30 @@
     },
     "assetRef": {
       "type": "string",
-      "pattern": "^(sfx|box|particles|pen)/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg|svg|png|webp)$"
+      "pattern": "^(sfx|box|particles|pen|throw)/[a-z0-9_\\-]{1,40}\\.(webm|mp3|ogg|svg|png|webp)$"
     },
     "sfxRef": {
       "description": "Tên tiếng có sẵn trong engine (capture, capture_bell, capture_chalk, capture_fire, capture_ink, capture_marker, capture_neon, capture_soft, combo, combo_bell, combo_chalk, combo_fire, combo_ink, combo_neon) HOẶC file trong gói: sfx/<tên>.webm|mp3|ogg.",
       "anyOf": [
-        { "type": "string", "pattern": "^[a-z0-9_]{1,40}$" },
-        { "$ref": "#/$defs/audioRef" }
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,40}$"
+        },
+        {
+          "$ref": "#/$defs/audioRef"
+        }
+      ]
+    },
+    "throwSfxRef": {
+      "description": "Tên tiếng có sẵn (throw, hit_splat, hit_crack, hit_explode, hit_bounce, hit_petals, hit_confetti) HOẶC file trong gói: sfx/<tên>.webm|mp3|ogg.",
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,40}$"
+        },
+        {
+          "$ref": "#/$defs/audioRef"
+        }
       ]
     }
   }

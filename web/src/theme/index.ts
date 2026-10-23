@@ -53,6 +53,9 @@ const textareaRecipe = defineRecipe({ base: fieldBase });
 
 const config = defineConfig({
   globalCss: {
+    // Chip người chơi rung khi trúng đồ ném (components/play/interaction-layer.tsx; keyframes ở
+    // theme.keyframes.okiaHit).
+    ".okia-hit": { animation: "okiaHit 0.45s ease-in-out" },
     // Ô nhập số: bỏ mũi tên tăng/giảm của trình duyệt (lệch phong cách sticker, docs/14).
     // Footer (site-footer.tsx): hover / focus nền sáng nhẹ như noitu.
     ".okia-footer-link:hover, .okia-footer-link:focus-visible": {
@@ -89,6 +92,15 @@ const config = defineConfig({
     },
   },
   theme: {
+    keyframes: {
+      okiaHit: {
+        "0%, 100%": { transform: "translate(0,0) rotate(0)" },
+        "20%": { transform: "translate(-4px, 2px) rotate(-3deg)" },
+        "40%": { transform: "translate(4px, -2px) rotate(3deg)" },
+        "60%": { transform: "translate(-3px, 1px) rotate(-2deg)" },
+        "80%": { transform: "translate(3px, -1px) rotate(2deg)" },
+      },
+    },
     tokens: {
       fonts: {
         hand: { value: "var(--font-hand), 'Patrick Hand', system-ui, sans-serif" },

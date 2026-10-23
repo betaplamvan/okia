@@ -54,7 +54,7 @@ def to_user_out(user: User) -> UserOut:
     lo = None if lo_loaded is NO_VALUE else lo_loaded
     loadout = catalog.default_loadout()
     if lo is not None:
-        for t in catalog.TYPES:
+        for t in catalog.LOADOUT_TYPES:
             sid = getattr(lo, t)
             s = catalog.get_skin(sid) if sid else None
             if s is not None and s.type == t:

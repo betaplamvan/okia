@@ -18,12 +18,15 @@ import { LuBot, LuCheck, LuCopy, LuFlag, LuShare2, LuUser, LuWifiOff } from "rea
 import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
 import { useMapName } from "@/components/play/map-picker";
+import { InteractionBar } from "@/components/play/interaction-bar";
+import { InteractionLayer } from "@/components/play/interaction-layer";
+import { useCatalog } from "@/stores/catalog";
 import { PlayerChip } from "@/components/play/player-chip";
 import { useGameSounds } from "@/components/play/use-game-sounds";
 import { RewardChips } from "@/components/economy/wallet-chips";
 import { RankEmblem } from "@/components/ranked/rank-emblem";
 import { TierBadge } from "@/components/ranked/tier-badge";
-import { seatSkins } from "@/game/skins/skins";
+import { allThrows, seatSkins } from "@/game/skins/skins";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
 import type { GameResult } from "@/game/controller";
@@ -86,6 +89,21 @@ export function RoomScreen({ code }: { code: string }) {
   useGameSounds(session, skins);
 
   const onSelectEdge = useCallback((edge: number) => controller.play(edge), [controller]);
+
+  // Tương tác trong trận (docs/08 — Đồ ném): đồ ném mình có = default + đã mua (tài khoản thật).
+  const ownedIds = useAuth((s) => s.skins?.owned);
+  const loadSkins = useAuth((s) => s.loadSkins);
+  const me = useAuth((s) => s.user);
+  const catalogLive = useCatalog((s) => s.skins);
+  useEffect(() => {
+    if (me && !me.isGuest && !ownedIds) void loadSkins().catch(() => undefined);
+  }, [me, ownedIds, loadSkins]);
+  const throwItems = useMemo(
+    () => allThrows().filter((t) => t.default || ownedIds?.includes(t.id)),
+    // catalogLive: catalog từ API tới sau → tính lại.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ownedIds, catalogLive],
+  );
   const onRendererEvent = useCallback((e: RendererEvent) => {
     if (e.type === "count") audio.playCount(e.n);
     else setSettled(e.result);
@@ -163,9 +181,11 @@ export function RoomScreen({ code }: { code: string }) {
 
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
+      <InteractionLayer source={controller} />
       <GameLayout
         me={
           <PlayerChip
+            hudSeat={human}
             icon={<LuUser />}
             name={myName}
             score={numberFormat.format(state.scores[human])}
@@ -176,6 +196,7 @@ export function RoomScreen({ code }: { code: string }) {
         }
         opponent={
           <PlayerChip
+            hudSeat={bot}
             icon={online.bots[bot] ? <LuBot /> : <LuUser />}
             name={theirName}
             score={numberFormat.format(state.scores[bot])}
@@ -245,6 +266,12 @@ export function RoomScreen({ code }: { code: string }) {
         }
         controls={
           <Stack gap={2} align="center">
+            <InteractionBar
+              items={throwItems}
+              disabled={!!result || online.status !== "playing"}
+              onEmote={(id) => controller.emote(id)}
+              onThrow={(id) => controller.throwItem(id)}
+            />
             <Button
               variant="sticker"
               size="sm"

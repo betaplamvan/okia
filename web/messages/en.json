@@ -137,7 +137,11 @@
     "finalScore": "{you} – {bot}",
     "playAgain": "Play again",
     "backHome": "Home",
-    "twoTapHint": "Tap once to preview, tap again to draw"
+    "twoTapHint": "Tap once to preview, tap again to draw",
+    "emote": "Emote",
+    "throwItem": "Throw {name}",
+    "cooldown": "Wait {s}s",
+    "moreItems": "Get more throwables"
   },
   "NotFound": {
     "title": "Page not found",
@@ -439,7 +443,12 @@
     "cancel": "Later",
     "loadError": "Could not load the shop.",
     "filterAll": "All",
-    "onlyOwned": "Mine"
+    "onlyOwned": "Mine",
+    "throws": "Throwables",
+    "throwHint": "Throw at your opponent's chip for fun: visuals and sound only, no effect on the game. Buy once, use forever (2 s cooldown).",
+    "tryThrow": "Test throw",
+    "throwTryHint": "In a game, tap an item in the bar under the board to throw it at the opponent.",
+    "ready": "Ready to throw"
   },
   "Nav": {
     "back": "Back",
@@ -573,7 +582,8 @@
       "purge": "Delete all but defaults",
       "confirmPurge": "Delete every non-default skin (including disabled ones)? Owners keep their inventory: re-importing the same id restores it. Export all (.zip) first.",
       "purged": "Deleted {n} skins.",
-      "previewReplace": "Replace the whole catalog: delete skins not in this package (except defaults)"
+      "previewReplace": "Replace the whole catalog: delete skins not in this package (except defaults)",
+      "throw": "Throwables"
     },
     "cfg": {
       "intro": "Each setting shows the value in effect and the default; type a new value and press Save (only changed settings are sent; changed fields turn yellow). Takes effect within 15 s of saving.",

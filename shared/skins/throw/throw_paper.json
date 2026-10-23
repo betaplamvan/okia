@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "id": "throw_paper",
+  "type": "throw",
+  "rarity": "common",
+  "name": {
+    "vi": "Giấy vo",
+    "en": "Paper Ball"
+  },
+  "description": {
+    "vi": "Một tờ giấy nháp vo tròn. Ai cũng có sẵn để ném chơi.",
+    "en": "A crumpled scrap of paper. Everyone has one to throw."
+  },
+  "throw": {
+    "icon": "paper",
+    "splat": "bounce",
+    "color": "#f5f1e8",
+    "color2": "#cfc7b6"
+  },
+  "default": true
+}
