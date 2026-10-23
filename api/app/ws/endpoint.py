@@ -167,6 +167,12 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
             await mmq.touch_online(redis, uid)
             await conn.send(m.Pong())
 
+        case m.ChatWatch():
+            hub.watch_chat(conn)
+
+        case m.ChatUnwatch():
+            hub.unwatch_chat(conn)
+
         case m.RoomCreate():
             room = await rooms.create(
                 redis,

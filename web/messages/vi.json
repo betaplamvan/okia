@@ -654,5 +654,26 @@
     "interstitialHint": "Quảng cáo xen sau mỗi {n} ván. Ủng hộ Ô Kìa để tắt quảng cáo vĩnh viễn.",
     "skipIn": "Bỏ qua sau {s} giây",
     "skip": "Bỏ qua"
+  },
+  "Chat": {
+    "title": "Chat tổng",
+    "open": "Mở chat tổng",
+    "close": "Đóng chat",
+    "expand": "Phóng to",
+    "shrink": "Thu nhỏ",
+    "online": "{n} người đang online",
+    "unread": "{n} tin mới",
+    "loadOlder": "Xem tin cũ hơn",
+    "empty": "Chưa có tin nào. Chào mọi người một câu đi!",
+    "loadError": "Không tải được tin nhắn.",
+    "placeholder": "Nhắn gì đó…",
+    "send": "Gửi",
+    "reply": "Trả lời",
+    "replyingTo": "Trả lời {name}:",
+    "cancelReply": "Bỏ trả lời",
+    "deleted": "Tin đã bị xóa",
+    "donor": "Đã ủng hộ Ô Kìa",
+    "guestLocked": "Đăng nhập Google để chat cùng mọi người.",
+    "signIn": "Đăng nhập"
   }
 }

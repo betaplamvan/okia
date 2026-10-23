@@ -50,6 +50,7 @@ from app.main import create_app  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 TABLES = [
     "app_config",
+    "chat_messages",
     "donations",
     "wallet_ledger",
     "wallets",

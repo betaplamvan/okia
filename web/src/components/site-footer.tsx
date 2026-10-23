@@ -13,8 +13,9 @@ export function SiteFooter() {
     { href: "/terms", label: t("terms"), icon: LuFileText },
   ] as const;
 
+  // Đáy chừa chỗ cho bong bóng chat tổng (góc dưới phải) để không che link.
   return (
-    <Container as="footer" maxW="4xl" px={4} py={5}>
+    <Container as="footer" maxW="4xl" px={4} pt={5} pb={{ base: "88px", md: "96px" }}>
       <HStack as="nav" gap={{ base: 2, md: 4 }} wrap="wrap" justify="center" color="cream">
         {links.map(({ href, label, icon: Icon }) => (
           <Link

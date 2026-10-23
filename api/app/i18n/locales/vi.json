@@ -43,7 +43,10 @@
     "BAD_SKIN": "Skin không hợp lệ: {detail}",
     "SKIN_DEFAULT_PROTECTED": "Không thể xóa hay tắt skin mặc định.",
     "BAD_CONFIG_KEY": "Thông số không tồn tại.",
-    "BAD_CONFIG_VALUE": "Giá trị thông số không hợp lệ."
+    "BAD_CONFIG_VALUE": "Giá trị thông số không hợp lệ.",
+    "CHAT_EMPTY": "Tin nhắn trống.",
+    "CHAT_TOO_LONG": "Tin nhắn dài quá (tối đa {max} ký tự).",
+    "CHAT_DUPLICATE": "Bạn vừa gửi đúng tin này rồi."
   },
   "currency": {
     "lead": "Ruột chì",

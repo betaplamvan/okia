@@ -17,6 +17,7 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `resign` | `roomId` | Đầu hàng |
 | `emote` | `roomId`, `id` | Biểu cảm nhanh (danh sách cố định, không chat tự do) |
 | `ping` | — | Giữ kết nối, mỗi 20 giây |
+| `chat_watch` / `chat_unwatch` | — | Mở / đóng khung chat tổng → bắt đầu / ngừng nhận `chat_msg` ([15](15-chat.md)) |
 
 ## Server → Client
 
@@ -38,6 +39,7 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 | `match_review` | `matchId`, `text`, `keyMove?` | Nhận xét sau ván với bot; `keyMove` = số thứ tự nước sai quan trọng nhất để client tô sáng |
 | `error` | `code`, `message`, `ref?` | Lỗi; `code` ổn định để client tự dịch, `message` đã dịch theo locale; `ref` gắn với tin nhắn gây lỗi |
 | `pong` | — | |
+| `chat_msg` | `message` | Tin chat tổng mới (kênh Redis `chat:all`, chỉ tới kết nối đang `chat_watch`); gửi tin qua REST `POST /chat/messages` ([15](15-chat.md)) |
 
 `players[]` gồm `{ userId, name, avatarUrl, rank: { tier, division, points } | null, isBot, seat: 0|1, online }` (`rank` chỉ ở phòng xếp hạng; null = đang phân hạng). Chủ phòng ngồi ghế 0 hoặc 1 ngẫu nhiên khi ván bắt đầu. `welcome` có thêm `serverTime` (epoch ms). `deadline` là epoch ms theo giờ server; client tự bù lệch giờ từ `welcome`.
 
