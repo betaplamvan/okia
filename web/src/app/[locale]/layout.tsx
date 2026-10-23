@@ -31,7 +31,14 @@ export function generateStaticParams() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
-  return { title: t("title"), description: t("description") };
+  // Thẻ meta nhận diện nhà xuất bản AdSense (docs/10 — Quảng cáo): chỉ để Google xác minh trang,
+  // không tải quảng cáo; script thật nạp có điều kiện ở components/ads/adsense.tsx.
+  const adsense = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
+  return {
+    title: t("title"),
+    description: t("description"),
+    ...(adsense ? { other: { "google-adsense-account": adsense } } : {}),
+  };
 }
 
 export const viewport: Viewport = {
