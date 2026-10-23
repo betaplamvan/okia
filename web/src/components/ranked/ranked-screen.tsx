@@ -68,9 +68,10 @@ export function RankedScreen() {
         <Grid
           templateColumns={{ base: "1fr", md: "3fr 2fr" }}
           gap={{ base: 4, md: 5 }}
-          alignItems="start"
+          alignItems="stretch"
         >
-          <Stack layerStyle="sticker" p={5} gap={4}>
+          {/* Hai thẻ cao bằng nhau: nút Tìm trận dồn xuống đáy thẻ trái. */}
+          <Stack layerStyle="sticker" p={5} gap={4} justify="space-between">
             {guest ? (
               <Stack gap={3}>
                 <Heading size="xl" color="ink">
@@ -82,7 +83,7 @@ export function RankedScreen() {
                 </Button>
               </Stack>
             ) : rank ? (
-              <RankCard rank={rank} />
+              <RankCard rank={rank} slim={search.phase !== "idle"} />
             ) : (
               <Text>…</Text>
             )}
@@ -116,7 +117,7 @@ export function RankedScreen() {
           </Stack>
 
           <Stack gap={4}>
-            <Stack layerStyle="sticker" p={5} gap={2}>
+            <Stack layerStyle="sticker" p={5} gap={2} flex="1">
               <Heading size="lg" color="ink">
                 {t("howTitle")}
               </Heading>
@@ -166,6 +167,9 @@ function SearchingBox({
     <Stack
       gap={3}
       align="center"
+      justify="center"
+      // Lấp phần còn lại của thẻ (thẻ hạng đã thu gọn) — thẻ không cao lên khi bắt đầu tìm.
+      flex="1"
       bg="cream"
       border="2px solid"
       borderColor="ink"

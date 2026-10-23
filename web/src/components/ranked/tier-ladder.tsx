@@ -54,7 +54,8 @@ export function TierLadder({ rank }: { rank: RankOut | null | undefined }) {
               borderRadius="lg"
               boxShadow={me ? "sticker" : undefined}
               px={2}
-              py={3}
+              pt={5}
+              pb={3}
               position="relative"
               data-testid={`ladder-${tier}`}
               data-current={me || undefined}

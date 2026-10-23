@@ -1,6 +1,7 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
+import { useId } from "react";
 import type { RankOut, Tier } from "@/lib/api";
 
 /**
@@ -10,6 +11,9 @@ import type { RankOut, Tier } from "@/lib/api";
  * - size ≥ 64: đủ nguyệt quế, mũ, chữ, sao bậc con dưới khiên (III → I) hoặc #thứ hạng với Thủ khoa.
  * - size < 64: chỉ khiên màu + hình chính, viền dày hơn để không nhòe.
  * rank = null → khiên phân hạng (giấy xám, viền đứt, dấu hỏi).
+ * Trạng nguyên (2026-10-23): rực lửa — lưỡi lửa bập bùng sau khiên, tàn lửa bay lên, vệt sáng lướt
+ * qua khiên, quầng cam thở nhịp; lửa vẽ tràn ra ngoài khung (overflow visible). size < 40 (pill) chỉ
+ * có quầng. prefers-reduced-motion → đứng yên.
  */
 const INK = "#1a2826";
 const PAPER = "#fffcf2";
@@ -17,6 +21,46 @@ const SUN = "#ffd93d";
 const RED = "#d8341e";
 const SHIELD = "M70,10 L118,28 V72 C118,102 94,122 70,132 C46,122 22,102 22,72 V28 Z";
 const STAR_SM = "0,-6 1.8,-1.8 6,-1.5 2.8,1.4 3.7,5.8 0,3.4 -3.7,5.8 -2.8,1.4 -6,-1.5 -1.8,-1.8";
+const FLAME_RED = "#ff4d1f";
+const FLAME_ORANGE = "#ff9f1c";
+// Lưỡi lửa: gốc (0,0) hướng lên, rộng w cao h (nhân tọa độ để nét viền không méo khi co giãn).
+const FLAME_PTS = [
+  [0, 0],
+  [-0.42, -0.12, -0.5, -0.5, -0.22, -0.72],
+  [-0.16, -0.52, -0.04, -0.5, 0, -0.62],
+  [0.02, -0.8, 0.1, -0.9, 0, -1],
+  [0.3, -0.86, 0.5, -0.5, 0.36, -0.2],
+  [0.3, -0.08, 0.16, 0, 0, 0],
+];
+function flamePath(w: number, h: number, dy = 0): string {
+  const f = (v: number[]) =>
+    v.map((n, i) => (i % 2 === 0 ? (n * w).toFixed(1) : (n * h + dy).toFixed(1))).join(",");
+  const [m, ...cs] = FLAME_PTS;
+  return `M${f(m)} ${cs.map((c) => `C${f(c.slice(0, 2))} ${f(c.slice(2, 4))} ${f(c.slice(4))}`).join(" ")} Z`;
+}
+// [x, y, chiều cao, góc nghiêng, độ trễ s] — quanh mép trên và hai bên khiên.
+const FLAMES: [number, number, number, number, number][] = [
+  [70, 18, 50, 0, 0],
+  [46, 20, 46, -14, 0.25],
+  [94, 20, 46, 14, 0.5],
+  [24, 34, 46, -30, 0.15],
+  [116, 34, 46, 30, 0.4],
+  [10, 66, 40, -48, 0.6],
+  [130, 66, 40, 48, 0.05],
+  [14, 100, 32, -64, 0.35],
+  [126, 100, 32, 64, 0.7],
+  [40, 128, 22, -110, 0.2],
+  [100, 128, 22, 110, 0.55],
+];
+// [x, y, r, độ trễ s] — tàn lửa bay lên.
+const EMBERS: [number, number, number, number][] = [
+  [40, 30, 2.4, 0],
+  [100, 26, 2, 0.6],
+  [58, 14, 1.8, 1.1],
+  [86, 12, 2.2, 0.3],
+  [20, 56, 1.8, 0.9],
+  [122, 52, 2, 1.4],
+];
 const STAR_BIG = "70,54 80,78 106,78 85,93 93,118 70,103 47,118 55,93 34,78 60,78";
 
 export const TIER_FILL: Record<Tier, string> = {
@@ -44,6 +88,8 @@ export function RankEmblem({ rank, size = 44, position, animate = true, label }:
   const fill = tier ? TIER_FILL[tier] : TIER_FILL.scratch;
   const sw = full ? 3.5 : size >= 32 ? 5 : 8;
   const division = rank?.division ?? null;
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const blaze = tier === "topscholar" && size >= 40;
   return (
     <Box
       as="span"
@@ -51,18 +97,7 @@ export function RankEmblem({ rank, size = 44, position, animate = true, label }:
       w={`${size}px`}
       h={`${Math.round((size * 150) / 140)}px`}
       flexShrink={0}
-      css={
-        tier === "topscholar" && animate
-          ? {
-              "& .aura": { animation: "okiaAura 2s ease-in-out infinite" },
-              "@keyframes okiaAura": {
-                "0%, 100%": { opacity: 0.35 },
-                "50%": { opacity: 0.6 },
-              },
-              "@media (prefers-reduced-motion: reduce)": { "& .aura": { animation: "none" } },
-            }
-          : undefined
-      }
+      css={tier === "topscholar" && animate ? BLAZE_CSS : undefined}
       data-testid="rank-emblem"
       data-tier={tier ?? "placing"}
     >
@@ -70,13 +105,38 @@ export function RankEmblem({ rank, size = 44, position, animate = true, label }:
         viewBox="0 0 140 150"
         width="100%"
         height="100%"
+        overflow={blaze ? "visible" : undefined}
         role={label ? "img" : undefined}
         aria-label={label}
         aria-hidden={label ? undefined : true}
       >
         {tier === "topscholar" ? (
-          <circle className="aura" cx="70" cy="72" r="66" fill={SUN} opacity="0.45" />
+          <>
+            <defs>
+              <radialGradient id={`glow${uid}`}>
+                <stop offset="0%" stopColor={SUN} stopOpacity="0.95" />
+                <stop offset="55%" stopColor={FLAME_ORANGE} stopOpacity="0.55" />
+                <stop offset="100%" stopColor={FLAME_RED} stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id={`shine${uid}`} x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+                <stop offset="50%" stopColor="#fff" stopOpacity="0.55" />
+                <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+              </linearGradient>
+              <clipPath id={`clip${uid}`}>
+                <path d={SHIELD} />
+              </clipPath>
+            </defs>
+            <circle
+              className="aura"
+              cx="70"
+              cy="70"
+              r={blaze ? 84 : 66}
+              fill={`url(#glow${uid})`}
+            />
+          </>
         ) : null}
+        {blaze ? <Flames /> : null}
         {/* bóng cứng */}
         {full ? <path d={SHIELD} fill={INK} opacity="0.85" transform="translate(5 5)" /> : null}
         {full ? <Laurels tier={tier} /> : null}
@@ -99,10 +159,106 @@ export function RankEmblem({ rank, size = 44, position, animate = true, label }:
             strokeLinejoin="round"
           />
         )}
+        {tier === "topscholar" ? (
+          <g clipPath={`url(#clip${uid})`}>
+            <rect
+              className="shine"
+              x="-40"
+              y="0"
+              width="36"
+              height="150"
+              fill={`url(#shine${uid})`}
+              transform="skewX(-20)"
+            />
+          </g>
+        ) : null}
         <Face tier={tier} full={full} />
+        {blaze ? <Embers /> : null}
         {full ? <Foot tier={tier} division={division} position={position ?? null} /> : null}
       </svg>
     </Box>
+  );
+}
+
+const BLAZE_CSS = {
+  "& .aura": {
+    transformBox: "fill-box",
+    transformOrigin: "50% 50%",
+    animation: "okiaAura 1.6s ease-in-out infinite",
+  },
+  "& .flame": {
+    transformBox: "fill-box",
+    transformOrigin: "50% 100%",
+    animation: "okiaFlame 0.7s ease-in-out infinite alternate",
+  },
+  "& .ember": { animation: "okiaEmber 1.8s ease-out infinite" },
+  "& .shine": { transformBox: "fill-box", animation: "okiaShine 3.2s ease-in-out infinite" },
+  "@keyframes okiaAura": {
+    "0%, 100%": { opacity: 0.55, transform: "scale(0.96)" },
+    "50%": { opacity: 0.95, transform: "scale(1.04)" },
+  },
+  "@keyframes okiaFlame": {
+    "0%": { transform: "scale(0.9, 0.82) skewX(-5deg)" },
+    "50%": { transform: "scale(1.05, 1.06) skewX(3deg)" },
+    "100%": { transform: "scale(0.96, 1.16) skewX(-2deg)" },
+  },
+  "@keyframes okiaEmber": {
+    "0%": { transform: "translateY(0)", opacity: 0 },
+    "20%": { opacity: 1 },
+    "100%": { transform: "translateY(-34px)", opacity: 0 },
+  },
+  "@keyframes okiaShine": {
+    "0%": { transform: "skewX(-20deg) translateX(0)" },
+    "55%, 100%": { transform: "skewX(-20deg) translateX(210px)" },
+  },
+  "@media (prefers-reduced-motion: reduce)": {
+    "& .aura, & .flame, & .ember, & .shine": { animation: "none" },
+    "& .ember, & .shine": { opacity: 0 },
+  },
+} as const;
+
+/** Lưỡi lửa sau khiên Trạng nguyên: lớp đỏ ngoài, cam giữa, vàng lõi. */
+function Flames() {
+  return (
+    <g>
+      {FLAMES.map(([x, y, h, rot, delay]) => (
+        <g key={`${x}-${y}`} transform={`translate(${x} ${y}) rotate(${rot})`}>
+          <g className="flame" style={{ animationDelay: `${delay}s` }}>
+            <path
+              d={flamePath(h * 0.62, h)}
+              fill={FLAME_RED}
+              stroke={INK}
+              strokeWidth="2.2"
+              strokeLinejoin="round"
+            />
+            <path d={flamePath(h * 0.42, h * 0.72, -1)} fill={FLAME_ORANGE} />
+            <path d={flamePath(h * 0.24, h * 0.42, -1)} fill={SUN} />
+          </g>
+        </g>
+      ))}
+    </g>
+  );
+}
+
+/** Tàn lửa bay lên quanh khiên Trạng nguyên. */
+function Embers() {
+  return (
+    <g>
+      {EMBERS.map(([x, y, r, delay]) => (
+        <circle
+          key={`${x}-${y}`}
+          className="ember"
+          cx={x}
+          cy={y}
+          r={r}
+          fill={SUN}
+          stroke={FLAME_RED}
+          strokeWidth="0.8"
+          opacity="0"
+          style={{ animationDelay: `${delay}s` }}
+        />
+      ))}
+    </g>
   );
 }
 

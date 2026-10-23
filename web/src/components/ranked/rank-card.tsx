@@ -7,7 +7,17 @@ import { useRankLabel } from "@/components/ranked/tier-badge";
 import { DIVISION_SIZE, TIER_SIZE, TIERS, type MyRankOut, type Tier } from "@/lib/api";
 
 // Thẻ hạng của tôi (docs/07): huy hiệu + điểm, thanh tiến tới bậc kế, thống kê mùa, vị trí BXH.
-export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean }) {
+// `slim` (đang tìm trận): chỉ còn huy hiệu nhỏ + tên hạng + điểm, nhường chỗ cho hộp đang tìm để
+// thẻ ngoài không cao lên.
+export function RankCard({
+  rank,
+  compact,
+  slim,
+}: {
+  rank: MyRankOut;
+  compact?: boolean;
+  slim?: boolean;
+}) {
   const t = useTranslations("Ranked");
   const locale = useLocale();
   const format = useFormatter();
@@ -27,7 +37,7 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
           {/* Huy hiệu hạng (thiết kế 2026-10-21): khiên 112 px, #thứ hạng dưới khiên với hai bậc đỉnh. */}
           <RankEmblem
             rank={rank.rank}
-            size={compact ? 88 : 112}
+            size={slim ? 64 : compact ? 88 : 112}
             position={rank.position}
             label={rankLabel(rank.rank)}
           />
@@ -53,7 +63,7 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
         </Stack>
       </HStack>
 
-      {placing ? (
+      {slim ? null : placing ? (
         <Stack gap={1}>
           <Text fontSize="sm" fontWeight="600">
             {rank.placementLeft > 0
@@ -91,7 +101,12 @@ export function RankCard({ rank, compact }: { rank: MyRankOut; compact?: boolean
         </Stack>
       )}
 
-      <SimpleGrid columns={compact ? 2 : { base: 2, sm: 3 }} gap={2} fontSize="sm">
+      <SimpleGrid
+        columns={compact ? 2 : { base: 2, sm: 3 }}
+        gap={2}
+        fontSize="sm"
+        display={slim ? "none" : undefined}
+      >
         <Stat label={t("record", { wins: String(rank.wins), losses: String(rank.losses) })} />
         <Stat
           label={`${t("streak", { n: String(rank.streak) })} · ${t("bestStreak", { n: String(rank.bestStreak) })}`}
