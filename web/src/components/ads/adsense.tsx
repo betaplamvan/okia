@@ -22,8 +22,13 @@ import { type AuthState, useAuth } from "@/stores/auth";
  * thấy, và **admin luôn thấy** (để xem trước dù tài khoản admin đã ủng hộ).
  */
 export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "";
-/** Quảng cáo xen cứ N ván kết thúc một lần. */
+/** Quảng cáo xen cứ N ván kết thúc một lần (mặc định; thông số admin `ads_interstitial_every` qua /site). */
 export const INTERSTITIAL_EVERY = 3;
+
+function interstitialEvery(): number {
+  const n = useAuth.getState().site.adsInterstitialEvery;
+  return Number.isInteger(n) && n >= 0 ? n : INTERSTITIAL_EVERY;
+}
 const GAMES_KEY = "okia-ad-games";
 
 type AdBreak = (o: {
@@ -225,8 +230,13 @@ export function afterFinishedGame(next: () => void) {
     next();
     return;
   }
+  const every = interstitialEvery();
+  if (every === 0) {
+    next();
+    return;
+  }
   const n = bumpGames();
-  if (n === 0 || n % INTERSTITIAL_EVERY !== 0) {
+  if (n === 0 || n % every !== 0) {
     next();
     return;
   }
@@ -253,6 +263,7 @@ export function afterFinishedGame(next: () => void) {
 export function InterstitialHost() {
   const t = useTranslations("Ads");
   const { open, done } = useInterstitial();
+  const every = useAuth((s) => s.site.adsInterstitialEvery) || INTERSTITIAL_EVERY;
   const [left, setLeft] = useState(5);
   useEffect(() => {
     if (!open) return;
@@ -293,7 +304,7 @@ export function InterstitialHost() {
           <Text fontFamily="hand" fontWeight="700" fontSize="3xl">
             {t("mock", { name: "interstitial" })}
           </Text>
-          <Text opacity={0.8}>{t("interstitialHint", { n: String(INTERSTITIAL_EVERY) })}</Text>
+          <Text opacity={0.8}>{t("interstitialHint", { n: String(every) })}</Text>
           <Button
             variant="sticker"
             bg="paper"

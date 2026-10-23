@@ -12,6 +12,8 @@ Kênh chat chung toàn trang (2026-10-23), học bố cục bong bóng của noi
 
 ## Giới hạn (chống spam)
 
+Các mức dưới đây là **mặc định**, admin chỉnh được ở /admin → Thông số (`chat_enabled`, `chat_max_len`, `chat_min_interval_seconds`, `chat_per_minute`, `chat_dup_seconds` — [06](06-kinh-te.md#thông-số-chỉnh-ở-admin-2026-10-22)). `chat_enabled` tắt → `POST` trả `CHAT_DISABLED`, `GET /site.chatEnabled = false`, khung nhập báo tạm đóng.
+
 - 1 tin / 2 giây và 12 tin / phút mỗi người (`RATE_LIMITED`, kèm `retryAfter`).
 - Không gửi lại đúng nội dung (không phân biệt hoa thường / khoảng trắng) trong 30 giây (`CHAT_DUPLICATE`).
 - 1–300 ký tự, tối đa 6 dòng (dòng thừa gộp vào dòng 6), không quá một dòng trống liền nhau (`CHAT_EMPTY`, `CHAT_TOO_LONG`).
@@ -33,7 +35,7 @@ Một tin: `{id, userId, name, avatarUrl, donor, rank, body, createdAt, reply?}`
 
 ## Giao diện
 
-- `web/src/components/chat/chat-host.tsx` (gắn trong AppShell): bong bóng tròn góc dưới phải, chấm đỏ số tin chưa đọc (so `lastId` với id đã xem lưu `localStorage["okia-chat-seen"]`; lần đầu vào trang coi như đã xem hết), viên số người online dưới bong bóng. Ẩn ở màn đang chơi (`/play`, `/r/…`).
+- `web/src/components/chat/chat-host.tsx` (gắn trong AppShell, **ranh giới Suspense riêng** để các host khác tạm treo không kéo bong bóng biến mất): bong bóng tròn góc dưới phải ở **mọi trang**, chấm đỏ số tin chưa đọc (so `lastId` với id đã xem lưu `localStorage["okia-chat-seen"]`; lần đầu vào trang coi như đã xem hết), viên số người online dưới bong bóng. Ở màn đang chơi (`/play`, `/r/…`) bong bóng thu nhỏ 44 px, không viên online, khung đang mở tự đóng.
 - Khung chat: tiêu đề + online, phóng to / thu nhỏ (PC), đóng (Esc). Tin gộp nhóm khi cùng người trong 2 phút; tin của mình nền vàng; nút trả lời hiện khi rê chuột (điện thoại luôn hiện mờ). Cuộn lên đầu tự tải tin cũ, giữ nguyên chỗ đang đọc. Enter gửi, Shift+Enter xuống dòng, bỏ qua Enter khi bộ gõ tiếng Việt đang ghép chữ.
 - Ô "Đang tìm trận" (SearchPill) nằm bên trái bong bóng; footer chừa khoảng trống đáy để bong bóng không che link.
 - Store `web/src/stores/chat.ts`.

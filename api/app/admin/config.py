@@ -40,7 +40,39 @@ DEFAULTS: dict[str, Any] = {
     # Vùng quảng cáo giả "AD here" (docs/10 — Quảng cáo): thử trải nghiệm khi AdSense chưa duyệt;
     # người đã ủng hộ (adFree) vẫn không thấy. Public qua GET /site.
     "ads_mock": False,
+    # Quảng cáo xen khi bấm Ván mới sau mỗi N ván đã kết thúc (0 = tắt). Public qua GET /site.
+    "ads_interstitial_every": 3,
+    # Ghép trận (docs/07): ưu tiên tránh gặp lại đối thủ vừa rồi trong N giây đầu; hạn bấm "Chơi
+    # luôn"; sau N giây chờ thì ghép bất kỳ ai (bỏ cửa sổ mmr); giây mỗi lượt ở trận xếp hạng.
+    "mm_rematch_grace_seconds": 15,
+    "mm_accept_seconds": 20,
+    "mm_unlimited_after_seconds": 90,
+    "ranked_turn_seconds": 30,
+    # Chat tổng (docs/15): bật/tắt (tắt → chỉ đọc), độ dài tối đa, giãn cách tối thiểu giữa hai tin,
+    # số tin mỗi phút, chặn lặp đúng nội dung trong N giây.
+    "chat_enabled": True,
+    "chat_max_len": 300,
+    "chat_min_interval_seconds": 2,
+    "chat_per_minute": 12,
+    "chat_dup_seconds": 30,
+    # Tạo tài khoản khách tối đa N lần / giờ / IP (docs/13); mạng 4G chung IP cần đủ rộng.
+    "guest_per_ip_per_hour": 30,
 }
+
+# Khóa số nguyên đơn: (nhỏ nhất, lớn nhất).
+INT_RANGES: dict[str, tuple[int, int]] = {
+    "ads_interstitial_every": (0, 50),
+    "mm_rematch_grace_seconds": (0, 120),
+    "mm_accept_seconds": (5, 60),
+    "mm_unlimited_after_seconds": (0, 600),
+    "ranked_turn_seconds": (10, 120),
+    "chat_max_len": (20, 2000),
+    "chat_min_interval_seconds": (0, 60),
+    "chat_per_minute": (1, 120),
+    "chat_dup_seconds": (0, 600),
+    "guest_per_ip_per_hour": (1, 1000),
+}
+BOOL_KEYS = frozenset({"ads_mock", "chat_enabled"})
 
 _cache: dict[str, Any] = {}
 
@@ -57,6 +89,11 @@ def get_int(key: str, fallback: int) -> int:
     return int(v) if isinstance(v, int | float) and not isinstance(v, bool) else fallback
 
 
+def get_bool(key: str, fallback: bool) -> bool:
+    v = get(key)
+    return v if isinstance(v, bool) else fallback
+
+
 def snapshot() -> dict[str, Any]:
     return {k: get(k) for k in DEFAULTS}
 
@@ -64,8 +101,13 @@ def snapshot() -> dict[str, Any]:
 def _validate(key: str, value: Any) -> Any:
     if key not in DEFAULTS:
         raise AppError("BAD_CONFIG_KEY", 400, key=key)
-    if key == "ads_mock":
+    if key in BOOL_KEYS:
         if not isinstance(value, bool):
+            raise AppError("BAD_CONFIG_VALUE", 400, key=key)
+        return value
+    if key in INT_RANGES:
+        lo, hi = INT_RANGES[key]
+        if not isinstance(value, int) or isinstance(value, bool) or not lo <= value <= hi:
             raise AppError("BAD_CONFIG_VALUE", 400, key=key)
         return value
     if key == "ranked_win_lead":

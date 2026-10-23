@@ -213,10 +213,21 @@ export type AdminConfigValues = {
   checkin_rewards: Record<string, number>[];
   mm_bot_after_seconds: number | null;
   ads_mock: boolean;
+  ads_interstitial_every: number;
+  mm_rematch_grace_seconds: number;
+  mm_accept_seconds: number;
+  mm_unlimited_after_seconds: number;
+  ranked_turn_seconds: number;
+  chat_enabled: boolean;
+  chat_max_len: number;
+  chat_min_interval_seconds: number;
+  chat_per_minute: number;
+  chat_dup_seconds: number;
+  guest_per_ip_per_hour: number;
 };
 
-/** GET /site — thông số public lúc boot (docs/10 — Quảng cáo). */
-export type SiteConfig = { adsMock: boolean };
+/** GET /site — thông số public lúc boot (docs/06 — Thông số, docs/10 — Quảng cáo, docs/15 — Chat). */
+export type SiteConfig = { adsMock: boolean; adsInterstitialEvery: number; chatEnabled: boolean };
 
 export type AdminConfigOut = { values: AdminConfigValues; defaults: AdminConfigValues };
 

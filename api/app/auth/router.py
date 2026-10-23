@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.admin import config as appconfig
 from app.auth import google, ratelimit, service, ws_cache
 from app.auth.deps import client_ip, current_user, get_redis, is_admin, is_banned, optional_user
 from app.auth.schemas import (
@@ -133,7 +134,9 @@ def req_locale(request: Request, explicit: str | None = None) -> Locale:
 
 @router.post("/auth/guest", response_model=TokenOut)
 async def guest(body: GuestIn, request: Request, response: Response, db: Db, redis: Rd) -> TokenOut:
-    await ratelimit.hit(redis, f"guest:{client_ip(request)}", 30, 3600)
+    await ratelimit.hit(
+        redis, f"guest:{client_ip(request)}", appconfig.get_int("guest_per_ip_per_hour", 30), 3600
+    )
     user = await service.guest_login(db, body.device_id, req_locale(request, body.locale))
     return await _issue(db, request, response, user)
 

@@ -46,7 +46,8 @@
     "BAD_CONFIG_VALUE": "Giá trị thông số không hợp lệ.",
     "CHAT_EMPTY": "Tin nhắn trống.",
     "CHAT_TOO_LONG": "Tin nhắn dài quá (tối đa {max} ký tự).",
-    "CHAT_DUPLICATE": "Bạn vừa gửi đúng tin này rồi."
+    "CHAT_DUPLICATE": "Bạn vừa gửi đúng tin này rồi.",
+    "CHAT_DISABLED": "Chat tổng đang tạm đóng."
   },
   "currency": {
     "lead": "Ruột chì",

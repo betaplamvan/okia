@@ -6,7 +6,6 @@ import {
   Container,
   Heading,
   HStack,
-  Input,
   SimpleGrid,
   Stack,
   Tabs,
@@ -14,11 +13,12 @@ import {
 } from "@chakra-ui/react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import { LuRefreshCw, LuSave } from "react-icons/lu";
+import { LuRefreshCw } from "react-icons/lu";
+import { ConfigTab } from "@/components/admin/admin-config";
 import { AdminDonations } from "@/components/admin/admin-donations";
 import { AdminSkins, AdminUsers } from "@/components/admin/admin-manage";
 import { toaster } from "@/components/ui/toaster";
-import { type AdminConfigOut, type AdminStats, ApiError } from "@/lib/api";
+import { type AdminStats, ApiError } from "@/lib/api";
 import { useAuth } from "@/stores/auth";
 
 type AdminTab = "stats" | "users" | "skins" | "config" | "donations";
@@ -177,184 +177,6 @@ function StatsTab() {
       </SimpleGrid>
     </Stack>
   );
-}
-
-// ---------- Thông số ----------
-
-const RARITIES = ["common", "uncommon", "rare", "epic", "legendary"] as const;
-
-function ConfigTab() {
-  const t = useTranslations("Admin");
-  const [cfg, setCfg] = useState<AdminConfigOut | null>(null);
-  const [draft, setDraft] = useState<AdminConfigOut["values"] | null>(null);
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    void adminCall<AdminConfigOut>("/admin/config").then((c) => {
-      setCfg(c);
-      setDraft(structuredClone(c.values));
-    });
-  }, []);
-  if (!cfg || !draft) return <Text color="cream">{t("loading")}</Text>;
-
-  const num = (v: string) => (v === "" ? 0 : Math.max(0, Math.floor(Number(v)) || 0));
-  async function save() {
-    if (!draft) return;
-    setBusy(true);
-    try {
-      const out = await adminCall<AdminConfigOut>("/admin/config", { method: "PUT", body: draft });
-      setCfg(out);
-      setDraft(structuredClone(out.values));
-      toaster.success({ title: t("saved") });
-    } catch {
-      /* đã toast */
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Stack gap={4} layerStyle="sticker" p={4} bg="paper" maxW="3xl">
-      <Field label={t("cfg.rankedWinLead")} hint={t("cfg.rankedWinLeadHint")}>
-        <Input
-          type="number"
-          w="32"
-          value={draft.ranked_win_lead}
-          onChange={(e) => setDraft({ ...draft, ranked_win_lead: num(e.target.value) })}
-        />
-      </Field>
-      <Field label={t("cfg.mmBotAfter")} hint={t("cfg.mmBotAfterHint")}>
-        <HStack>
-          <Input
-            type="number"
-            w="32"
-            value={draft.mm_bot_after_seconds ?? ""}
-            placeholder={t("cfg.env")}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                mm_bot_after_seconds: e.target.value === "" ? null : num(e.target.value),
-              })
-            }
-          />
-          <Button
-            size="xs"
-            variant="sticker"
-            onClick={() => setDraft({ ...draft, mm_bot_after_seconds: null })}
-          >
-            {t("cfg.useEnv")}
-          </Button>
-        </HStack>
-      </Field>
-      <Field label={t("cfg.adsMock")} hint={t("cfg.adsMockHint")}>
-        <Button
-          size="sm"
-          variant="sticker"
-          bg={draft.ads_mock ? "sun" : "paper"}
-          onClick={() => setDraft({ ...draft, ads_mock: !draft.ads_mock })}
-          data-testid="cfg-ads-mock"
-        >
-          {draft.ads_mock ? t("cfg.adsMockOn") : t("cfg.adsMockOff")}
-        </Button>
-      </Field>
-      <Field label={t("cfg.rarityPrice")} hint={t("cfg.rarityPriceHint")}>
-        <Stack gap={1}>
-          {RARITIES.map((r) => (
-            <HStack key={r} gap={2}>
-              <Text w="28" fontWeight="600">
-                {t(`rarity.${r}`)}
-              </Text>
-              <Input
-                type="number"
-                w="28"
-                value={draft.rarity_price[r]?.lead ?? ""}
-                placeholder={t("lead")}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    rarity_price: {
-                      ...draft.rarity_price,
-                      [r]: priceOf(num(e.target.value), draft.rarity_price[r]?.flower ?? 0),
-                    },
-                  })
-                }
-              />
-              <Input
-                type="number"
-                w="28"
-                value={draft.rarity_price[r]?.flower ?? ""}
-                placeholder={t("flower")}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    rarity_price: {
-                      ...draft.rarity_price,
-                      [r]: priceOf(draft.rarity_price[r]?.lead ?? 0, num(e.target.value)),
-                    },
-                  })
-                }
-              />
-            </HStack>
-          ))}
-        </Stack>
-      </Field>
-      <Field label={t("cfg.checkinRewards")} hint={t("cfg.checkinRewardsHint")}>
-        <SimpleGrid columns={{ base: 1, sm: 2 }} gap={1}>
-          {draft.checkin_rewards.map((r, i) => (
-            <HStack key={i} gap={2}>
-              <Text w="16" fontWeight="600">
-                {t("day", { n: String(i + 1) })}
-              </Text>
-              <Input
-                type="number"
-                w="24"
-                value={r.lead ?? ""}
-                placeholder={t("lead")}
-                onChange={(e) => {
-                  const next = draft.checkin_rewards.slice();
-                  next[i] = rewardOf(num(e.target.value), r.flower ?? 0);
-                  setDraft({ ...draft, checkin_rewards: next });
-                }}
-              />
-              <Input
-                type="number"
-                w="24"
-                value={r.flower ?? ""}
-                placeholder={t("flower")}
-                onChange={(e) => {
-                  const next = draft.checkin_rewards.slice();
-                  next[i] = rewardOf(r.lead ?? 0, num(e.target.value));
-                  setDraft({ ...draft, checkin_rewards: next });
-                }}
-              />
-            </HStack>
-          ))}
-        </SimpleGrid>
-      </Field>
-      <HStack>
-        <Button variant="sticker" bg="mint" loading={busy} onClick={() => void save()}>
-          <LuSave /> {t("save")}
-        </Button>
-        <Button variant="sticker" size="sm" onClick={() => setDraft(structuredClone(cfg.defaults))}>
-          {t("cfg.resetDefaults")}
-        </Button>
-      </HStack>
-    </Stack>
-  );
-}
-
-function priceOf(lead: number, flower: number): Record<string, number> {
-  const out: Record<string, number> = {};
-  if (lead > 0) out.lead = lead;
-  if (flower > 0) out.flower = flower;
-  return out;
-}
-
-function rewardOf(lead: number, flower: number): Record<string, number> {
-  const out: Record<string, number> = {};
-  if (lead > 0) out.lead = lead;
-  if (flower > 0) out.flower = flower;
-  if (!Object.keys(out).length) out.lead = 0;
-  return out;
 }
 
 export function Field({

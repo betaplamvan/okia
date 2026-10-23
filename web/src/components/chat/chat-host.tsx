@@ -30,14 +30,15 @@ const GROUP_MS = 2 * 60_000;
 
 /**
  * Chat tổng (docs/15): bong bóng góc dưới phải (đếm tin chưa đọc + số người online) mở khung chat
- * chung. Khách đọc được, tài khoản Google mới gửi. Ẩn ở màn đang chơi (/play, /r/…).
+ * chung. Khách đọc được, tài khoản Google mới gửi. Hiện ở MỌI trang (2026-10-23; trước đó ẩn ở màn
+ * chơi — người chơi tưởng mất); trong màn chơi (/play, /r/…) bong bóng nhỏ hơn để không che nút.
  */
 export function ChatHost() {
   const pathname = usePathname();
   const status = useAuth((s) => s.status);
   const open = useChat((s) => s.open);
   const refreshMeta = useChat((s) => s.refreshMeta);
-  const hidden = pathname === "/play" || pathname.startsWith("/r/");
+  const inGame = pathname === "/play" || pathname.startsWith("/r/");
 
   useEffect(() => {
     if (status !== "ready") return;
@@ -55,16 +56,15 @@ export function ChatHost() {
     };
   }, [status, refreshMeta]);
 
-  // Rời sang màn chơi → đóng khung (ngừng nhận tin).
+  // Vào màn chơi → đóng khung đang mở (ngừng nhận tin), bong bóng vẫn còn.
   useEffect(() => {
-    if (hidden) useChat.getState().setOpen(false);
-  }, [hidden]);
+    if (inGame) useChat.getState().setOpen(false);
+  }, [inGame]);
 
-  if (hidden) return null;
   return (
     <>
       {open ? <ChatPanel /> : null}
-      <ChatBubble />
+      <ChatBubble compact={inGame} />
     </>
   );
 }
@@ -92,7 +92,7 @@ function OnlinePill({ n }: { n: number }) {
   );
 }
 
-function ChatBubble() {
+function ChatBubble({ compact }: { compact: boolean }) {
   const t = useTranslations("Chat");
   const open = useChat((s) => s.open);
   const online = useChat((s) => s.online);
@@ -114,10 +114,10 @@ function ChatBubble() {
         onClick={() => setOpen(!open)}
         variant="sticker"
         bg="mint"
-        w={{ base: "56px", md: "64px" }}
-        h={{ base: "56px", md: "64px" }}
+        w={compact ? "44px" : { base: "56px", md: "64px" }}
+        h={compact ? "44px" : { base: "56px", md: "64px" }}
         borderRadius="full"
-        fontSize={{ base: "26px", md: "30px" }}
+        fontSize={compact ? "22px" : { base: "26px", md: "30px" }}
         data-sfx={open ? "back" : "open"}
         data-testid="chat-bubble"
       >
@@ -148,7 +148,7 @@ function ChatBubble() {
           {unread > 99 ? "99+" : unread}
         </Box>
       ) : null}
-      {online > 0 ? (
+      {online > 0 && !compact ? (
         <Box
           position="absolute"
           bottom="-8px"
@@ -460,6 +460,7 @@ function MessageRow({
 function Composer() {
   const t = useTranslations("Chat");
   const user = useAuth((s) => s.user);
+  const chatEnabled = useAuth((s) => s.site.chatEnabled);
   const openProfile = useAuth((s) => s.openProfile);
   const replyTo = useChat((s) => s.replyTo);
   const setReply = useChat((s) => s.setReply);
@@ -472,6 +473,24 @@ function Composer() {
     if (replyTo) inputRef.current?.focus();
   }, [replyTo]);
 
+  if (!chatEnabled) {
+    return (
+      <HStack
+        px={3}
+        py={2.5}
+        gap={2}
+        borderTop="2px solid"
+        borderColor="ink"
+        bg="paper"
+        data-testid="chat-disabled"
+      >
+        <LuLock />
+        <Text fontSize="sm" flex="1">
+          {t("disabled")}
+        </Text>
+      </HStack>
+    );
+  }
   if (!user || user.isGuest) {
     return (
       <HStack

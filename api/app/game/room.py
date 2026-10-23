@@ -34,6 +34,15 @@ ROOM_TTL_OVER = 10 * 60
 PLAYING_KEY = "rooms:playing"
 MAX_TIMEOUTS = 3
 RANKED_TURN_SECONDS = 30
+
+
+def ranked_turn_seconds() -> int:
+    """Thông số admin `ranked_turn_seconds` (mặc định RANKED_TURN_SECONDS)."""
+    from app.admin import config as appconfig
+
+    return appconfig.get_int("ranked_turn_seconds", RANKED_TURN_SECONDS)
+
+
 DEADLINES_KEY = "deadlines"
 
 Status = Literal["waiting", "playing", "over"]
@@ -302,7 +311,7 @@ async def create_ranked(redis: Redis, a: "Entry", b: "Entry") -> Room:
         id=rid,
         mode="ranked",
         board=game_map.id,
-        turn_seconds=RANKED_TURN_SECONDS,
+        turn_seconds=ranked_turn_seconds(),
         host_id=a.user_id,
         status="playing",
         players=[
@@ -347,7 +356,7 @@ async def create_vs_bot(redis: Redis, a: "Entry", strength: float) -> Room:
         id=rid,
         mode="ranked",
         board=game_map.id,
-        turn_seconds=RANKED_TURN_SECONDS,
+        turn_seconds=ranked_turn_seconds(),
         host_id=a.user_id,
         status="playing",
         players=[

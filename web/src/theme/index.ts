@@ -1,4 +1,10 @@
-import { createSystem, defaultConfig, defineConfig, defineRecipe } from "@chakra-ui/react";
+import {
+  createSystem,
+  defaultConfig,
+  defineConfig,
+  defineRecipe,
+  defineSlotRecipe,
+} from "@chakra-ui/react";
 
 /**
  * Theme "sticker vở ô li" — đặc tả: docs/14-thiet-ke-giao-dien.md.
@@ -28,6 +34,22 @@ const buttonRecipe = defineRecipe({
     },
   },
 });
+
+// Ô nhập (Input / Textarea / NativeSelect): luôn chữ mực trên nền giấy, viền mực, chữ gợi ý mực mờ.
+// Mặc định Chakra lấy `fg` (= kem, cho nền xanh) và html `color-scheme: dark` → chữ gợi ý kem trên
+// giấy gần như tàng hình, số gõ vào có thể trắng (trang Thông số admin, 2026-10-23).
+const fieldBase = {
+  color: "ink",
+  bg: "paper",
+  colorScheme: "light",
+  borderWidth: "2px",
+  borderColor: "ink",
+  caretColor: "ink",
+  _placeholder: { color: "ink", opacity: 0.45 },
+  _focusVisible: { outline: "3px solid", outlineColor: "sun", outlineOffset: "1px" },
+} as const;
+const inputRecipe = defineRecipe({ base: fieldBase });
+const textareaRecipe = defineRecipe({ base: fieldBase });
 
 const config = defineConfig({
   globalCss: {
@@ -128,6 +150,14 @@ const config = defineConfig({
     },
     recipes: {
       button: buttonRecipe,
+      input: inputRecipe,
+      textarea: textareaRecipe,
+    },
+    slotRecipes: {
+      nativeSelect: defineSlotRecipe({
+        slots: ["root", "field", "indicator"],
+        base: { field: { ...fieldBase, _placeholder: undefined }, indicator: { color: "ink" } },
+      }),
     },
   },
 });

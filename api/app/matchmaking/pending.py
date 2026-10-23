@@ -25,6 +25,15 @@ from redis.asyncio import Redis
 from app.matchmaking import queue as q
 
 ACCEPT_SECONDS = 20
+
+
+def accept_seconds() -> int:
+    """Thông số admin `mm_accept_seconds` (mặc định ACCEPT_SECONDS)."""
+    from app.admin import config as appconfig
+
+    return appconfig.get_int("mm_accept_seconds", ACCEPT_SECONDS)
+
+
 PENDING_ZSET = "mm:pending"
 BOT_ID = "bot"  # = app.game.room.BOT_ID (tránh import vòng)
 CancelReason = Literal["declined", "timeout", "left"]
@@ -95,12 +104,12 @@ async def create(
         id=pid,
         a=a,
         b=b,
-        expires=(now or q.now_ms()) + ACCEPT_SECONDS * 1000,
+        expires=(now or q.now_ms()) + accept_seconds() * 1000,
         bot_strength=bot_strength,
     )
     if bot_strength is not None:
         p.accepted[b.user_id] = True  # máy luôn sẵn sàng
-    ttl = ACCEPT_SECONDS + 30
+    ttl = accept_seconds() + 30
     async with redis.pipeline(transaction=True) as pipe:
         pipe.set(key(pid), p.to_json(), ex=ttl)
         pipe.zadd(PENDING_ZSET, {pid: p.expires})
@@ -128,7 +137,7 @@ async def load(redis: Redis, pid: str) -> Pending | None:
 
 async def save(redis: Redis, p: Pending) -> None:
     """Ghi lại JSON (hạn, …). Không dùng để ghi chấp nhận — xem `accept`."""
-    await redis.set(key(p.id), p.to_json(), ex=ACCEPT_SECONDS + 30)
+    await redis.set(key(p.id), p.to_json(), ex=accept_seconds() + 30)
 
 
 async def of_user(redis: Redis, user_id: str) -> Pending | None:
@@ -168,7 +177,7 @@ async def accept(redis: Redis, user_id: str) -> tuple[Pending | None, bool]:
         return None, False
     async with redis.pipeline(transaction=True) as pipe:
         pipe.sadd(acc_key(p.id), user_id)
-        pipe.expire(acc_key(p.id), ACCEPT_SECONDS + 30)
+        pipe.expire(acc_key(p.id), accept_seconds() + 30)
         pipe.smembers(acc_key(p.id))
         added, _, members = await pipe.execute()
     for u in members:

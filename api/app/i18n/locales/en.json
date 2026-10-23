@@ -46,7 +46,8 @@
     "BAD_CONFIG_VALUE": "Invalid setting value.",
     "CHAT_EMPTY": "The message is empty.",
     "CHAT_TOO_LONG": "Message too long (max {max} characters).",
-    "CHAT_DUPLICATE": "You just sent that exact message."
+    "CHAT_DUPLICATE": "You just sent that exact message.",
+    "CHAT_DISABLED": "Global chat is temporarily closed."
   },
   "currency": {
     "lead": "Lead",

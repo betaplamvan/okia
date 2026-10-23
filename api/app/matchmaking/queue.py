@@ -36,6 +36,20 @@ UNLIMITED_AFTER = 90
 REMATCH_GRACE = 15
 
 
+def unlimited_after() -> float:
+    """Thông số admin `mm_unlimited_after_seconds` (mặc định UNLIMITED_AFTER)."""
+    from app.admin import config as appconfig
+
+    return float(appconfig.get_int("mm_unlimited_after_seconds", UNLIMITED_AFTER))
+
+
+def rematch_grace() -> float:
+    """Thông số admin `mm_rematch_grace_seconds` (mặc định REMATCH_GRACE)."""
+    from app.admin import config as appconfig
+
+    return float(appconfig.get_int("mm_rematch_grace_seconds", REMATCH_GRACE))
+
+
 def now_ms() -> int:
     return int(time.time() * 1000)
 
@@ -68,7 +82,7 @@ class Entry:
 
 
 def window(waited_s: float) -> float:
-    if waited_s >= UNLIMITED_AFTER:
+    if waited_s >= unlimited_after():
         return math.inf
     return min(WINDOW_MAX, WINDOW_BASE + WINDOW_STEP * math.floor(waited_s / WINDOW_STEP_SECONDS))
 
@@ -162,7 +176,7 @@ def compatible(a: Entry, b: Entry, now: int) -> bool:
     if gap > a.window(now) or gap > b.window(now):
         return False
     for x, y in ((a, b), (b, a)):
-        if x.last_opponent == y.user_id and x.waited_s(now) < REMATCH_GRACE:
+        if x.last_opponent == y.user_id and x.waited_s(now) < rematch_grace():
             return False
     return True
 

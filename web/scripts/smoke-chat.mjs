@@ -1,6 +1,6 @@
 // Smoke chat tổng (docs/15): khách thấy bong bóng, mở chat chỉ đọc (khung khóa) → hai tài khoản
 // chat qua lại trực tiếp (WS), trả lời trích dẫn, gửi quá nhanh bị chặn → khách tải lại thấy số tin
-// chưa đọc → màn chơi không có bong bóng.
+// chưa đọc → màn chơi vẫn có bong bóng (nhỏ).
 // Cần web (3000) + api (8000) local.   node scripts/smoke-chat.mjs [http://localhost:3000]
 import { chromium } from "playwright";
 
@@ -67,24 +67,37 @@ try {
   await sendMsg(a, hello);
   await b.getByTestId("chat-body").filter({ hasText: hello }).waitFor({ timeout: 10000 });
   console.log("B nhận tin của A trực tiếp");
-  if ((await a.getByTestId("chat-input").inputValue()) !== "") problems.push("ô nhập chưa xóa");
+  // Ô nhập xóa sau khi server trả lời (có thể chậm hơn tin WS tới B một nhịp).
+  await a
+    .waitForFunction(
+      () => document.querySelector('[data-testid="chat-input"]').value === "",
+      null,
+      {
+        timeout: 5000,
+      },
+    )
+    .catch(() => problems.push("ô nhập chưa xóa"));
 
   // B trả lời A.
   const row = b.getByTestId("chat-row").filter({ hasText: hello }).last();
   await row.hover();
   await row.getByTestId("chat-reply").click();
   await b.getByTestId("chat-replying").waitFor();
-  await sendMsg(b, "chào Ánh nha");
-  await a.getByTestId("chat-body").filter({ hasText: "chào Ánh nha" }).waitFor({ timeout: 10000 });
-  const replyRow = a.getByTestId("chat-row").filter({ hasText: "chào Ánh nha" }).last();
+  const replyText = `chào Ánh nha ${stamp}`;
+  await sendMsg(b, replyText);
+  await a.getByTestId("chat-body").filter({ hasText: replyText }).waitFor({ timeout: 10000 });
+  const replyRow = a.getByTestId("chat-row").filter({ hasText: replyText }).last();
   if (!(await replyRow.innerText()).includes(hello)) problems.push("thiếu trích dẫn tin trả lời");
   console.log("trả lời trích dẫn ok");
   await b.screenshot({ path: ".shots/chat-mobile.png" });
 
   // Gửi quá nhanh → toast lỗi, tin không lên.
   await a.waitForTimeout(2100);
-  await sendMsg(a, "nhanh 1");
-  await a.getByTestId("chat-body").filter({ hasText: "nhanh 1" }).waitFor({ timeout: 5000 });
+  await sendMsg(a, `nhanh 1 ${stamp}`);
+  await a
+    .getByTestId("chat-body")
+    .filter({ hasText: `nhanh 1 ${stamp}` })
+    .waitFor({ timeout: 5000 });
   await sendMsg(a, "nhanh 2");
   await a.getByText(/Thao tác quá nhanh/).waitFor({ timeout: 5000 });
   if ((await a.getByTestId("chat-input").inputValue()) !== "nhanh 2")
@@ -101,11 +114,13 @@ try {
   if (await guest.getByTestId("chat-unread").count())
     problems.push("mở chat mà vẫn còn số chưa đọc");
 
-  // Màn chơi: không có bong bóng.
+  // Màn chơi: vẫn có bong bóng (2026-10-23: hiện ở mọi trang), cỡ nhỏ, khung chat đang mở tự đóng.
   await guest.goto(base + "/play", { waitUntil: "networkidle" });
-  await guest.waitForTimeout(800);
-  if (await guest.getByTestId("chat-bubble").count()) problems.push("có bong bóng ở màn chơi");
-  console.log("màn chơi: không có bong bóng");
+  await guest.getByTestId("chat-bubble").waitFor({ timeout: 10000 });
+  const bb = await guest.getByTestId("chat-bubble").boundingBox();
+  if (!bb || bb.width > 48) problems.push(`bong bóng ở màn chơi cỡ ${bb?.width}px, kỳ vọng nhỏ`);
+  if (await guest.getByTestId("chat-panel").count()) problems.push("khung chat còn mở ở màn chơi");
+  console.log("màn chơi: có bong bóng nhỏ, khung đã đóng");
 } finally {
   await browser.close();
 }

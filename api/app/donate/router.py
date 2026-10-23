@@ -60,12 +60,20 @@ class DonateOut(CamelModel):
 class SiteOut(CamelModel):
     # Vùng quảng cáo giả "AD here" đang bật (thông số admin ads_mock).
     ads_mock: bool
+    # Quảng cáo xen sau mỗi N ván (0 = tắt) — thông số admin ads_interstitial_every.
+    ads_interstitial_every: int
+    # Chat tổng đang mở để gửi (thông số admin chat_enabled); tắt → client chỉ đọc.
+    chat_enabled: bool
 
 
 @router.get("/site", response_model=SiteOut)
 async def site_info() -> SiteOut:
     """Thông số public cho client lúc boot (docs/10 — Quảng cáo)."""
-    return SiteOut(ads_mock=bool(appconfig.get("ads_mock")))
+    return SiteOut(
+        ads_mock=bool(appconfig.get("ads_mock")),
+        ads_interstitial_every=appconfig.get_int("ads_interstitial_every", 3),
+        chat_enabled=appconfig.get_bool("chat_enabled", True),
+    )
 
 
 @router.get("/donate", response_model=DonateOut)

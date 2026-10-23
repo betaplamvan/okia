@@ -170,4 +170,15 @@ Bảng `app_config` (key → JSON), mặc định trong `api/app/admin/config.py
 | `rarity_price` | trắng 100 · xanh lá 250 · xanh lam 600 · tím 1500 Ruột chì · vàng 5 Hoa | giá shop |
 | `checkin_rewards` | 10 10 15 15 20 20 30+1 Hoa | điểm danh 7 ngày |
 | `mm_bot_after_seconds` | null (= biến môi trường, 45) | ghép máy khi chờ lâu; 0 = tắt |
+| `mm_rematch_grace_seconds` | 15 | ưu tiên tránh gặp lại đối thủ vừa rồi trong N giây đầu ([07](07-xep-hang-ghep-tran.md)) |
+| `mm_accept_seconds` | 20 (5–60) | hạn bấm "Chơi luôn" |
+| `mm_unlimited_after_seconds` | 90 | sau N giây chờ ghép bất kỳ ai (bỏ cửa sổ mmr) |
+| `ranked_turn_seconds` | 30 (10–120) | giây mỗi lượt ở trận xếp hạng (áp dụng cho ván mới) |
+| `ads_mock` | false | vùng quảng cáo giả "AD here" ([10](10-phap-ly.md#quảng-cáo)); public qua `GET /site` |
+| `ads_interstitial_every` | 3 (0 = tắt) | quảng cáo xen khi bấm Ván mới sau mỗi N ván; public qua `GET /site` |
+| `chat_enabled` | true | tắt → chat tổng chỉ đọc ([15](15-chat.md)); public qua `GET /site` |
+| `chat_max_len` · `chat_min_interval_seconds` · `chat_per_minute` · `chat_dup_seconds` | 300 · 2 · 12 · 30 | giới hạn chat tổng |
+| `guest_per_ip_per_hour` | 30 | tạo tài khoản khách tối đa N lần / giờ / IP ([13](13-xac-thuc.md)) |
+
+Trang admin hiện **giá trị hiện tại** và **mặc định** cạnh ô nhập giá trị mới; Lưu chỉ gửi các khóa đã đổi (2026-10-23).
 

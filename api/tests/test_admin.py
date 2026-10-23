@@ -208,10 +208,11 @@ async def test_thong_so(client: AsyncClient) -> None:
     assert r.status_code == 200, r.text
     assert r.json()["values"]["ranked_win_lead"] == 45
     # Vùng quảng cáo giả: thông số bool, public qua GET /site.
-    assert (await client.get("/site")).json() == {"adsMock": False}
+    site = (await client.get("/site")).json()
+    assert site == {"adsMock": False, "adsInterstitialEvery": 3, "chatEnabled": True}
     r = await client.put("/admin/config", json={"ads_mock": True}, headers=admin)
     assert r.status_code == 200 and r.json()["values"]["ads_mock"] is True
-    assert (await client.get("/site")).json() == {"adsMock": True}
+    assert (await client.get("/site")).json()["adsMock"] is True
     assert (
         await client.put("/admin/config", json={"ads_mock": 1}, headers=admin)
     ).status_code == 400
@@ -219,6 +220,29 @@ async def test_thong_so(client: AsyncClient) -> None:
     assert appconfig.get_int("ranked_win_lead", 30) == 45
     assert catalog.get_skin("pen_marker").price == {"lead": 250}  # type: ignore[union-attr]
     assert catalog.rarity_price()["common"] == {"lead": 120}
+    # Thông số số nguyên có khoảng cho phép; bool phải đúng kiểu; public qua /site khi cần.
+    r = await client.put(
+        "/admin/config",
+        json={"mm_accept_seconds": 30, "chat_enabled": False, "ads_interstitial_every": 0},
+        headers=admin,
+    )
+    assert r.status_code == 200
+    assert (await client.get("/site")).json() == {
+        "adsMock": False,
+        "adsInterstitialEvery": 0,
+        "chatEnabled": False,
+    }
+    from app.matchmaking import pending as pd
+
+    assert pd.accept_seconds() == 30
+    for bad in ({"mm_accept_seconds": 4}, {"mm_accept_seconds": 61}, {"chat_enabled": "no"}):
+        assert (await client.put("/admin/config", json=bad, headers=admin)).status_code == 400
+    assert pd.accept_seconds() == 30
+    await client.put(
+        "/admin/config",
+        json={"mm_accept_seconds": 20, "chat_enabled": True, "ads_interstitial_every": 3},
+        headers=admin,
+    )
     # Khóa lạ / giá trị sai → 400, không đổi gì.
     assert (await client.put("/admin/config", json={"x": 1}, headers=admin)).status_code == 400
     r = await client.put("/admin/config", json={"ranked_win_lead": -1}, headers=admin)

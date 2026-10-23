@@ -34,7 +34,10 @@ export function AppShell({ children }: AppShellProps) {
         <AdSenseScript />
         <AdRails />
         <InterstitialHost />
-        {/* Chat tổng (docs/15): bong bóng góc dưới phải, ẩn ở màn đang chơi. */}
+      </Suspense>
+      {/* Chat tổng (docs/15): bong bóng góc dưới phải ở MỌI trang. Ranh giới Suspense riêng: các host
+          trên tạm treo (usePathname trên route động) thì bong bóng không biến mất theo. */}
+      <Suspense fallback={null}>
         <ChatHost />
       </Suspense>
       <Toaster />

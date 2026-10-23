@@ -123,7 +123,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   status: "idle",
   user: null,
   accessToken: null,
-  site: { adsMock: false },
+  site: { adsMock: false, adsInterstitialEvery: 3, chatEnabled: true },
   expiresAt: 0,
   locale: "vi",
   profileOpen: false,

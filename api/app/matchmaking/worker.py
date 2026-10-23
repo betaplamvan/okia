@@ -41,7 +41,7 @@ async def _offer(redis: Redis, hub: Hub, a: q.Entry, b: q.Entry, now: int) -> bo
                 match_id=p.id,
                 mode="ranked",
                 expires_at=p.expires,
-                accept_seconds=pd.ACCEPT_SECONDS,
+                accept_seconds=pd.accept_seconds(),
             ),
         )
     return True
@@ -98,7 +98,7 @@ async def tick(redis: Redis, hub: Hub) -> int:
                     match_id=p.id,
                     mode="ranked",
                     expires_at=p.expires,
-                    accept_seconds=pd.ACCEPT_SECONDS,
+                    accept_seconds=pd.accept_seconds(),
                     bot=True,
                 ),
             )
@@ -120,7 +120,7 @@ async def tick(redis: Redis, hub: Hub) -> int:
                     waiting=len(left),
                     online=online,
                     since=e.since,
-                    widened=e.waited_s(now) >= q.UNLIMITED_AFTER,
+                    widened=e.waited_s(now) >= q.unlimited_after(),
                 ),
             )
     return n

@@ -97,6 +97,20 @@ async def test_khach_doc_tai_khoan_gui(client: AsyncClient) -> None:
     assert meta["online"] >= 1  # người gọi meta được tính online
 
 
+async def test_tat_chat_tu_admin(client: AsyncClient) -> None:
+    from app.admin import config as appconfig
+
+    an = await login(client, "an4@example.com")
+    appconfig._cache["chat_enabled"] = False
+    try:
+        r = await client.post("/chat/messages", json={"body": "hi"}, headers=an)
+        assert r.status_code == 403 and r.json()["code"] == "CHAT_DISABLED"
+        assert (await client.get("/chat/messages")).status_code == 200  # vẫn đọc được
+    finally:
+        appconfig._cache.pop("chat_enabled", None)
+    assert (await client.post("/chat/messages", json={"body": "hi"}, headers=an)).status_code == 200
+
+
 async def test_gioi_han_toc_do_va_chong_lap(client: AsyncClient) -> None:
     an = await login(client, "an2@example.com")
     assert (await client.post("/chat/messages", json={"body": "1"}, headers=an)).status_code == 200

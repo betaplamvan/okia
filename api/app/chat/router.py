@@ -3,9 +3,10 @@
 - GET  /chat/meta       số người online + id tin mới nhất (bong bóng đếm tin chưa đọc). Gọi định kỳ
                         khi trang mở → cũng đánh dấu người gọi đang online.
 - GET  /chat/messages   50 tin gần nhất (cũ → mới), phân trang lùi `?before=<id>`. Ai cũng đọc được.
-- POST /chat/messages   gửi tin — chỉ tài khoản Google (khách chỉ đọc). Giới hạn tốc độ: 1 tin /
-                        2 giây, 12 tin / phút, không lặp đúng nội dung trong 30 giây. Tin mới phát
-                        qua WS `chat_msg` (kênh Redis `chat:all`).
+- POST /chat/messages   gửi tin — chỉ tài khoản Google (khách chỉ đọc). Giới hạn tốc độ (thông số
+                        admin `chat_*`, mặc định): 1 tin / 2 giây, 12 tin / phút, không lặp đúng
+                        nội dung trong 30 giây, ≤ 300 ký tự; `chat_enabled` tắt → chỉ đọc
+                        (CHAT_DISABLED). Tin mới phát qua WS `chat_msg` (kênh Redis `chat:all`).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from redis.asyncio import Redis
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.admin import config as appconfig
 from app.auth import ratelimit
 from app.auth.deps import account_user, get_redis, optional_user
 from app.auth.schemas import CamelModel
@@ -171,20 +173,27 @@ async def chat_messages(db: Db, before: Annotated[int | None, Query(ge=1)] = Non
 async def chat_send(
     body: SendIn, db: Db, redis: Rd, user: Annotated[User, Depends(account_user)]
 ) -> m.ChatMessageOut:
+    if not appconfig.get_bool("chat_enabled", True):
+        raise AppError("CHAT_DISABLED", 403)
     text = clean_body(body.body)
     if not text:
         raise AppError("CHAT_EMPTY", 400)
-    if len(text) > MAX_LEN:
-        raise AppError("CHAT_TOO_LONG", 400, max=MAX_LEN)
+    max_len = appconfig.get_int("chat_max_len", MAX_LEN)
+    if len(text) > max_len:
+        raise AppError("CHAT_TOO_LONG", 400, max=max_len)
     uid = str(user.id)
-    await ratelimit.hit(redis, f"chat:s:{uid}", 1, 2)
-    await ratelimit.hit(redis, f"chat:m:{uid}", 12, 60)
-    digest = hashlib.sha1(" ".join(text.lower().split()).encode()).hexdigest()
-    dup_key = f"chat:dup:{uid}"
-    last = await redis.get(dup_key)
-    if (last.decode() if isinstance(last, bytes) else last) == digest:
-        raise AppError("CHAT_DUPLICATE", 429)
-    await redis.set(dup_key, digest, ex=DUP_SECONDS)
+    gap = appconfig.get_int("chat_min_interval_seconds", 2)
+    if gap > 0:
+        await ratelimit.hit(redis, f"chat:s:{uid}", 1, gap)
+    await ratelimit.hit(redis, f"chat:m:{uid}", appconfig.get_int("chat_per_minute", 12), 60)
+    dup_seconds = appconfig.get_int("chat_dup_seconds", DUP_SECONDS)
+    if dup_seconds > 0:
+        digest = hashlib.sha1(" ".join(text.lower().split()).encode()).hexdigest()
+        dup_key = f"chat:dup:{uid}"
+        last = await redis.get(dup_key)
+        if (last.decode() if isinstance(last, bytes) else last) == digest:
+            raise AppError("CHAT_DUPLICATE", 429)
+        await redis.set(dup_key, digest, ex=dup_seconds)
 
     reply_to = None
     if body.reply_to is not None:
