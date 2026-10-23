@@ -22,8 +22,45 @@ log = logging.getLogger("okia.mm")
 LOCK_KEY = "lock:mm"
 
 
+async def _offer(redis: Redis, hub: Hub, a: q.Entry, b: q.Entry, now: int) -> bool:
+    """Cặp hai người thật → trận chờ chấp nhận + `match_found` cho cả hai. False nếu một người vừa
+    rời hàng chờ (cancel / rớt mạng) đúng lúc này — người còn lại được trả về hàng chờ."""
+    ra = await q.dequeue(redis, a.user_id)
+    rb = await q.dequeue(redis, b.user_id)
+    if not (ra and rb):
+        # Trả lại người còn ở hàng chờ (giữ thời điểm vào cũ).
+        for e, removed in ((a, ra), (b, rb)):
+            if removed:
+                await q.enqueue(redis, e)
+        return False
+    p = await pd.create(redis, a, b, now)
+    for e in (a, b):
+        await hub.publish_user(
+            e.user_id,
+            m.MatchFound(
+                match_id=p.id,
+                mode="ranked",
+                expires_at=p.expires,
+                accept_seconds=pd.ACCEPT_SECONDS,
+            ),
+        )
+    return True
+
+
+def bot_after_seconds() -> int:
+    """Mốc ghép máy (giây): thông số admin, không có thì biến môi trường; 0 = tắt."""
+    from app.admin import config as appconfig
+
+    cfg_after = appconfig.get("mm_bot_after_seconds")
+    return cfg_after if isinstance(cfg_after, int) else get_settings().mm_bot_after_seconds
+
+
 async def tick(redis: Redis, hub: Hub) -> int:
-    """Một vòng ghép; trả số cặp đã ghép. Gọi được từ test."""
+    """Một vòng ghép; trả số cặp đã ghép. Gọi được từ test.
+
+    Thứ tự ưu tiên (docs/07): (1) cặp hợp cửa sổ mmr; (2) ai đã chờ tới mốc ghép máy mà còn người
+    thật khác trong hàng → ghép người với người (bỏ qua cửa sổ / luật tránh gặp lại); (3) chỉ ai
+    còn lại MỘT MÌNH mới được ghép máy."""
     now = q.now_ms()
     n = 0
     # Mục ma (không ping quá 60 s: API restart, rớt mạng) → bỏ trước khi ghép.
@@ -32,33 +69,15 @@ async def tick(redis: Redis, hub: Hub) -> int:
     waiting = await q.entries(redis)
     # Lưu ý: không thoát sớm khi hàng chờ trống — trận chờ quá hạn vẫn phải được hủy.
     for a, b in q.pair_up(waiting, now) if waiting else []:
-        # Xóa cả hai khỏi hàng chờ trước; ai đã rời (cancel/rớt mạng) đúng lúc này thì bỏ cặp.
-        ra = await q.dequeue(redis, a.user_id)
-        rb = await q.dequeue(redis, b.user_id)
-        if not (ra and rb):
-            # Trả lại người còn ở hàng chờ (giữ thời điểm vào cũ).
-            for e, removed in ((a, ra), (b, rb)):
-                if removed:
-                    await q.enqueue(redis, e)
-            continue
-        p = await pd.create(redis, a, b, now)
-        for e in (a, b):
-            await hub.publish_user(
-                e.user_id,
-                m.MatchFound(
-                    match_id=p.id,
-                    mode="ranked",
-                    expires_at=p.expires,
-                    accept_seconds=pd.ACCEPT_SECONDS,
-                ),
-            )
-        n += 1
-    # Chờ quá lâu mà không có ai hợp → ghép với máy (docs/07): cũng qua vòng chấp nhận như người
-    # (máy đã nhận sẵn → client thấy "đối thủ đã sẵn sàng"); nhận → mở phòng, điểm hạng cược ½.
-    from app.admin import config as appconfig
-
-    cfg_after = appconfig.get("mm_bot_after_seconds")
-    bot_after = cfg_after if isinstance(cfg_after, int) else get_settings().mm_bot_after_seconds
+        n += await _offer(redis, hub, a, b, now)
+    bot_after = bot_after_seconds()
+    if bot_after > 0:
+        for a, b in q.pair_stragglers(await q.entries(redis), now, after=bot_after):
+            log.info("ưu tiên người thật: %s – %s (bỏ qua cửa sổ)", a.user_id, b.user_id)
+            n += await _offer(redis, hub, a, b, now)
+    # Chờ quá lâu mà KHÔNG còn người thật nào khác → ghép với máy (docs/07): cũng qua vòng chấp
+    # nhận như người (máy đã nhận sẵn → client thấy "đối thủ đã sẵn sàng"); nhận → mở phòng, điểm
+    # hạng cược ½.
     if bot_after > 0:
         for e in await q.entries(redis):
             if e.waited_s(now) < bot_after:

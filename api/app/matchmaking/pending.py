@@ -3,7 +3,10 @@ ACCEPT_SECONDS giây để bấm "Chơi luôn!". Cả hai nhận → tạo phòn
 từ chối / hết giờ / rớt mạng → hủy: người đã chấp nhận (hoặc chưa kịp) được trả về hàng chờ với thời
 điểm xếp hàng cũ, người từ chối rời hàng chờ.
 
-Redis: `mm:pending:{id}` (JSON), zset `mm:pending` (score = hạn ms), `mm:pending:user:{uid}` → id.
+Redis: `mm:pending:{id}` (JSON), zset `mm:pending` (score = hạn ms), `mm:pending:user:{uid}` → id,
+set `mm:pending:{id}:acc` = người đã chấp nhận. Chấp nhận ghi bằng SADD (nguyên tử): trước
+2026-10-23 là đọc–sửa–ghi cả JSON → hai người bấm cùng lúc thì lượt ghi sau xóa mất lượt nhận của
+người kia, phòng không bao giờ mở và trận bị hủy "hết giờ".
 
 Ghép máy (2026-10-22) cũng đi qua vòng này: `b` là Entry giả của máy (user_id = BOT_ID), đã chấp
 nhận sẵn, `bot_strength` ghi độ mạnh; người chấp nhận → mở phòng vs máy, từ chối / hết giờ → rời
@@ -71,6 +74,14 @@ def user_key(user_id: str) -> str:
     return f"mm:pending:user:{user_id}"
 
 
+def acc_key(pid: str) -> str:
+    return f"mm:pending:{pid}:acc"
+
+
+def _s(v: bytes | str) -> str:
+    return v.decode() if isinstance(v, bytes) else v
+
+
 async def create(
     redis: Redis,
     a: q.Entry,
@@ -107,10 +118,16 @@ def bot_entry(a: q.Entry, name: str, now: int | None = None) -> q.Entry:
 
 async def load(redis: Redis, pid: str) -> Pending | None:
     raw = await redis.get(key(pid))
-    return Pending.from_json(raw) if raw else None
+    if not raw:
+        return None
+    p = Pending.from_json(raw)
+    for u in await redis.smembers(acc_key(pid)):
+        p.accepted[_s(u)] = True
+    return p
 
 
 async def save(redis: Redis, p: Pending) -> None:
+    """Ghi lại JSON (hạn, …). Không dùng để ghi chấp nhận — xem `accept`."""
     await redis.set(key(p.id), p.to_json(), ex=ACCEPT_SECONDS + 30)
 
 
@@ -122,6 +139,7 @@ async def of_user(redis: Redis, user_id: str) -> Pending | None:
 async def remove(redis: Redis, p: Pending) -> None:
     async with redis.pipeline(transaction=True) as pipe:
         pipe.delete(key(p.id))
+        pipe.delete(acc_key(p.id))
         pipe.zrem(PENDING_ZSET, p.id)
         pipe.delete(user_key(p.a.user_id))
         if p.b.user_id != BOT_ID:
@@ -142,10 +160,18 @@ async def expired(redis: Redis, now: int | None = None) -> list[Pending]:
 
 
 async def accept(redis: Redis, user_id: str) -> tuple[Pending | None, bool]:
-    """Đánh dấu chấp nhận. Trả (pending, cả hai đã chấp nhận?). None nếu không có trận chờ."""
+    """Đánh dấu chấp nhận (SADD — nguyên tử). Trả (pending, đủ người để mở phòng?). None nếu không
+    có trận chờ. "Đủ" chỉ trả True cho ĐÚNG lượt chấp nhận cuối cùng (lượt vừa thêm người còn
+    thiếu): bấm lặp hoặc hai lượt cùng lúc không mở hai phòng."""
     p = await of_user(redis, user_id)
     if p is None:
         return None, False
-    p.accepted[user_id] = True
-    await save(redis, p)
-    return p, all(p.accepted.get(u) for u in p.users)
+    async with redis.pipeline(transaction=True) as pipe:
+        pipe.sadd(acc_key(p.id), user_id)
+        pipe.expire(acc_key(p.id), ACCEPT_SECONDS + 30)
+        pipe.smembers(acc_key(p.id))
+        added, _, members = await pipe.execute()
+    for u in members:
+        p.accepted[_s(u)] = True
+    both = bool(added) and all(p.accepted.get(u) for u in p.users)
+    return p, both

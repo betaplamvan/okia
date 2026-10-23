@@ -101,10 +101,34 @@ def test_pair_up_khong_ghep_lai_doi_thu_vua_gap() -> None:
     a = _entry("a", 1500, 10, now, last="b")
     b = _entry("b", 1500, 10, now, last="a")
     assert q.pair_up([a, b], now) == []
-    # Chờ > 60 giây thì chấp nhận gặp lại.
-    a2 = _entry("a", 1500, 61, now, last="b")
-    b2 = _entry("b", 1500, 61, now, last="a")
+    # Có người khác hợp cửa sổ → ưu tiên người khác.
+    c = _entry("c", 1520, 10, now)
+    assert [(x.user_id, y.user_id) for x, y in q.pair_up([a, b, c], now)] == [("a", "c")]
+    # Chờ quá REMATCH_GRACE (15 s — phải nhỏ hơn hẳn mốc ghép máy 45 s) thì chấp nhận gặp lại.
+    a2 = _entry("a", 1500, q.REMATCH_GRACE + 1, now, last="b")
+    b2 = _entry("b", 1500, q.REMATCH_GRACE + 1, now, last="a")
     assert len(q.pair_up([a2, b2], now)) == 1
+    assert q.REMATCH_GRACE < 45
+
+
+def test_toi_moc_ghep_may_thi_uu_tien_nguoi_that() -> None:
+    """Tới mốc ghép máy mà còn người thật khác trong hàng → ghép người với người, bất kể cửa sổ
+    mmr hay vừa gặp nhau; chưa tới mốc thì để `pair_up` lo."""
+    now = q.now_ms()
+    a = _entry("a", 1500, 46, now, last="b")
+    b = _entry("b", 1900, 3, now, last="a")  # mới vào, lệch 400, vừa đấu với a
+    assert q.pair_up([a, b], now) == []
+    pairs = q.pair_stragglers([a, b], now, after=45)
+    assert [(x.user_id, y.user_id) for x, y in pairs] == [("a", "b")]
+    # Chưa ai tới mốc → không ghép ép.
+    a_early = _entry("a", 1500, 30, now)
+    assert q.pair_stragglers([a_early, b], now, after=45) == []
+    # Một mình → không có cặp (worker sẽ ghép máy).
+    assert q.pair_stragglers([a], now, after=45) == []
+    # Ba người: người chờ lâu nhất lấy người gần mmr nhất.
+    c = _entry("c", 1550, 1, now)
+    pairs = q.pair_stragglers([a, b, c], now, after=45)
+    assert [(x.user_id, y.user_id) for x, y in pairs] == [("a", "c")]
 
 
 # ---------- Tích hợp WS ----------
@@ -349,6 +373,59 @@ def test_ghep_may_khi_cho_lau(client: TestClient) -> None:
     assert body["history"][0]["pointsDelta"] == my_delta
 
 
+def test_danh_xong_tim_lai_gap_lai_nhau_khong_gap_may(client: TestClient) -> None:
+    """Lỗi 2026-10-23 (Hoàng & Mi): hai người đấu xong một ván, tìm lại → mỗi người gặp một máy
+    vì luật tránh gặp lại (60 s) dài hơn mốc ghép máy (45 s). Giờ: tới mốc ghép máy mà còn người
+    thật → ghép người với người; trạng thái sau ván sạch (không còn phòng / trận chờ)."""
+    from app.admin import config as appconfig
+    from app.game import room as rooms
+
+    ta, ua = account(client, "hoang@example.com")
+    tb, ub = account(client, "mi@example.com")
+    a = open_ws(client, ta)
+    b = open_ws(client, tb)
+    send(a, t="queue", mode="ranked")
+    recv(a, "queued")
+    send(b, t="queue", mode="ranked")
+    recv(b, "queued")
+    f = recv(a, "match_found")
+    recv(b, "match_found")
+    send(a, t="match_accept", matchId=f["matchId"])
+    send(b, t="match_accept", matchId=f["matchId"])
+    code = recv(a, "matched")["roomId"]
+    recv(b, "matched")
+    send(a, t="room_join", roomId=code)
+    send(b, t="room_join", roomId=code)
+    rs = recv(a, "room_state")
+    recv(b, "room_state")
+    seat_of = {p["userId"]: p["seat"] for p in rs["players"]}
+    over = play_to_end({seat_of[ua]: a, seat_of[ub]: b}, code, rs["state"])
+    assert over["reason"] == "complete"
+
+    # Sau ván: không còn liên kết người → phòng, vào lại hàng chờ được ngay.
+    async def active() -> list[str | None]:
+        r = aioredis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+        try:
+            return [await rooms.active_room_id(r, u) for u in (ua, ub)]
+        finally:
+            await r.aclose()
+
+    assert asyncio.run(active()) == [None, None]
+
+    appconfig._cache["mm_bot_after_seconds"] = 2
+    try:
+        send(a, t="queue", mode="ranked")
+        recv(a, "queued")
+        send(b, t="queue", mode="ranked")
+        recv(b, "queued")
+        fa = recv(a, "match_found")
+        fb = recv(b, "match_found")
+    finally:
+        appconfig._cache.pop("mm_bot_after_seconds", None)
+    assert fa["matchId"] == fb["matchId"]
+    assert not fa.get("bot") and not fb.get("bot")
+
+
 def test_khach_va_casual_bi_tu_choi_cancel_va_rot_mang_roi_hang_cho(client: TestClient) -> None:
     g = open_ws(client, guest(client, "device-guest-0123456789"))
     send(g, t="queue", mode="ranked")
@@ -456,6 +533,32 @@ def test_tu_choi_va_het_gio_tran_cho(client: TestClient) -> None:
     assert ca["reason"] == "timeout" and ca["byMe"] is False and ca["requeued"] is True
     assert cb["reason"] == "timeout" and cb["byMe"] is True and cb["requeued"] is False
     assert recv(a, "queued")["since"] == since_a
+
+
+async def test_hai_nguoi_chap_nhan_cung_luc_mo_dung_mot_phong() -> None:
+    """Lỗi 2026-10-23: chấp nhận là đọc–sửa–ghi JSON → hai lượt cùng lúc mất một lượt, phòng không
+    mở, trận chờ bị hủy "hết giờ". Giờ SADD nguyên tử: đúng một lượt báo "đủ", bấm lặp không mở
+    thêm phòng."""
+    from app.matchmaking import pending as pd
+
+    r = aioredis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+    try:
+        now = q.now_ms()
+        for _ in range(20):
+            a = q.Entry("hoang", "Hoàng", 1500, 350, now)
+            b = q.Entry("mi", "Mi", 1500, 350, now)
+            p = await pd.create(r, a, b, now)
+            res = await asyncio.gather(pd.accept(r, "hoang"), pd.accept(r, "mi"))
+            assert sum(both for _, both in res) == 1
+            loaded = await pd.load(r, p.id)
+            assert loaded is not None and loaded.accepted == {"hoang": True, "mi": True}
+            # Bấm lặp sau khi đã đủ → không báo "đủ" lần nữa.
+            again = await pd.accept(r, "hoang")
+            assert again[1] is False
+            await pd.remove(r, p)
+            assert await r.exists(pd.acc_key(p.id)) == 0
+    finally:
+        await r.aclose()
 
 
 async def test_muc_ma_trong_hang_cho_bi_bo_truoc_khi_ghep() -> None:

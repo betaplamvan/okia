@@ -199,6 +199,29 @@ await winner
 await winner.screenshot({ path: ".shots/leaderboard-390.png" });
 console.log("leaderboard: ok");
 
+// Lỗi 2026-10-23 (Hoàng & Mi): đánh xong một ván, cả hai tìm lại → phải gặp lại NHAU (không phải
+// mỗi người một máy ở giây 45), và bấm chấp nhận CÙNG LÚC vẫn vào được phòng.
+for (const p of [A, B]) {
+  await p.goto(base + "/ranked", { waitUntil: "networkidle" });
+  await p.getByTestId("find-match").click();
+}
+const t0 = Date.now();
+await Promise.all([
+  A.getByTestId("accept-dialog").waitFor({ timeout: 40000 }),
+  B.getByTestId("accept-dialog").waitFor({ timeout: 40000 }),
+]);
+const waitedS = Math.round((Date.now() - t0) / 1000);
+for (const p of [A, B])
+  if (await p.getByTestId("accept-dialog").getByText(/Máy/).count())
+    problems.push("tìm lại sau ván: bị ghép với máy");
+await Promise.all([A.getByTestId("accept-match").click(), B.getByTestId("accept-match").click()]);
+await Promise.all([
+  A.waitForURL(/\/r\/[A-Z2-9]{6}$/, { timeout: 20000 }),
+  B.waitForURL(/\/r\/[A-Z2-9]{6}$/, { timeout: 20000 }),
+]);
+if (A.url() !== B.url()) problems.push("tìm lại sau ván: A và B vào hai phòng khác nhau");
+console.log(`tìm lại sau ván: gặp lại nhau sau ~${waitedS} giây, chấp nhận cùng lúc → chung phòng`);
+
 for (const p of problems) console.log("  LỖI: " + p);
 await browser.close();
 process.exit(problems.length === 0 && finished ? 0 : 1);

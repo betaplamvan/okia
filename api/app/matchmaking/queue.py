@@ -30,7 +30,10 @@ WINDOW_STEP = 25.0
 WINDOW_STEP_SECONDS = 5
 WINDOW_MAX = 400.0
 UNLIMITED_AFTER = 90
-REMATCH_GRACE = 60  # chờ > 60 giây mới chấp nhận gặp lại đối thủ vừa rồi
+# Tránh gặp lại đối thủ vừa đấu trong REMATCH_GRACE giây đầu (ưu tiên người khác nếu có). Phải nhỏ
+# hơn hẳn mốc ghép máy (45 s): trước 2026-10-23 là 60 s → hai người vừa đấu xong không bao giờ gặp
+# lại, cả hai đều bị ghép máy ở giây 45 dù không có ai khác.
+REMATCH_GRACE = 15
 
 
 def now_ms() -> int:
@@ -181,6 +184,34 @@ def pair_up(waiting: list[Entry], now: int | None = None) -> list[tuple[Entry, E
                 continue
             gap = abs(a.mmr - b.mmr)
             if gap < best_gap and compatible(a, b, now):
+                best, best_gap = b, gap
+        if best is not None:
+            taken.update((a.user_id, best.user_id))
+            pairs.append((a, best))
+    return pairs
+
+
+def pair_stragglers(
+    waiting: list[Entry], now: int | None = None, *, after: float
+) -> list[tuple[Entry, Entry]]:
+    """Người thật luôn được ưu tiên hơn máy: ai đã chờ ≥ `after` giây (mốc ghép máy) mà trong hàng
+    còn người thật khác → ghép với người gần mmr nhất, BỎ QUA cửa sổ và luật tránh gặp lại (điểm
+    cược của trận lệch tự giảm — app/rating/points.py). Chạy sau `pair_up`, trước khi ghép máy.
+    Hàm thuần, test được."""
+    now = now or now_ms()
+    order = sorted(waiting, key=lambda e: e.since)
+    taken: set[str] = set()
+    pairs: list[tuple[Entry, Entry]] = []
+    for a in order:
+        if a.user_id in taken or a.waited_s(now) < after:
+            continue
+        best: Entry | None = None
+        best_gap = math.inf
+        for b in order:
+            if b.user_id == a.user_id or b.user_id in taken:
+                continue
+            gap = abs(a.mmr - b.mmr)
+            if gap < best_gap:
                 best, best_gap = b, gap
         if best is not None:
             taken.update((a.user_id, best.user_id))
