@@ -225,7 +225,12 @@ export function RoomScreen({ code }: { code: string }) {
                   : t("theirTurn", { name: theirName })}
             {!result && !online.opponentOnline ? (
               <HStack as="span" justify="center" gap={1} color="sun" fontSize="sm">
-                <LuWifiOff /> {t("opponentOffline")}
+                <LuWifiOff />{" "}
+                {online.graceUntil ? (
+                  <GraceCountdown until={online.graceUntil} />
+                ) : (
+                  t("opponentOffline")
+                )}
               </HStack>
             ) : null}
             {session.combo >= 2 && !result ? (
@@ -602,4 +607,16 @@ function TurnTimer({
       </Text>
     </HStack>
   );
+}
+
+/** Đối thủ rớt mạng và server đã bắt đầu ân hạn: "bạn thắng sau N giây" (giờ server). */
+function GraceCountdown({ until }: { until: number }) {
+  const t = useTranslations("Room");
+  const [now, setNow] = useState(() => serverNow());
+  useEffect(() => {
+    const id = setInterval(() => setNow(serverNow()), 500);
+    return () => clearInterval(id);
+  }, []);
+  const s = Math.max(0, Math.ceil((until - now) / 1000));
+  return <span data-testid="grace-countdown">{t("opponentOfflineGrace", { s: String(s) })}</span>;
 }

@@ -250,7 +250,8 @@
     "errorBack": "Back to rooms",
     "noConnection": "Cannot reach the server.",
     "backRanked": "Find another",
-    "rankedCode": "Ranked game"
+    "rankedCode": "Ranked game",
+    "opponentOfflineGrace": "Opponent disconnected — you win in {s}s"
   },
   "Maps": {
     "board": "Board",
@@ -394,7 +395,9 @@
     "ladderFrom": "{n}+ pts",
     "ladderTop": "Top 100 Valedictorians",
     "ladderYou": "You are here",
-    "ladderDivisions": "Divisions of {tier}:"
+    "ladderDivisions": "Divisions of {tier}:",
+    "activeGame": "You have a game in progress",
+    "rejoin": "Rejoin"
   },
   "Leaderboard": {
     "title": "Leaderboard",
@@ -637,7 +640,9 @@
       "checkinRewards": "7-day check-in rewards",
       "checkinRewardsHint": "At least one currency per day. Current shown as Lead/Flowers.",
       "resetDefaults": "Reset to defaults",
-      "invalid": "{n} setting(s) out of range"
+      "invalid": "{n} setting(s) out of range",
+      "disconnect_grace_seconds": "Disconnect grace (seconds)",
+      "disconnect_grace_seconds_hint": "Mid-game disconnect: the turn clock pauses for N seconds to reconnect; after that the player forfeits."
     },
     "cancel": "Cancel",
     "donations": {

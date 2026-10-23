@@ -360,3 +360,139 @@ def test_bieu_cam_va_nem_do(client: TestClient) -> None:
     asyncio.run(unthrottle())
     send(b, t="emote", roomId=code, id="gg")
     assert recv(b, "error")["code"] == "GAME_OVER"
+
+
+# ---------- Ân hạn rớt mạng (docs/04 — Kết nối lại, 2026-10-24) ----------
+
+
+def _redis():
+    return aioredis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+
+
+async def _tick_now(code: str, *, grace_expired: bool = False) -> None:
+    """Đẩy deadline (và hạn ân hạn nếu cần) về quá khứ rồi chạy một nhịp timer như worker."""
+    r = _redis()
+    hub = Hub(r)
+    try:
+        room = await rooms.load(r, code)
+        assert room is not None
+        if room.status == "playing":
+            room.deadline = rooms.now_ms() - 1
+            if grace_expired and room.grace_until:
+                room.grace_until = rooms.now_ms() - 1
+            await rooms.save(r, room)
+        await timer.tick(r, hub)
+    finally:
+        await r.aclose()
+
+
+def _setup_room(client: TestClient, turn_seconds: int | None):
+    ta = guest(client, "device-grace-a-0123")
+    tb = guest(client, "device-grace-b-0123")
+    a = open_ws(client, ta)
+    b = open_ws(client, tb)
+    recv(a, "welcome")
+    recv(b, "welcome")
+    send(a, t="room_create", board="3x3", turnSeconds=turn_seconds)
+    code = recv(a, "room_state")["roomId"]
+    send(b, t="room_join", roomId=code)
+    rs = recv(a, "room_state")
+    recv(b, "room_state")
+    ua, ub = recv_uid(client, ta), recv_uid(client, tb)
+    seat = {p["userId"]: p["seat"] for p in rs["players"]}
+    return a, b, ta, tb, ua, ub, code, seat, rs
+
+
+def test_an_han_rot_mang_nguoi_co_luot(client: TestClient) -> None:
+    """Người ĐANG CÓ LƯỢT rớt mạng: hết giờ timer không đi hộ mà bắt đầu ân hạn (opponent_status
+    kèm graceUntil); nối lại trong ân hạn → room_state lượt mới, bỏ lượt về 0; rớt tiếp và hết
+    ân hạn → thua "abandon"."""
+    a, b, ta, tb, ua, ub, code, seat, rs = _setup_room(client, 15)
+    turn_uid = ua if seat[ua] == rs["state"]["turn"] else ub
+    # Người có lượt là "gone"; người kia là "stay".
+    gone, stay, gone_tok = (a, b, ta) if turn_uid == ua else (b, a, tb)
+    gone_uid = turn_uid
+    gone.__exit__(None, None, None)
+    st = recv(stay, "opponent_status")
+    assert st["online"] is False and st["userId"] == gone_uid and st["graceUntil"] is None
+
+    # Hết giờ lượt → KHÔNG có moved; thay vào đó opponent_status với hạn nối lại.
+    asyncio.run(_tick_now(code))
+    st = recv(stay, "opponent_status")
+    assert st["online"] is False and st["graceUntil"] and st["graceUntil"] > rooms.now_ms()
+    asyncio.run(_tick_now(code))  # chưa hết ân hạn → vẫn không đi hộ
+
+    async def snapshot():
+        r = _redis()
+        try:
+            return await rooms.load(r, code)
+        finally:
+            await r.aclose()
+
+    room = asyncio.run(snapshot())
+    assert room is not None and room.state.move_no == 0 and room.grace_seat == seat[gone_uid]
+
+    # Nối lại trong ân hạn → cả phòng nhận room_state: không còn ân hạn, deadline mới.
+    gone = open_ws(client, gone_tok)
+    assert recv(gone, "welcome")["activeRoomId"] == code
+    send(gone, t="room_join", roomId=code)
+    back = recv(stay, "room_state")
+    assert back["graceUntil"] is None and back["graceSeat"] is None
+    assert back["deadline"] and back["deadline"] > rooms.now_ms() + 10_000
+    assert all(p["online"] for p in back["players"])
+    # Tin về chính mình (online) cũng tới người nối lại — client bỏ qua theo userId.
+    own = recv(gone, "opponent_status")
+    assert own["online"] is True and own["userId"] == gone_uid
+
+    # Rớt lần nữa, hết ân hạn → abandon, người ở lại thắng.
+    gone.__exit__(None, None, None)
+    recv(stay, "opponent_status")
+    asyncio.run(_tick_now(code))  # bắt đầu ân hạn
+    recv(stay, "opponent_status")
+    asyncio.run(_tick_now(code, grace_expired=True))
+    over = recv(stay, "game_over")
+    assert over["reason"] == "abandon" and over["winner"] == 1 - seat[gone_uid]
+
+
+def test_an_han_phong_khong_gioi_han_gio(client: TestClient) -> None:
+    """Phòng không giới hạn giờ: rớt là bắt đầu ân hạn ngay (trước đây treo mãi, không ai thắng)."""
+    a, b, ta, tb, ua, ub, code, seat, rs = _setup_room(client, None)
+    assert rs["deadline"] is None
+    b.__exit__(None, None, None)
+    st = recv(a, "opponent_status")
+    assert st["online"] is False and st["userId"] == ub and st["graceUntil"]
+    asyncio.run(_tick_now(code, grace_expired=True))
+    over = recv(a, "game_over")
+    assert over["reason"] == "abandon" and over["winner"] == seat[ua]
+
+
+def test_hien_dien_cu_tu_sach_va_tab_khac_khong_tru(client: TestClient) -> None:
+    """Hiện diện là zset theo kết nối, không ping quá 60 giây coi như rớt (API restart không để lại
+    bộ đếm sai); tab khác của cùng người chưa vào phòng đóng lại không làm đối thủ thấy 'rớt'."""
+    a, b, ta, tb, ua, ub, code, seat, rs = _setup_room(client, 30)
+
+    async def check():
+        r = _redis()
+        try:
+            key = f"presence:{code}"
+            # Kết nối "ma" (score cũ) không tính; kết nối thật vẫn online.
+            await r.zadd(key, {f"{ub}|deadbeef": rooms.now_ms() - rooms.PRESENCE_STALE_MS - 1})
+            online = await rooms.online_map(r, code)
+            assert online.get(ua) and online.get(ub)
+            assert await r.zscore(key, f"{ub}|deadbeef") is None  # đã dọn
+            # Một mình kết nối cũ → sau khi stale thì offline.
+            members = await r.zrange(key, 0, -1)
+            for mbr in members:
+                if mbr.startswith(ub + "|"):
+                    await r.zadd(key, {mbr: rooms.now_ms() - rooms.PRESENCE_STALE_MS - 1})
+            assert not (await rooms.online_map(r, code)).get(ub)
+        finally:
+            await r.aclose()
+
+    asyncio.run(check())
+    # Tab thứ hai của a (không vào phòng) mở rồi đóng → b KHÔNG nhận opponent_status offline.
+    a2 = open_ws(client, ta)
+    recv(a2, "welcome")
+    a2.__exit__(None, None, None)
+    send(b, t="ping")
+    assert recv(b)["t"] == "pong"  # không có opponent_status chen vào trước pong

@@ -15,7 +15,7 @@ import { type EmoteId, type Interaction, isEmoteId } from "./interactions";
 import { createGameForMap, DEFAULT_MAP_ID } from "./maps";
 import { applyMove, type GameState, type Player } from "./rules";
 import type { GameOver, GameStateOut, RankOut, RoomState, ServerMsg } from "./ws-types";
-import { useConnection, type WsClient } from "@/net/ws-client";
+import { setActiveRoom, useConnection, type WsClient } from "@/net/ws-client";
 
 export type NetworkEvent =
   { type: "error"; code: string; message: string; ref?: string | null } | { type: "left" };
@@ -46,6 +46,8 @@ export class NetworkController implements GameController {
   private destroyed = false;
   private mySeat: Player | null = null;
   private interactionListeners = new Set<(e: Interaction) => void>();
+  /** Nước lạc quan chờ server quá lâu (socket treo) → hoàn tác + xin ảnh chụp. */
+  private pendingTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly ws: WsClient,
@@ -76,6 +78,7 @@ export class NetworkController implements GameController {
         turnSeconds: null,
         deadline: null,
         opponentOnline: false,
+        graceUntil: null,
         pendingEdge: null,
       },
     };
@@ -128,12 +131,18 @@ export class NetworkController implements GameController {
       case "moved": {
         if (m.roomId !== this.roomId) return;
         const by = m.by as Player;
-        const res = applyMove(this.serverState, by, m.edge);
-        if (!res.ok) {
-          // Lệch với server (bỏ lỡ tin nhắn?) → xin ảnh chụp mới.
+        // Bỏ lỡ tin `moved` (rớt mạng thoáng, nối lại đúng lúc) → số nước không liên tiếp → xin
+        // ảnh chụp mới thay vì áp nước lên bàn đã lệch.
+        if (m.moveNo !== this.serverState.moveNo + 1) {
           this.join();
           return;
         }
+        const res = applyMove(this.serverState, by, m.edge);
+        if (!res.ok) {
+          this.join();
+          return;
+        }
+        this.clearPending();
         this.serverState = res.state;
         const prev = this.session;
         const wasPending = prev.online?.pendingEdge === m.edge && by === this.mySeat;
@@ -166,9 +175,17 @@ export class NetworkController implements GameController {
         this.clearActiveRoom();
         this.emit({ result: resultOf(m) }, { status: "over", deadline: null });
         return;
-      case "opponent_status":
-        if (m.roomId === this.roomId) this.emit({}, { opponentOnline: m.online });
+      case "opponent_status": {
+        if (m.roomId !== this.roomId) return;
+        // Gửi cho cả phòng — tin về chính mình (nối lại) thì bỏ qua.
+        const me = useConnection.getState().userId;
+        if (m.userId && me && m.userId === me) return;
+        this.emit(
+          {},
+          { opponentOnline: m.online, graceUntil: m.online ? null : (m.graceUntil ?? null) },
+        );
         return;
+      }
       case "emote":
         // Server dội lại cho cả hai ghế (kể cả người gửi) → chỉ vẽ ở đây, không vẽ lúc bấm.
         if (m.roomId === this.roomId && isEmoteId(m.id))
@@ -179,12 +196,18 @@ export class NetworkController implements GameController {
           this.emitInteraction({ kind: "throw", by: m.by as Player, id: m.id });
         return;
       case "error":
+        // Phòng không còn / không vào được → xoá bản lưu để ô "đang dở trận" không trỏ vào phòng chết.
+        if (m.ref === "room_join" && (m.code === "ROOM_NOT_FOUND" || m.code === "ROOM_FULL"))
+          this.clearActiveRoom();
         if (m.ref === "move") {
           // Hoàn tác nước lạc quan.
+          this.clearPending();
           this.emit(
             { state: this.serverState, lastMove: null, lastTurn: null },
             { pendingEdge: null },
           );
+          // Trạng thái đã cũ (bỏ lỡ moved) → lấy ảnh chụp mới (docs/04).
+          if (m.code === "STALE_SEQ") this.join();
         }
         this.onEvent({ type: "error", code: m.code, message: m.message, ref: m.ref });
         return;
@@ -213,6 +236,12 @@ export class NetworkController implements GameController {
       if (p.userId !== me) opponentOnline = p.online ?? false;
     }
     this.serverState = fromServer(rs.state);
+    this.clearPending();
+    const oppSeat = mine ? 1 - seat : null;
+    // Đang chơi → ghi nhớ phòng (welcome chỉ gửi activeRoomId lúc kết nối): rời sang trang khác
+    // vẫn có ô "Bạn đang dở một trận — Vào lại" (MatchmakingHost); ván xong / rời phòng thì xoá.
+    if (mine && rs.status === "playing") setActiveRoom(rs.roomId);
+    else if (rs.status === "over") this.clearActiveRoom();
     this.emit(
       {
         mapId: rs.board,
@@ -236,9 +265,18 @@ export class NetworkController implements GameController {
         turnSeconds: rs.turnSeconds ?? null,
         deadline: rs.deadline ?? null,
         opponentOnline,
+        graceUntil:
+          !opponentOnline && rs.graceSeat != null && rs.graceSeat === oppSeat
+            ? (rs.graceUntil ?? null)
+            : null,
         pendingEdge: null,
       },
     );
+  }
+
+  private clearPending(): void {
+    if (this.pendingTimer) clearTimeout(this.pendingTimer);
+    this.pendingTimer = null;
   }
 
   // ---------- Hành động của người chơi ----------
@@ -251,6 +289,14 @@ export class NetworkController implements GameController {
     if (!res.ok) return false;
     const seq = this.serverState.moveNo;
     if (!this.ws.send({ t: "move", roomId: this.roomId, edge, seq })) return false;
+    // Quá 5 giây không có moved / error (socket treo) → hoàn tác và đồng bộ lại.
+    this.clearPending();
+    this.pendingTimer = setTimeout(() => {
+      this.pendingTimer = null;
+      if (this.destroyed || this.session.online?.pendingEdge !== edge) return;
+      this.emit({ state: this.serverState, lastMove: null, lastTurn: null }, { pendingEdge: null });
+      this.join();
+    }, 5000);
     const sameTurnStreak = s.lastMove?.by === this.mySeat && s.lastMove.captured.length > 0;
     const combo =
       res.captured.length > 0 ? (sameTurnStreak ? s.combo : 0) + res.captured.length : 0;
@@ -309,12 +355,12 @@ export class NetworkController implements GameController {
   /** welcome.activeRoomId chỉ được server gửi lúc kết nối; phòng xong/rời thì xóa, nếu không sảnh
    * (/room) sẽ tự đẩy người chơi về lại phòng cũ. */
   private clearActiveRoom(): void {
-    if (useConnection.getState().activeRoomId === this.roomId)
-      useConnection.setState({ activeRoomId: null });
+    if (useConnection.getState().activeRoomId === this.roomId) setActiveRoom(null);
   }
 
   destroy(): void {
     this.destroyed = true;
+    this.clearPending();
     this.unsubscribe?.();
     this.listeners.clear();
     this.interactionListeners.clear();

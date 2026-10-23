@@ -174,6 +174,7 @@ Bảng `app_config` (key → JSON), mặc định trong `api/app/admin/config.py
 | `mm_accept_seconds` | 20 (5–60) | hạn bấm "Chơi luôn" |
 | `mm_unlimited_after_seconds` | 90 | sau N giây chờ ghép bất kỳ ai (bỏ cửa sổ mmr) |
 | `ranked_turn_seconds` | 30 (10–120) | giây mỗi lượt ở trận xếp hạng (áp dụng cho ván mới) |
+| `disconnect_grace_seconds` | 60 (10–300) | ân hạn nối lại khi rớt mạng giữa ván ([04](04-giao-thuc-ws.md#kết-nối-lại-viết-lại-2026-10-24)) |
 | `ads_mock` | false | vùng quảng cáo giả "AD here" ([10](10-phap-ly.md#quảng-cáo)); public qua `GET /site` |
 | `ads_interstitial_every` | 3 (0 = tắt) | quảng cáo xen khi bấm Ván mới sau mỗi N ván; public qua `GET /site` |
 | `chat_enabled` | true | tắt → chat tổng chỉ đọc ([15](15-chat.md)); public qua `GET /site` |

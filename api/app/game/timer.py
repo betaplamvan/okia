@@ -11,6 +11,7 @@ import logging
 from redis.asyncio import Redis
 
 from app.game import room as rooms
+from app.ws import messages as rooms_msg
 from app.ws.hub import Hub
 
 log = logging.getLogger("okia.timer")
@@ -29,8 +30,28 @@ async def tick(redis: Redis, hub: Hub) -> int:
             continue
         if out is None:
             continue
+        if out.grace_started:
+            # Người có lượt đang rớt: đồng hồ dừng, báo đối thủ hạn nối lại (docs/04).
+            gone = out.room.player_at(out.room.grace_seat or 0)
+            await hub.publish(
+                out.room.id,
+                rooms_msg.OpponentStatus(
+                    room_id=out.room.id,
+                    online=False,
+                    user_id=gone.user_id if gone else None,
+                    grace_until=out.room.grace_until,
+                ),
+            )
+            continue
+        if out.resumed:
+            await hub.publish(
+                out.room.id,
+                rooms.room_state_msg(out.room, await rooms.online_map(redis, out.room.id)),
+            )
+            continue
         n += 1
-        await hub.publish(out.room.id, out.moved)
+        if out.moved:
+            await hub.publish(out.room.id, out.moved)
         if out.over:
             await hub.publish(out.room.id, out.over)
         else:

@@ -240,6 +240,9 @@ class RoomState(Msg):
     deadline: int | None = None
     result: "GameOver | None" = None
     loadouts: dict[str, dict[str, str]] = Field(default_factory=dict)
+    # Ân hạn rớt mạng đang chạy: ghế rớt + hạn nối lại (docs/04 — Kết nối lại).
+    grace_seat: Seat | None = None
+    grace_until: int | None = None
 
 
 class Moved(Msg):
@@ -276,9 +279,15 @@ class GameOver(Msg):
 
 
 class OpponentStatus(Msg):
+    """Một người trong phòng rớt / trở lại. Gửi cho CẢ PHÒNG (kể cả chính người đó khi nối lại) →
+    client bỏ qua khi `userId` là mình. `graceUntil`: hạn nối lại (epoch ms) khi đang rớt và đã bắt
+    đầu ân hạn; hết hạn → thua "abandon" (docs/04 — Kết nối lại)."""
+
     t: Literal["opponent_status"] = "opponent_status"
     room_id: str
     online: bool
+    user_id: str | None = None
+    grace_until: int | None = None
 
 
 class EmoteOut(Msg):

@@ -101,3 +101,63 @@ describe("combo online", () => {
     expect(c.getSession().combo).toBe(0);
   });
 });
+
+// Độ bền (docs/04 — Kết nối lại, 2026-10-24): bỏ lỡ `moved` / STALE_SEQ → xin ảnh chụp mới;
+// opponent_status về chính mình bị bỏ qua, graceUntil đi vào session.
+describe("NetworkController đồng bộ lại khi lệch", () => {
+  function start() {
+    const ws = new FakeWs();
+    const c = new NetworkController(ws as unknown as WsClient, "ROOM01");
+    c.start();
+    useConnection.setState({ userId: "me" });
+    ws.push(roomWith([], 0));
+    ws.sent.length = 0;
+    return { ws, c };
+  }
+
+  it("bỏ lỡ moved (moveNo nhảy cóc) → gửi room_join thay vì áp nước", () => {
+    const { ws, c } = start();
+    ws.push({
+      t: "moved",
+      roomId: "ROOM01",
+      by: 1,
+      edge: 5,
+      captured: [],
+      scores: [0, 0],
+      turn: 0,
+      moveNo: 3, // server đã ở nước 3, ta mới thấy 0
+      deadline: null,
+      reason: "player",
+    });
+    expect(ws.sent).toEqual([{ t: "room_join", roomId: "ROOM01" }]);
+    expect(c.getSession().state.moveNo).toBe(0);
+  });
+
+  it("STALE_SEQ → hoàn tác nước lạc quan và room_join", () => {
+    const { ws, c } = start();
+    expect(c.play(0)).toBe(true);
+    expect(c.getSession().state.moveNo).toBe(1);
+    ws.sent.length = 0;
+    ws.push({ t: "error", code: "STALE_SEQ", message: "cũ", ref: "move" });
+    expect(c.getSession().state.moveNo).toBe(0);
+    expect(c.getSession().online?.pendingEdge).toBeNull();
+    expect(ws.sent).toEqual([{ t: "room_join", roomId: "ROOM01" }]);
+  });
+
+  it("opponent_status: bỏ qua tin về mình, nhận graceUntil của đối thủ", () => {
+    const { ws, c } = start();
+    ws.push({ t: "opponent_status", roomId: "ROOM01", online: false, userId: "me" });
+    expect(c.getSession().online?.opponentOnline).toBe(true);
+    ws.push({
+      t: "opponent_status",
+      roomId: "ROOM01",
+      online: false,
+      userId: "them",
+      graceUntil: 123456,
+    });
+    expect(c.getSession().online?.opponentOnline).toBe(false);
+    expect(c.getSession().online?.graceUntil).toBe(123456);
+    ws.push({ t: "opponent_status", roomId: "ROOM01", online: true, userId: "them" });
+    expect(c.getSession().online?.graceUntil).toBeNull();
+  });
+});

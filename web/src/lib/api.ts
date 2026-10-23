@@ -218,6 +218,7 @@ export type AdminConfigValues = {
   mm_accept_seconds: number;
   mm_unlimited_after_seconds: number;
   ranked_turn_seconds: number;
+  disconnect_grace_seconds: number;
   chat_enabled: boolean;
   chat_max_len: number;
   chat_min_interval_seconds: number;

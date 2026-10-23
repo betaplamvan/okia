@@ -250,7 +250,8 @@
     "errorBack": "Về sảnh phòng",
     "noConnection": "Không kết nối được máy chủ.",
     "backRanked": "Tìm trận mới",
-    "rankedCode": "Trận xếp hạng"
+    "rankedCode": "Trận xếp hạng",
+    "opponentOfflineGrace": "Đối thủ mất kết nối — bạn thắng sau {s} giây"
   },
   "Maps": {
     "board": "Bàn chơi",
@@ -394,7 +395,9 @@
     "ladderFrom": "Từ {n} điểm",
     "ladderTop": "Top 100 Thủ khoa",
     "ladderYou": "Bạn ở đây",
-    "ladderDivisions": "Ba bậc của {tier}:"
+    "ladderDivisions": "Ba bậc của {tier}:",
+    "activeGame": "Bạn đang dở một trận",
+    "rejoin": "Vào lại"
   },
   "Leaderboard": {
     "title": "Bảng xếp hạng",
@@ -637,7 +640,9 @@
       "checkinRewards": "Thưởng điểm danh 7 ngày",
       "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền. Hiện tại ghi dạng Ruột chì/Hoa.",
       "resetDefaults": "Về mặc định",
-      "invalid": "{n} thông số ngoài khoảng cho phép"
+      "invalid": "{n} thông số ngoài khoảng cho phép",
+      "disconnect_grace_seconds": "Ân hạn rớt mạng (giây)",
+      "disconnect_grace_seconds_hint": "Rớt mạng giữa ván: đồng hồ lượt dừng, có N giây để nối lại; hết thì thua 'rời ván'."
     },
     "cancel": "Hủy",
     "donations": {

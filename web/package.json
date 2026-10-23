@@ -40,6 +40,7 @@
     "smoke:chat": "node scripts/smoke-chat.mjs",
     "smoke:config": "node scripts/smoke-config.mjs",
     "smoke:interact": "node scripts/smoke-interact.mjs",
+    "smoke:reconnect": "node scripts/smoke-reconnect.mjs",
     "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {
