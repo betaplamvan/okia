@@ -377,17 +377,6 @@ function Face({ tier, full }: { tier: Tier | null; full: boolean }) {
             </g>
           ) : null}
           <path d="M34,30 V116" stroke={RED} strokeWidth={full ? 2 : 4} opacity="0.7" />
-          <text
-            x="76"
-            y="86"
-            textAnchor="middle"
-            fontFamily="inherit"
-            fontSize={full ? 44 : 60}
-            fontWeight="700"
-            fill={INK}
-          >
-            Ô
-          </text>
         </g>
       );
     case "good":
@@ -515,17 +504,6 @@ function Face({ tier, full }: { tier: Tier | null; full: boolean }) {
           />
           {full ? (
             <g>
-              <text
-                x="70"
-                y="92"
-                textAnchor="middle"
-                fontFamily="inherit"
-                fontSize="22"
-                fontWeight="700"
-                fill={INK}
-              >
-                Ô
-              </text>
               <g fill="#fff6c2">
                 <polygon points="20,18 22,23 27,24 22,26 20,31 18,26 13,24 18,23" />
                 <polygon points="124,12 125.5,16 130,17 125.5,18.5 124,23 122.5,18.5 118,17 122.5,16" />
