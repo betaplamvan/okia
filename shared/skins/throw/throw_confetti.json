@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "throw_confetti",
+  "type": "throw",
+  "rarity": "legendary",
+  "name": {
+    "vi": "Pháo giấy",
+    "en": "Confetti Popper"
+  },
+  "description": {
+    "vi": "Pháo giấy ăn mừng, chỉ dân chơi vàng mới có.",
+    "en": "A celebration popper, gold tier only."
+  },
+  "throw": {
+    "icon": "confetti",
+    "splat": "confetti",
+    "color": "#ffd93d",
+    "color2": "#ff6fbc"
+  }
+}

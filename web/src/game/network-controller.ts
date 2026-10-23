@@ -11,6 +11,7 @@ import {
   type GameSession,
   type OnlineInfo,
 } from "./controller";
+import { type EmoteId, type Interaction, isEmoteId } from "./interactions";
 import { createGameForMap, DEFAULT_MAP_ID } from "./maps";
 import { applyMove, type GameState, type Player } from "./rules";
 import type { GameOver, GameStateOut, RankOut, RoomState, ServerMsg } from "./ws-types";
@@ -44,6 +45,7 @@ export class NetworkController implements GameController {
   private unsubscribe: (() => void) | null = null;
   private destroyed = false;
   private mySeat: Player | null = null;
+  private interactionListeners = new Set<(e: Interaction) => void>();
 
   constructor(
     private readonly ws: WsClient,
@@ -167,6 +169,15 @@ export class NetworkController implements GameController {
       case "opponent_status":
         if (m.roomId === this.roomId) this.emit({}, { opponentOnline: m.online });
         return;
+      case "emote":
+        // Server dội lại cho cả hai ghế (kể cả người gửi) → chỉ vẽ ở đây, không vẽ lúc bấm.
+        if (m.roomId === this.roomId && isEmoteId(m.id))
+          this.emitInteraction({ kind: "emote", by: m.by as Player, id: m.id });
+        return;
+      case "throw_out":
+        if (m.roomId === this.roomId)
+          this.emitInteraction({ kind: "throw", by: m.by as Player, id: m.id });
+        return;
       case "error":
         if (m.ref === "move") {
           // Hoàn tác nước lạc quan.
@@ -260,6 +271,32 @@ export class NetworkController implements GameController {
     this.ws.send({ t: "resign", roomId: this.roomId });
   }
 
+  // ---------- Tương tác (docs/08 — Đồ ném) ----------
+
+  emote(id: EmoteId): boolean {
+    if (!this.canInteract()) return false;
+    return this.ws.send({ t: "emote", roomId: this.roomId, id });
+  }
+
+  throwItem(id: string): boolean {
+    if (!this.canInteract()) return false;
+    return this.ws.send({ t: "throw", roomId: this.roomId, id });
+  }
+
+  subscribeInteractions(cb: (e: Interaction) => void): () => void {
+    this.interactionListeners.add(cb);
+    return () => this.interactionListeners.delete(cb);
+  }
+
+  private canInteract(): boolean {
+    const o = this.session.online;
+    return !this.session.result && this.mySeat !== null && !!o && o.status !== "over";
+  }
+
+  private emitInteraction(e: Interaction) {
+    for (const l of this.interactionListeners) l(e);
+  }
+
   /** Online không có "ván mới" tại chỗ; màn hình sẽ điều hướng về sảnh. */
   newGame(): void {}
 
@@ -280,5 +317,6 @@ export class NetworkController implements GameController {
     this.destroyed = true;
     this.unsubscribe?.();
     this.listeners.clear();
+    this.interactionListeners.clear();
   }
 }

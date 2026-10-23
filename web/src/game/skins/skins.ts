@@ -1,13 +1,14 @@
 /**
  * Catalog skin (docs/08, ADR-0013, ADR-0014). Nguồn: shared/skins/**.json → catalog.data.ts
  * (pnpm gen:skins); lúc chạy thay bằng catalog từ API (skin admin nhập, kể cả gói zip có file).
- * Hai loại: `pen` (nét vẽ + bộ tiếng ăn ô/combo + kiểu chữ COMBO + vụn) và `box` (hình ô đã ăn).
+ * Ba loại: `pen` (nét vẽ + bộ tiếng ăn ô/combo + kiểu chữ COMBO + vụn), `box` (hình ô đã ăn) và
+ * `throw` (đồ ném vào đối thủ trong trận, 2026-10-24 — sở hữu là dùng, không trang bị).
  * Năm bậc hiếm: trắng → xanh lá → xanh lam → tím → vàng. Giá theo bậc (api/app/skins/catalog.py).
  * Định dạng chuẩn: shared/skins/schema.json + SPEC.md.
  */
 import { SKIN_SOURCES } from "./catalog.data";
 
-export type SkinType = "pen" | "box";
+export type SkinType = "pen" | "box" | "throw";
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 export type ComboStyle = "sticker" | "ink" | "chalk" | "neon" | "sparkle" | "fire";
 /** Loại vụn; `image` = ảnh `particleImage` trong gói skin (nhuộm theo màu bút). */
@@ -128,17 +129,40 @@ export interface BoxSkin extends SkinBase {
   box: BoxParams;
 }
 
-export type SkinManifest = PenSkin | BoxSkin;
+/** Hình đồ ném vẽ sẵn (components/play/throw-art.tsx) hoặc `image` = ảnh `throw/<tên>` trong gói. */
+export type ThrowIconId =
+  "paper" | "tomato" | "egg" | "flower" | "slipper" | "cake" | "bomb" | "confetti" | "image";
+/** Hiệu ứng khi trúng chip đối thủ. */
+export type SplatKind = "splat" | "crack" | "explode" | "bounce" | "petals" | "confetti";
+
+export interface ThrowParams {
+  icon: ThrowIconId;
+  image?: string;
+  splat: SplatKind;
+  color?: string;
+  color2?: string;
+  /** Tên tiếng có sẵn (`throw`, `hit_<splat>`) hoặc `sfx/<tên>` trong gói. */
+  sfx?: { throw?: string; hit?: string };
+}
+
+export interface ThrowSkin extends SkinBase {
+  type: "throw";
+  throw: ThrowParams;
+}
+
+export type SkinManifest = PenSkin | BoxSkin | ThrowSkin;
 
 /** Bản biên dịch (seed). Lúc chạy, catalog thật từ API thay vào qua `registerSkins` (stores/catalog). */
 export const SKINS: readonly SkinManifest[] = SKIN_SOURCES;
 export const PENS: readonly PenSkin[] = SKINS.filter((s): s is PenSkin => s.type === "pen");
 export const BOXES: readonly BoxSkin[] = SKINS.filter((s): s is BoxSkin => s.type === "box");
+export const THROWS: readonly ThrowSkin[] = SKINS.filter((s): s is ThrowSkin => s.type === "throw");
 
 const BY_ID = new Map<string, SkinManifest>(SKINS.map((s) => [s.id, s]));
 
 export const DEFAULT_PEN: PenSkin = PENS.find((p) => p.default)!;
 export const DEFAULT_BOX: BoxSkin = BOXES.find((b) => b.default)!;
+export const DEFAULT_THROW: ThrowSkin = THROWS.find((t) => t.default)!;
 
 /**
  * Thay bảng tra bằng catalog từ API (admin thêm/sửa/tắt skin không cần deploy web). Skin default
@@ -155,9 +179,11 @@ export function registerSkins(list: readonly SkinManifest[]): boolean {
   return true;
 }
 
-/** Chuỗi là tham chiếu file trong gói (`sfx/…`, `box/…`, `particles/…`, `pen/…`)? */
+/** Chuỗi là tham chiếu file trong gói (`sfx/…`, `box/…`, `particles/…`, `pen/…`, `throw/…`)? */
 export function isAssetRef(ref: string | null | undefined): ref is string {
-  return typeof ref === "string" && /^(sfx|box|particles|pen)\/[a-z0-9_-]+\.[a-z0-9]+$/.test(ref);
+  return (
+    typeof ref === "string" && /^(sfx|box|particles|pen|throw)\/[a-z0-9_-]+\.[a-z0-9]+$/.test(ref)
+  );
 }
 
 /** URL của một file trong gói skin (blob cục bộ khi xem trước, hoặc `base` + đường dẫn); null nếu không
@@ -190,9 +216,13 @@ export function skinAssetUrls(skin: SkinManifest): { images: AssetUrl[]; sounds:
     add(images, skin.combo.particleImage);
     add(sounds, skin.sfx.capture);
     add(sounds, skin.sfx.combo);
-  } else {
+  } else if (skin.type === "box") {
     add(images, skin.box.image);
     add(images, skin.box.particleImage);
+  } else {
+    add(images, skin.throw.image);
+    add(sounds, skin.throw.sfx?.throw);
+    add(sounds, skin.throw.sfx?.hit);
   }
   return { images, sounds };
 }
@@ -213,6 +243,21 @@ export function penOf(id: string | null | undefined): PenSkin {
 export function boxOf(id: string | null | undefined): BoxSkin {
   const s = id ? BY_ID.get(id) : undefined;
   return s?.type === "box" ? s : DEFAULT_BOX;
+}
+/** Đồ ném theo id; không có (catalog cũ / id lạ) → món mặc định. */
+export function throwOf(id: string | null | undefined): ThrowSkin {
+  const s = id ? BY_ID.get(id) : undefined;
+  return s?.type === "throw" ? s : DEFAULT_THROW;
+}
+/** Mọi đồ ném trong catalog hiện hành (default trước, rồi theo bậc). */
+export function allThrows(): ThrowSkin[] {
+  return [...BY_ID.values()]
+    .filter((s): s is ThrowSkin => s.type === "throw")
+    .sort(
+      (a, b) =>
+        Number(!!b.default) - Number(!!a.default) ||
+        RARITIES.indexOf(a.rarity) - RARITIES.indexOf(b.rarity),
+    );
 }
 
 /** Hình thái của bút theo phía nhìn: nét của mình (`isMine`) tông lạnh, nét đối thủ tông nóng. */

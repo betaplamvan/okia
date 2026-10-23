@@ -37,9 +37,12 @@ def test_ban_chep_catalog_khop_shared() -> None:
 
 
 def test_catalog_hop_le() -> None:
-    """Seed chỉ còn hai skin default (ADR-0014): skin khác là tài nguyên nhập qua admin."""
+    """Seed: hai skin default bút / ô (ADR-0014; skin khác nhập qua admin) + bộ đồ ném khởi đầu
+    (2026-10-24: 8 món, throw_paper mặc định)."""
     seed = {m["id"] for m in catalog.seed_manifests()}
-    assert seed == {"pen_default", "box_default"}
+    assert {"pen_default", "box_default", "throw_paper", "throw_bomb"} <= seed
+    assert sum(m["type"] == "throw" for m in catalog.seed_manifests()) == 8
+    assert catalog.default_ids() == {"pen_default", "box_default", "throw_paper"}
     skins = catalog.all_skins()
     for s in skins.values():
         assert s.type in catalog.TYPES and s.rarity in catalog.RARITIES
@@ -63,7 +66,8 @@ async def test_mua_trang_bi_va_tu_choi(client: AsyncClient) -> None:
     r = await client.get("/me/skins", headers=bearer(tok))
     assert r.status_code == 200
     mine = r.json()
-    assert mine["owned"] == ["box_default", "pen_default"] and mine["canBuy"] is True
+    assert mine["owned"] == ["box_default", "pen_default", "throw_paper"]
+    assert mine["canBuy"] is True
 
     # Mua bút dạ (250 Ruột chì) → ví 450, kho có; mua lại → ALREADY_OWNED, ví không đổi.
     r = await client.post("/me/skins/pen_marker/buy", headers=bearer(tok))

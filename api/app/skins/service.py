@@ -19,7 +19,7 @@ async def owned_ids(db: AsyncSession, user_id: uuid.UUID) -> set[str]:
     """Skin sở hữu, luôn gồm các skin default."""
     res = await db.execute(select(Inventory.item_id).where(Inventory.user_id == user_id))
     ids = {r for r in res.scalars() if r in catalog.all_skins()}
-    ids.update(catalog.default_loadout().values())
+    ids.update(catalog.default_ids())
     return ids
 
 
@@ -29,7 +29,7 @@ async def loadout_of(db: AsyncSession, user_id: uuid.UUID) -> dict[str, str]:
     out = catalog.default_loadout()
     if row is None:
         return out
-    for t in catalog.TYPES:
+    for t in catalog.LOADOUT_TYPES:
         sid = getattr(row, t)
         s = catalog.get_skin(sid) if sid else None
         if s is not None and s.type == t:
@@ -46,7 +46,7 @@ async def loadouts_of(db: AsyncSession, user_ids: list[uuid.UUID]) -> dict[str, 
         lo = catalog.default_loadout()
         row = rows.get(uid)
         if row is not None:
-            for t in catalog.TYPES:
+            for t in catalog.LOADOUT_TYPES:
                 sid = getattr(row, t)
                 s = catalog.get_skin(sid) if sid else None
                 if s is not None and s.type == t:

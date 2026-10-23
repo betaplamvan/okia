@@ -18,7 +18,8 @@
           "resign": "#/definitions/Resign",
           "room_create": "#/definitions/RoomCreate",
           "room_join": "#/definitions/RoomJoin",
-          "room_leave": "#/definitions/RoomLeave"
+          "room_leave": "#/definitions/RoomLeave",
+          "throw": "#/definitions/Throw"
         },
         "propertyName": "t"
       },
@@ -54,6 +55,9 @@
           "$ref": "#/definitions/Emote"
         },
         {
+          "$ref": "#/definitions/Throw"
+        },
+        {
           "$ref": "#/definitions/Ping"
         },
         {
@@ -83,6 +87,7 @@
           "queue_status": "#/definitions/QueueStatus",
           "queued": "#/definitions/Queued",
           "room_state": "#/definitions/RoomState",
+          "throw_out": "#/definitions/ThrowOut",
           "welcome": "#/definitions/Welcome"
         },
         "propertyName": "t"
@@ -123,6 +128,9 @@
         },
         {
           "$ref": "#/definitions/EmoteOut"
+        },
+        {
+          "$ref": "#/definitions/ThrowOut"
         },
         {
           "$ref": "#/definitions/BotSay"
@@ -1411,6 +1419,65 @@
         "state"
       ],
       "title": "RoomState",
+      "type": "object"
+    },
+    "Throw": {
+      "description": "Ném đồ vào đối thủ (docs/08 — Đồ ném): `id` = skin loại throw mình sở hữu.",
+      "properties": {
+        "t": {
+          "const": "throw",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 48,
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "roomId",
+        "id"
+      ],
+      "title": "Throw",
+      "type": "object"
+    },
+    "ThrowOut": {
+      "properties": {
+        "t": {
+          "const": "throw_out",
+          "default": "throw_out",
+          "title": "T",
+          "type": "string"
+        },
+        "roomId": {
+          "title": "Roomid",
+          "type": "string"
+        },
+        "by": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "By",
+          "type": "integer"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "roomId",
+        "by",
+        "id"
+      ],
+      "title": "ThrowOut",
       "type": "object"
     },
     "Welcome": {

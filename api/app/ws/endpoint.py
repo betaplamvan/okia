@@ -9,7 +9,7 @@ import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
 
-from app.auth import security, service, ws_cache
+from app.auth import ratelimit, security, service, ws_cache
 from app.auth.deps import is_loopback, real_ip
 from app.config import get_settings
 from app.db import get_session_factory
@@ -222,11 +222,33 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
             await hub.publish(room.id, over)
 
         case m.Emote():
-            room = await rooms.load(redis, msg.room_id)
-            seat = room.seat_of(uid) if room else None
-            if seat is None:
-                raise AppError("ROOM_NOT_FOUND", 404)
-            await hub.publish(room.id, m.EmoteOut(room_id=room.id, by=seat, id=msg.id))  # type: ignore[arg-type]
+            if msg.id not in m.EMOTES:
+                raise AppError("BAD_MESSAGE", 400)
+            room = await _interact_room(redis, msg.room_id, uid)
+            await ratelimit.hit(redis, f"interact:{uid}", 1, 2)
+            await ratelimit.hit(redis, f"interact:m:{uid}", 15, 60)
+            seat = room.seat_of(uid)
+            assert seat is not None
+            await hub.publish(room.id, m.EmoteOut(room_id=room.id, by=seat, id=msg.id))
+
+        case m.Throw():
+            from app.skins import catalog
+            from app.skins import service as skins
+
+            skin = catalog.get_skin(msg.id)
+            if skin is None or skin.type != "throw":
+                raise AppError("UNKNOWN_ITEM", 404)
+            room = await _interact_room(redis, msg.room_id, uid)
+            if not skin.default:
+                async with get_session_factory()() as db:
+                    owned = await skins.owned_ids(db, uuid.UUID(uid))
+                if msg.id not in owned:
+                    raise AppError("NOT_OWNED", 403)
+            await ratelimit.hit(redis, f"interact:{uid}", 1, 2)
+            await ratelimit.hit(redis, f"interact:m:{uid}", 15, 60)
+            seat = room.seat_of(uid)
+            assert seat is not None
+            await hub.publish(room.id, m.ThrowOut(room_id=room.id, by=seat, id=msg.id))
 
         case m.Queue():
             if msg.mode != "ranked":
@@ -246,6 +268,16 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
         case m.MatchDecline():
             if not await mmw.decline(redis, hub, uid, "declined"):
                 raise AppError("MATCH_EXPIRED", 409)
+
+
+async def _interact_room(redis, room_id: str, user_id: str) -> rooms.Room:
+    """Phòng mà người này đang ngồi và ván chưa kết thúc — điều kiện để biểu cảm / ném đồ."""
+    room = await rooms.load(redis, room_id)
+    if room is None or room.seat_of(user_id) is None:
+        raise AppError("ROOM_NOT_FOUND", 404)
+    if room.status == "over":
+        raise AppError("GAME_OVER", 409)
+    return room
 
 
 async def _loadout(user_id: str) -> dict[str, str]:

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "throw_example",
+  "type": "throw",
+  "rarity": "rare",
+  "name": {
+    "vi": "Cục tẩy",
+    "en": "Eraser"
+  },
+  "description": {
+    "vi": "Cục tẩy hồng ném vào đối thủ, nảy bật ra. Gói mẫu có ảnh riêng.",
+    "en": "A pink eraser that bounces off the opponent. Template package with a custom image."
+  },
+  "author": "Ô Kìa",
+  "license": "CC0-1.0",
+  "throw": {
+    "icon": "image",
+    "image": "throw/eraser.svg",
+    "splat": "bounce",
+    "color": "#ff9fd0",
+    "color2": "#8ec5ff"
+  }
+}

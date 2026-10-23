@@ -2,6 +2,7 @@
 
 import { Box } from "@chakra-ui/react";
 import { useLocale } from "next-intl";
+import { ThrowIcon } from "@/components/play/throw-art";
 import {
   assetUrl,
   type BoxSkin,
@@ -31,13 +32,19 @@ export function SkinPreview({ skin, size = 120 }: { skin: SkinManifest; size?: n
       backgroundImage="linear-gradient(rgba(201,216,240,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(201,216,240,.6) 1px, transparent 1px)"
       backgroundSize="12px 12px"
     >
-      <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" aria-hidden="true">
-        {skin.type === "pen" ? (
-          <PenSample pen={skin} size={size} />
-        ) : (
-          <BoxSample box={skin} size={size} />
-        )}
-      </svg>
+      {skin.type === "throw" ? (
+        <Box display="flex" alignItems="center" justifyContent="center" w="full" h="full">
+          <ThrowIcon skin={skin} size={size * 0.62} imageUrl={assetUrl(skin, skin.throw.image)} />
+        </Box>
+      ) : (
+        <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" aria-hidden="true">
+          {skin.type === "pen" ? (
+            <PenSample pen={skin} size={size} />
+          ) : (
+            <BoxSample box={skin} size={size} />
+          )}
+        </svg>
+      )}
     </Box>
   );
 }

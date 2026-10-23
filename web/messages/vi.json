@@ -137,7 +137,11 @@
     "finalScore": "{you} – {bot}",
     "playAgain": "Chơi lại",
     "backHome": "Trang chủ",
-    "twoTapHint": "Chạm một lần để xem trước, chạm lần nữa để vẽ"
+    "twoTapHint": "Chạm một lần để xem trước, chạm lần nữa để vẽ",
+    "emote": "Biểu cảm",
+    "throwItem": "Ném {name}",
+    "cooldown": "Chờ {s} giây",
+    "moreItems": "Mua thêm đồ ném"
   },
   "NotFound": {
     "title": "Không tìm thấy trang",
@@ -439,7 +443,12 @@
     "cancel": "Để sau",
     "loadError": "Không tải được cửa hàng.",
     "filterAll": "Tất cả",
-    "onlyOwned": "Của tôi"
+    "onlyOwned": "Của tôi",
+    "throws": "Đồ ném",
+    "throwHint": "Ném vào chip đối thủ trong trận cho vui: chỉ hình và tiếng, không ảnh hưởng ván. Mua một lần, dùng mãi (có giãn cách 2 giây).",
+    "tryThrow": "Ném thử",
+    "throwTryHint": "Trong trận, bấm món đồ ở thanh dưới bàn là ném sang chip đối thủ.",
+    "ready": "Sẵn sàng ném"
   },
   "Nav": {
     "back": "Quay lại",
@@ -573,7 +582,8 @@
       "purge": "Xóa tất cả trừ mặc định",
       "confirmPurge": "Xóa mọi skin không phải mặc định (kể cả đang tắt)? Người sở hữu giữ quyền trong kho: nhập lại gói cùng id là có lại. Hãy xuất tất cả (.zip) trước.",
       "purged": "Đã xóa {n} skin.",
-      "previewReplace": "Thay toàn bộ catalog: xóa skin không có trong gói này (trừ mặc định)"
+      "previewReplace": "Thay toàn bộ catalog: xóa skin không có trong gói này (trừ mặc định)",
+      "throw": "Đồ ném"
     },
     "cfg": {
       "intro": "Mỗi thông số hiện giá trị đang áp dụng và mặc định; nhập giá trị mới rồi bấm Lưu (chỉ gửi những thông số đã đổi, ô đổi tô vàng). Có hiệu lực tối đa 15 giây sau khi Lưu.",

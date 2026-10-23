@@ -13,6 +13,7 @@ export interface OkiaWs {
     | Move
     | Resign
     | Emote
+    | Throw
     | Ping
     | ChatWatch
     | ChatUnwatch;
@@ -29,6 +30,7 @@ export interface OkiaWs {
     | GameOver
     | OpponentStatus
     | EmoteOut
+    | ThrowOut
     | BotSay
     | MatchReview
     | Error
@@ -83,6 +85,14 @@ export interface Resign {
 }
 export interface Emote {
   t: "emote";
+  roomId: string;
+  id: string;
+}
+/**
+ * Ném đồ vào đối thủ (docs/08 — Đồ ném): `id` = skin loại throw mình sở hữu.
+ */
+export interface Throw {
+  t: "throw";
   roomId: string;
   id: string;
 }
@@ -241,6 +251,12 @@ export interface OpponentStatus {
 }
 export interface EmoteOut {
   t: "emote";
+  roomId: string;
+  by: 0 | 1;
+  id: string;
+}
+export interface ThrowOut {
+  t: "throw_out";
   roomId: string;
   by: 0 | 1;
   id: string;

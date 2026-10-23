@@ -30,10 +30,12 @@ from app.models.admin import SkinRow
 
 log = logging.getLogger("okia.skins")
 
-SkinType = Literal["pen", "box"]
+SkinType = Literal["pen", "box", "throw"]
 Rarity = Literal["common", "uncommon", "rare", "epic", "legendary"]
 
-TYPES: tuple[SkinType, ...] = ("pen", "box")
+TYPES: tuple[SkinType, ...] = ("pen", "box", "throw")
+# Loại có ô "trang bị" (bảng loadouts). Đồ ném (throw, 2026-10-24) sở hữu là dùng, không trang bị.
+LOADOUT_TYPES: tuple[SkinType, ...] = ("pen", "box")
 RARITIES: tuple[Rarity, ...] = ("common", "uncommon", "rare", "epic", "legendary")
 DEFAULT_RARITY_PRICE: dict[str, dict[str, int]] = {
     "common": {"lead": 100},
@@ -124,7 +126,12 @@ def default_id(skin_type: SkinType) -> str:
 
 
 def default_loadout() -> dict[str, str]:
-    return {t: default_id(t) for t in TYPES}
+    return {t: default_id(t) for t in LOADOUT_TYPES}
+
+
+def default_ids() -> set[str]:
+    """Skin default mọi loại (ai cũng có, kể cả đồ ném mặc định)."""
+    return {default_id(t) for t in TYPES}
 
 
 def set_cache(manifests: list[dict[str, Any]]) -> None:

@@ -59,7 +59,8 @@ export function TryDialog({ skin, onClose }: Props) {
     // Skin chưa có trong catalog (xem trước gói ở admin): dùng thẳng manifest được truyền.
     if (!skin) return base;
     if (skin.type === "pen") return { ...base, pens: [skin, skin] as [PenSkin, PenSkin] };
-    return { ...base, boxes: [skin, skin] as [BoxSkin, BoxSkin] };
+    if (skin.type === "box") return { ...base, boxes: [skin, skin] as [BoxSkin, BoxSkin] };
+    return base; // đồ ném: thử ở ThrowTryDialog
   }, [skin, loadout]);
   useGameSounds(session, skins);
 

@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "throw_tomato",
+  "type": "throw",
+  "rarity": "common",
+  "name": {
+    "vi": "Cà chua",
+    "en": "Tomato"
+  },
+  "description": {
+    "vi": "Cà chua chín, trúng là toé đỏ cả chip.",
+    "en": "A ripe tomato; splatters red all over the chip."
+  },
+  "throw": {
+    "icon": "tomato",
+    "splat": "splat",
+    "color": "#e5321c",
+    "color2": "#ff6b4a"
+  }
+}

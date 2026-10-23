@@ -10,11 +10,23 @@ export type PlayerChipProps = {
   reverse?: boolean;
   /** Dòng phụ dưới tên (huy hiệu hạng ở trận xếp hạng). */
   sub?: React.ReactNode;
+  /** Ghế 0/1 — mốc `data-hud-seat` để lớp phủ tương tác (đồ ném, biểu cảm) tìm toạ độ chip. */
+  hudSeat?: number;
 };
 
-export function PlayerChip({ icon, name, score, tone, active, reverse, sub }: PlayerChipProps) {
+export function PlayerChip({
+  icon,
+  name,
+  score,
+  tone,
+  active,
+  reverse,
+  sub,
+  hudSeat,
+}: PlayerChipProps) {
   return (
     <HStack
+      data-hud-seat={hudSeat}
       flexDirection={reverse ? "row-reverse" : "row"}
       gap={2}
       bg="paper"

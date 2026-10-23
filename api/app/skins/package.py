@@ -30,12 +30,15 @@ MAX_ZIP = 3 * 1024 * 1024
 MAX_FILES = 24
 MAX_AUDIO = 400 * 1024
 MAX_IMAGE = 300 * 1024
-ASSET_RE = re.compile(r"^(sfx|box|particles|pen)/[a-z0-9_\-]{1,40}\.(webm|mp3|ogg|svg|png|webp)$")
+ASSET_RE = re.compile(
+    r"^(sfx|box|particles|pen|throw)/[a-z0-9_\-]{1,40}\.(webm|mp3|ogg|svg|png|webp)$"
+)
 DIR_EXTS = {
     "sfx": {"webm", "mp3", "ogg"},
     "box": {"svg", "png", "webp"},
     "particles": {"svg", "png", "webp"},
     "pen": {"svg", "png", "webp"},
+    "throw": {"svg", "png", "webp"},
 }
 MEDIA_TYPES = {
     "webm": "audio/webm",
@@ -58,6 +61,7 @@ REF_PATHS: tuple[tuple[str, str], ...] = (
     ("combo", "particleImage"),
     ("box", "image"),
     ("box", "particleImage"),
+    ("throw", "image"),
     ("sfx", "capture"),
     ("sfx", "combo"),
 )

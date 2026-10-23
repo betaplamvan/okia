@@ -97,3 +97,17 @@ Dấu ăn ô (`box`):
 - Code (JS, shader): engine chỉ nhận tham số và ảnh/âm thanh.
 - Giá, thứ tự hiển thị, bật/tắt: quản trị viên chỉnh trên trang admin.
 - Font, nhạc nền, skin bàn: chưa hỗ trợ (ADR-0014).
+
+## Đồ ném (`throw`, 2026-10-24)
+
+Loại thứ ba: vật phẩm ném vào chip đối thủ trong trận (chỉ hình + tiếng, không ảnh hưởng ván). Không
+"trang bị" — sở hữu là dùng được; mua trong Shop theo bậc hiếm như skin. Khối `throw`:
+
+| Trường | Ý nghĩa |
+|---|---|
+| `icon` | hình vẽ sẵn: paper · tomato · egg · flower · slipper · cake · bomb · confetti; hoặc `image` + `image: throw/<tên>.svg\|png\|webp` |
+| `splat` | hiệu ứng khi trúng: splat (bắn toé) · crack (nứt, chảy) · explode (nổ, rung chip) · bounce (nảy bật) · petals (cánh hoa) · confetti (pháo giấy) |
+| `color`, `color2` | màu vệt / hạt (mặc định theo icon) |
+| `sfx.throw`, `sfx.hit` | tên tiếng có sẵn (`throw`, `hit_<splat>`) hoặc `sfx/<tên>` trong gói |
+
+Thư mục file trong gói: thêm `throw/` (svg · png · webp). Mẫu: `_template/throw_example`.

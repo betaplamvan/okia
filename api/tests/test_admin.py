@@ -163,7 +163,8 @@ async def test_skin_them_sua_xoa_export_import(client: AsyncClient) -> None:
         )
         assert r.status_code == 200, r.text
         assert catalog.get_skin("pen_default") is not None
-        assert {s["id"] for s in r.json()} == {"pen_default", "box_default", sid}
+        # Skin default mỗi loại (kể cả throw_paper, 2026-10-24) không bị thay.
+        assert {s["id"] for s in r.json()} == {"pen_default", "box_default", "throw_paper", sid}
     finally:
         r = await client.delete(f"/admin/skins/{sid}", headers=admin)
         assert r.status_code in (200, 404)
@@ -184,12 +185,13 @@ async def test_xoa_tat_ca_tru_mac_dinh(client: AsyncClient) -> None:
     r = await client.post("/admin/skins/purge", headers=admin)
     assert r.status_code == 200 and r.json()["deleted"] >= 6
     ids = {s["id"] for s in (await client.get("/admin/skins", headers=admin)).json()}
-    assert ids == {"pen_default", "box_default"}
+    assert ids == {"pen_default", "box_default", "throw_paper"}
     assert catalog.get_skin("pen_marker") is None
     # Kho sở hữu giữ nguyên: nhập lại cùng id là có lại ngay.
     assert (await client.get("/me/skins", headers=user)).json()["owned"] == [
         "box_default",
         "pen_default",
+        "throw_paper",
     ]
     await install_test_skins(client)
     assert "pen_marker" in (await client.get("/me/skins", headers=user)).json()["owned"]

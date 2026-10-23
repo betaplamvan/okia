@@ -2,7 +2,7 @@
 
 Quyết định: [ADR-0013](adr/0013-skin-but-o-nam-bac-hiem.md) (2026-10-21; bổ sung cùng ngày: bút hai hình thái), [ADR-0014](adr/0014-goi-skin-zip-asset-ngoai.md) (2026-10-22: gói skin zip có ảnh + tiếng, nhập ở admin). **Đã làm:** catalog 22 skin, engine, shop `/shop`, mua/trang bị, loadout trong trận, gói skin. Code: `shared/skins/` (manifest, `schema.json`, `SPEC.md`, gói mẫu `_template/`), `web/src/game/skins/`, `web/src/game/renderer/board-renderer.ts` (hiệu ứng), `api/app/skins/` (catalog, gói `package.py`, kho, shop).
 
-## Hai loại skin
+## Hai loại skin (+ đồ ném)
 
 | Loại            | Ảnh hưởng                                                                                                                                                                                                                    | Skin hiện có                                                                                                                        |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -179,3 +179,12 @@ Nguồn lúc chạy là bảng `skins` (id, type, rarity, enabled, sort, manifes
 3. Xem trên `/shop` → Thử. Không cần seed DB hay upload asset.
 
 Chưa làm (giữ ở lộ trình): skin `board` (bàn đấu), rương/bộ sưu tập (ADR-0007), tủ trưng bày, skin `reward` theo mùa/sự kiện.
+
+## Đồ ném & biểu cảm trong trận (2026-10-24)
+
+Loại skin thứ ba **`throw`** (manifest: khối `throw` — xem `shared/skins/SPEC.md`): vật phẩm ném vào chip đối thủ, **chỉ hình + tiếng**, không ảnh hưởng ván; **mua một lần dùng mãi**, không "trang bị" (không có cột trong `loadouts`; `catalog.LOADOUT_TYPES` vẫn là pen/box, `catalog.TYPES` có thêm throw; `default_ids()` gồm `throw_paper`). Seed bộ khởi đầu 8 món (`shared/skins/throw/`): giấy vo (mặc định, miễn phí) · cà chua · trứng · bó hoa · dép · bánh kem · bom · pháo giấy — giá theo bậc hiếm như skin. Hình vẽ bằng SVG trong code (`components/play/throw-art.tsx`, nhuộm theo `color`/`color2`), hoặc `icon: image` + ảnh `throw/<tên>` trong gói. Tiếng: sprite `throw`, `hit_<splat>` (synth-sfx.mjs) hoặc file trong gói.
+
+- **Giao thức** ([04](04-giao-thuc-ws.md)): client `emote {roomId, id}` (id trong `EMOTES` cố định: hi gg lol wow cry angry think fire) và `throw {roomId, id}` (skin throw mình sở hữu; default ai cũng ném được). Server kiểm tra phòng (đang ngồi, chưa kết thúc), sở hữu (`NOT_OWNED`), giới hạn **1 lần / 2 giây, 15 lần / phút** (`RATE_LIMITED`), rồi dội `emote` / `throw_out {roomId, by, id}` cho **cả hai ghế** (client chỉ vẽ khi nhận dội lại, không vẽ lúc bấm).
+- **Web**: `InteractionBar` (nút biểu cảm popover + các món mình có, khoá 2 giây sau mỗi lần gửi, link Shop) trong ô điều khiển của màn chơi; `InteractionLayer` (lớp phủ fixed) đọc toạ độ chip qua `data-hud-seat` của `PlayerChip`: món bay từ chip người ném sang chip đối thủ 650 ms (xoay, nảy), rồi hiệu ứng trúng 1,4 s (bắn toé / nứt chảy / nổ "BÙM" / nảy / cánh hoa / pháo giấy) + chip rung (`.okia-hit`) + tiếng + rung máy; biểu cảm là bong bóng emoji trên chip 2,2 s. `prefers-reduced-motion` → bỏ đường bay. Nguồn tương tác là `GameController.subscribeInteractions` — `NetworkController` (dội từ server) và `LocalBotController` (chơi với máy: máy đáp lại bằng biểu cảm sau ~1 giây, `interactions.botReply`).
+- **Shop**: tab "Đồ ném", thẻ hiện hình; "Thử" mở `ThrowTryDialog` (hai chip giả + lớp phủ thật); đã có → "Sẵn sàng ném" (không có nút Trang bị). Admin có tab Đồ ném, gói zip nhập như skin (thư mục `throw/`).
+- Smoke: `pnpm smoke:interact`; test API: `tests/test_ws.py::test_bieu_cam_va_nem_do`.
