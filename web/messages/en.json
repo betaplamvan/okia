@@ -569,7 +569,7 @@
       "checkinRewardsHint": "At least one currency per day.",
       "resetDefaults": "Reset to defaults",
       "adsMock": "Mock ad zones (AD here)",
-      "adsMockHint": "Show \"AD here\" frames at the real ad positions: between home cards, end of Shop / Leaderboard, side rails on wide PC screens, and an interstitial on New game every 3 bot games. Non-supporters and admins see them. Takes effect after Save (within 15 s); players need to reload.",
+      "adsMockHint": "Show \"AD here\" frames at the real ad positions: home below the signboard and below the button row, end of Shop / Leaderboard, two rails at the edges of wide PC screens, and an interstitial on New game every 3 bot games. Non-supporters and admins see them. Takes effect after Save (within 15 s); players need to reload.",
       "adsMockOn": "On — click to turn off",
       "adsMockOff": "Off — click to turn on"
     },

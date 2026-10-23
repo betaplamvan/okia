@@ -57,6 +57,9 @@ export default function Home() {
           </Text>
         </Box>
 
+        {/* Ô quảng cáo ngay dưới bảng hiệu (docs/10): người ủng hộ không thấy. */}
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} name="home-top" />
+
         <PlayerPill />
 
         <SimpleGrid
@@ -79,8 +82,6 @@ export default function Home() {
             description={t("rankedSub")}
             href="/ranked"
           />
-          {/* Ô quảng cáo giữa hai hàng thẻ (docs/10): người ủng hộ không thấy. */}
-          <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} name="home" span />
           <ModeCard
             tone="pink"
             icon={<LuUsers />}
@@ -98,6 +99,9 @@ export default function Home() {
         </SimpleGrid>
 
         <HomeActions />
+
+        {/* Ô quảng cáo dưới cụm nút chức năng (docs/10). */}
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_PAGE} name="home-bottom" />
 
         <GuideArticle />
       </Stack>

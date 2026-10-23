@@ -159,7 +159,7 @@ export function AdSlot({ slot, name, minH = "90px", span, vertical }: SlotProps)
 }
 
 /**
- * Hai cột quảng cáo dọc hai bên lề trên màn PC rộng (≥ 1280 px, nội dung 896 px ở giữa). Không hiện
+ * Hai cột quảng cáo dọc sát hai mép màn hình PC rộng (≥ 1280 px, nội dung 896 px ở giữa). Không hiện
  * ở màn đang chơi (/play, /r/…) để không làm phân tâm.
  */
 export function AdRails() {
@@ -174,7 +174,7 @@ export function AdRails() {
       display={{ base: "none", xl: "block" }}
       position="fixed"
       top="140px"
-      {...{ [side]: "max(16px, calc(50% - 448px - 184px))" }}
+      {...{ [side]: "16px" }}
       w="160px"
       h="600px"
       zIndex={1}

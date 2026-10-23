@@ -569,7 +569,7 @@
       "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền.",
       "resetDefaults": "Về mặc định",
       "adsMock": "Vùng quảng cáo giả (AD here)",
-      "adsMockHint": "Hiện khung \"AD here\" ở đúng các vị trí quảng cáo: giữa các thẻ trang chủ, cuối Shop / Bảng xếp hạng, hai bên lề trên PC rộng, và lớp phủ xen khi bấm Ván mới sau mỗi 3 ván chơi với máy. Người chưa ủng hộ và admin thấy. Có hiệu lực sau khi Lưu (tối đa 15 giây); người chơi cần tải lại trang.",
+      "adsMockHint": "Hiện khung \"AD here\" ở đúng các vị trí quảng cáo: trang chủ dưới bảng hiệu và dưới cụm nút, cuối Shop / Bảng xếp hạng, hai cột sát mép màn PC rộng, và lớp phủ xen khi bấm Ván mới sau mỗi 3 ván chơi với máy. Người chưa ủng hộ và admin thấy. Có hiệu lực sau khi Lưu (tối đa 15 giây); người chơi cần tải lại trang.",
       "adsMockOn": "Đang bật — bấm để tắt",
       "adsMockOff": "Đang tắt — bấm để bật"
     },
