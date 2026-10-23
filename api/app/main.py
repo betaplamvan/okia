@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin.router import router as admin_router
 from app.auth.router import router as auth_router
+from app.chat.router import router as chat_router
 from app.config import Settings, get_settings
 from app.db import dispose_engine, get_db
 from app.donate.router import router as donate_router
@@ -93,6 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_error_handlers(app)
     app.include_router(auth_router)
     app.include_router(admin_router)
+    app.include_router(chat_router)
     app.include_router(donate_router)
     app.include_router(economy_router)
     app.include_router(rating_router)

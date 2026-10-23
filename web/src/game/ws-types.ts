@@ -13,7 +13,9 @@ export interface OkiaWs {
     | Move
     | Resign
     | Emote
-    | Ping;
+    | Ping
+    | ChatWatch
+    | ChatUnwatch;
   server:
     | Welcome
     | Queued
@@ -30,7 +32,8 @@ export interface OkiaWs {
     | BotSay
     | MatchReview
     | Error
-    | Pong;
+    | Pong
+    | ChatMsg;
 }
 export interface Queue {
   t: "queue";
@@ -85,6 +88,15 @@ export interface Emote {
 }
 export interface Ping {
   t: "ping";
+}
+/**
+ * Mở khung chat tổng → nhận `chat_msg` theo thời gian thực (docs/15).
+ */
+export interface ChatWatch {
+  t: "chat_watch";
+}
+export interface ChatUnwatch {
+  t: "chat_unwatch";
 }
 export interface Welcome {
   t: "welcome";
@@ -253,6 +265,33 @@ export interface Error {
 }
 export interface Pong {
   t: "pong";
+}
+export interface ChatMsg {
+  t: "chat_msg";
+  message: ChatMessageOut;
+}
+/**
+ * Một tin chat tổng (docs/15) — dùng chung cho REST `GET /chat/messages` và WS `chat_msg`.
+ */
+export interface ChatMessageOut {
+  id: number;
+  userId: string;
+  name: string;
+  avatarUrl?: string | null;
+  donor?: boolean;
+  rank?: RankOut | null;
+  body: string;
+  createdAt: string;
+  reply?: ChatReplyOut | null;
+}
+/**
+ * Trích dẫn tin được trả lời (rút gọn).
+ */
+export interface ChatReplyOut {
+  id: number;
+  name: string;
+  body: string;
+  deleted?: boolean;
 }
 
 // Union theo chiều gửi (docs/04).

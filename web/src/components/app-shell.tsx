@@ -4,6 +4,7 @@ import { AdRails, AdSenseScript, InterstitialHost } from "@/components/ads/adsen
 import { AudioProvider } from "@/components/audio-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { UserButton } from "@/components/auth/user-button";
+import { ChatHost } from "@/components/chat/chat-host";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { BackButton, PageBreadcrumb } from "@/components/page-nav";
 import { MatchmakingHost } from "@/components/ranked/matchmaking-host";
@@ -33,6 +34,8 @@ export function AppShell({ children }: AppShellProps) {
         <AdSenseScript />
         <AdRails />
         <InterstitialHost />
+        {/* Chat tổng (docs/15): bong bóng góc dưới phải, ẩn ở màn đang chơi. */}
+        <ChatHost />
       </Suspense>
       <Toaster />
       <Box as="header">

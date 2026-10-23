@@ -3,6 +3,7 @@
 Mỗi tiến trình giữ map room_id → các kết nối đang xem phòng đó; sự kiện phòng được publish lên
 kênh `room:{id}` và mọi tiến trình đang psubscribe `room:*` đẩy tới kết nối của mình.
 Kênh `user:{id}` gửi riêng cho một người (ghép trận: `matched`, `queue_status`).
+Kênh `chat:all` phát tin chat tổng (docs/15) tới mọi kết nối đang mở khung chat (`chat_watch`).
 Kênh `kick:{id}` (nội dung = mã đóng) đóng mọi kết nối của một người trên mọi tiến trình — dùng khi
 tài khoản đăng nhập nơi khác (docs/13 — Một phiên mỗi tài khoản).
 """
@@ -57,6 +58,8 @@ class Hub:
         self.by_user: dict[str, set[Connection]] = defaultdict(set)
         self.by_ip: dict[str, int] = defaultdict(int)
         self.conns: set[Connection] = set()
+        # Kết nối đang mở khung chat tổng.
+        self.chat: set[Connection] = set()
         self._task: asyncio.Task[None] | None = None
 
     # ----- vòng đời -----
@@ -93,7 +96,7 @@ class Hub:
 
     async def _listen(self) -> None:
         pubsub = self.redis.pubsub()
-        await pubsub.psubscribe("room:*", "user:*", "kick:*")
+        await pubsub.psubscribe("room:*", "user:*", "kick:*", "chat:*")
         try:
             async for item in pubsub.listen():
                 if item.get("type") != "pmessage":
@@ -104,8 +107,12 @@ class Hub:
                 if kind == "kick":
                     await self._close_user(target, int(data))
                     continue
-                targets = self.by_room if kind == "room" else self.by_user
-                for conn in list(targets.get(target, ())):
+                if kind == "chat":
+                    receivers: list[Connection] = list(self.chat)
+                else:
+                    targets = self.by_room if kind == "room" else self.by_user
+                    receivers = list(targets.get(target, ()))
+                for conn in receivers:
                     try:
                         await conn.ws.send_text(data)
                     except Exception:  # noqa: BLE001
@@ -130,6 +137,7 @@ class Hub:
         if conn not in self.conns:
             return
         self.conns.discard(conn)
+        self.chat.discard(conn)
         if conn.ip:
             self.by_ip[conn.ip] -= 1
             if self.by_ip[conn.ip] <= 0:
@@ -153,6 +161,12 @@ class Hub:
             s.discard(conn)
             if not s:
                 del self.by_room[room_id]
+
+    def watch_chat(self, conn: Connection) -> None:
+        self.chat.add(conn)
+
+    def unwatch_chat(self, conn: Connection) -> None:
+        self.chat.discard(conn)
 
     async def publish(self, room_id: str, msg: m.Msg) -> None:
         await self.redis.publish(f"room:{room_id}", m.dump(msg))

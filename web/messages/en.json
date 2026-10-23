@@ -654,5 +654,26 @@
     "interstitialHint": "An ad between games every {n} games. Support Ô Kìa to turn ads off forever.",
     "skipIn": "Skip in {s}s",
     "skip": "Skip"
+  },
+  "Chat": {
+    "title": "Global chat",
+    "open": "Open global chat",
+    "close": "Close chat",
+    "expand": "Expand",
+    "shrink": "Shrink",
+    "online": "{n} online",
+    "unread": "{n} new messages",
+    "loadOlder": "Load older messages",
+    "empty": "No messages yet. Say hi to everyone!",
+    "loadError": "Couldn't load messages.",
+    "placeholder": "Say something…",
+    "send": "Send",
+    "reply": "Reply",
+    "replyingTo": "Replying to {name}:",
+    "cancelReply": "Cancel reply",
+    "deleted": "Message deleted",
+    "donor": "Ô Kìa supporter",
+    "guestLocked": "Sign in with Google to chat with everyone.",
+    "signIn": "Sign in"
   }
 }

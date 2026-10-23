@@ -43,7 +43,10 @@
     "BAD_SKIN": "Invalid skin: {detail}",
     "SKIN_DEFAULT_PROTECTED": "Default skins cannot be deleted or disabled.",
     "BAD_CONFIG_KEY": "Unknown setting.",
-    "BAD_CONFIG_VALUE": "Invalid setting value."
+    "BAD_CONFIG_VALUE": "Invalid setting value.",
+    "CHAT_EMPTY": "The message is empty.",
+    "CHAT_TOO_LONG": "Message too long (max {max} characters).",
+    "CHAT_DUPLICATE": "You just sent that exact message."
   },
   "currency": {
     "lead": "Lead",

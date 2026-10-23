@@ -86,6 +86,16 @@ class Ping(Msg):
     t: Literal["ping"]
 
 
+class ChatWatch(Msg):
+    """Mở khung chat tổng → nhận `chat_msg` theo thời gian thực (docs/15)."""
+
+    t: Literal["chat_watch"]
+
+
+class ChatUnwatch(Msg):
+    t: Literal["chat_unwatch"]
+
+
 ClientMsg = Annotated[
     Queue
     | QueueCancel
@@ -97,7 +107,9 @@ ClientMsg = Annotated[
     | Move
     | Resign
     | Emote
-    | Ping,
+    | Ping
+    | ChatWatch
+    | ChatUnwatch,
     Field(discriminator="t"),
 ]
 client_adapter: TypeAdapter[ClientMsg] = TypeAdapter(ClientMsg)
@@ -287,6 +299,36 @@ class Pong(Msg):
     t: Literal["pong"] = "pong"
 
 
+class ChatReplyOut(Msg):
+    """Trích dẫn tin được trả lời (rút gọn)."""
+
+    id: int
+    name: str
+    body: str
+    deleted: bool = False
+
+
+class ChatMessageOut(Msg):
+    """Một tin chat tổng (docs/15) — dùng chung cho REST `GET /chat/messages` và WS `chat_msg`."""
+
+    id: int
+    user_id: str
+    name: str
+    avatar_url: str | None = None
+    # Đã ủng hộ (Trống Đồng Tri Ân) — hiện huy hiệu nhỏ cạnh tên.
+    donor: bool = False
+    # Hạng mùa hiện tại (None = chưa xong phân hạng).
+    rank: RankOut | None = None
+    body: str
+    created_at: str
+    reply: ChatReplyOut | None = None
+
+
+class ChatMsg(Msg):
+    t: Literal["chat_msg"] = "chat_msg"
+    message: ChatMessageOut
+
+
 ServerMsg = Annotated[
     Welcome
     | Queued
@@ -303,7 +345,8 @@ ServerMsg = Annotated[
     | BotSay
     | MatchReview
     | Error
-    | Pong,
+    | Pong
+    | ChatMsg,
     Field(discriminator="t"),
 ]
 server_adapter: TypeAdapter[ServerMsg] = TypeAdapter(ServerMsg)

@@ -83,7 +83,8 @@ function SearchPill({ since, onCancel }: { since: number | null; onCancel: () =>
   return (
     <Box
       position="fixed"
-      right={{ base: 3, md: 5 }}
+      // Bên trái bong bóng chat tổng (56/64 px ở góc dưới phải).
+      right={{ base: "80px", md: "100px" }}
       bottom={{ base: 3, md: 5 }}
       zIndex="toast"
       layerStyle="sticker"
@@ -91,7 +92,7 @@ function SearchPill({ since, onCancel }: { since: number | null; onCancel: () =>
       color="ink"
       px={3}
       py={2}
-      maxW="calc(100vw - 24px)"
+      maxW="calc(100vw - 92px)"
       data-testid="search-pill"
     >
       <HStack gap={3}>
