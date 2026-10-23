@@ -1,6 +1,7 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/stores/auth";
@@ -18,17 +19,22 @@ declare global {
   }
 }
 
-/** Dùng hook này ở nơi đặt ô: true = người này có quảng cáo. */
-export function useAdsEnabled(): boolean {
+/**
+ * Người này có quảng cáo không. `real`: AdSense thật (có mã, chưa ủng hộ); `mock`: vùng giả "AD here"
+ * (thông số admin ads_mock, để thử bố cục khi chưa được duyệt) — người đã ủng hộ không thấy cả hai.
+ * Chưa biết người dùng (đang boot) → chưa hiện, tránh nháy quảng cáo với người đã ủng hộ.
+ */
+export function useAdsEnabled(): { real: boolean; mock: boolean } {
   const user = useAuth((s) => s.user);
-  // Chưa biết người dùng (đang boot) → chưa hiện, tránh nháy quảng cáo với người đã ủng hộ.
-  return !!ADSENSE_CLIENT && !!user && !user.adFree;
+  const adsMock = useAuth((s) => s.site.adsMock);
+  const eligible = !!user && !user.adFree;
+  return { real: eligible && !!ADSENSE_CLIENT, mock: eligible && adsMock };
 }
 
 /** Nạp script AdSense một lần (AppShell), sau khi trang tương tác được. */
 export function AdSenseScript() {
-  const enabled = useAdsEnabled();
-  if (!enabled) return null;
+  const { real } = useAdsEnabled();
+  if (!real) return null;
   return (
     <Script
       id="adsense"
@@ -41,26 +47,51 @@ export function AdSenseScript() {
 }
 
 type SlotProps = {
-  /** data-ad-slot của đơn vị quảng cáo tạo trong AdSense; trống → không render. */
+  /** data-ad-slot của đơn vị quảng cáo tạo trong AdSense; trống → không render ô thật. */
   slot: string | undefined;
+  /** Tên vị trí (hiện trong vùng giả). */
+  name: string;
   /** Chiều cao tối thiểu để bố cục không nhảy khi quảng cáo tải. */
   minH?: string;
 };
 
 /** Một ô quảng cáo hiển thị (responsive). Không đặt gần bàn cờ đang chơi. */
-export function AdSlot({ slot, minH = "90px" }: SlotProps) {
-  const enabled = useAdsEnabled();
+export function AdSlot({ slot, name, minH = "90px" }: SlotProps) {
+  const { real, mock } = useAdsEnabled();
+  const t = useTranslations("Ads");
+  const active = real && !!slot;
   const pushed = useRef(false);
   useEffect(() => {
-    if (!enabled || !slot || pushed.current) return;
+    if (!active || pushed.current) return;
     pushed.current = true;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch {
       /* script chưa nạp / bị chặn → ô trống */
     }
-  }, [enabled, slot]);
-  if (!enabled || !slot) return null;
+  }, [active]);
+  if (!active && mock) {
+    return (
+      <Box
+        w="full"
+        minH={minH}
+        border="2px dashed"
+        borderColor="cream"
+        borderRadius="lg"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        color="cream"
+        fontFamily="hand"
+        fontWeight="700"
+        opacity={0.85}
+        data-testid="ad-mock"
+      >
+        {t("mock", { name })}
+      </Box>
+    );
+  }
+  if (!active) return null;
   return (
     <Box w="full" minH={minH} overflow="hidden" data-testid="ad-slot">
       <ins

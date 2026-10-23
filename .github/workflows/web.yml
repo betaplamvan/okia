@@ -57,6 +57,7 @@ jobs:
           ws-url: ${{ vars.NEXT_PUBLIC_WS_URL }}
           adsense-client: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
           adsense-slot-home: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_HOME }}
+          adsense-slot-page: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_PAGE }}
 
   build-fallback:
     name: Build (minisforum, dự phòng)
@@ -81,6 +82,7 @@ jobs:
           ws-url: ${{ vars.NEXT_PUBLIC_WS_URL }}
           adsense-client: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
           adsense-slot-home: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_HOME }}
+          adsense-slot-page: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_PAGE }}
 
   deploy:
     name: Deploy (minisforum)

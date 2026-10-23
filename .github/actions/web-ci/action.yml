@@ -22,6 +22,10 @@ inputs:
     description: NEXT_PUBLIC_ADSENSE_SLOT_HOME (data-ad-slot ô trang chủ; rỗng → không đặt ô)
     required: false
     default: ""
+  adsense-slot-page:
+    description: NEXT_PUBLIC_ADSENSE_SLOT_PAGE (data-ad-slot ô cuối trang Shop / Bảng xếp hạng)
+    required: false
+    default: ""
   ws-url:
     description: NEXT_PUBLIC_WS_URL (rỗng → suy ra từ API URL)
     default: ""
@@ -106,5 +110,6 @@ runs:
           NEXT_PUBLIC_WS_URL=${{ inputs.ws-url }}
           NEXT_PUBLIC_ADSENSE_CLIENT=${{ inputs.adsense-client }}
           NEXT_PUBLIC_ADSENSE_SLOT_HOME=${{ inputs.adsense-slot-home }}
+          NEXT_PUBLIC_ADSENSE_SLOT_PAGE=${{ inputs.adsense-slot-page }}
         cache-from: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=web' || '' }}
         cache-to: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=web,mode=max' || '' }}

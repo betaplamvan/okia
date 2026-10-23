@@ -1,6 +1,8 @@
 "use client";
 
+import { AdSlot } from "@/components/ads/adsense";
 import {
+  Box,
   Button,
   CloseButton,
   Container,
@@ -213,6 +215,10 @@ export function ShopScreen() {
           </Dialog.Positioner>
         </Portal>
       </Dialog.Root>
+      {/* Ô quảng cáo cuối trang (docs/10): ngoài màn chơi; người ủng hộ không thấy. */}
+      <Box mt={4}>
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_PAGE} name="shop" />
+      </Box>
     </Container>
   );
 }

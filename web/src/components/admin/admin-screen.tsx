@@ -245,6 +245,17 @@ function ConfigTab() {
           </Button>
         </HStack>
       </Field>
+      <Field label={t("cfg.adsMock")} hint={t("cfg.adsMockHint")}>
+        <Button
+          size="sm"
+          variant="sticker"
+          bg={draft.ads_mock ? "sun" : "paper"}
+          onClick={() => setDraft({ ...draft, ads_mock: !draft.ads_mock })}
+          data-testid="cfg-ads-mock"
+        >
+          {draft.ads_mock ? t("cfg.adsMockOn") : t("cfg.adsMockOff")}
+        </Button>
+      </Field>
       <Field label={t("cfg.rarityPrice")} hint={t("cfg.rarityPriceHint")}>
         <Stack gap={1}>
           {RARITIES.map((r) => (

@@ -36,6 +36,7 @@
     "smoke:skin": "node scripts/smoke-skin-package.mjs",
     "smoke:skin-purge": "node scripts/smoke-skin-purge.mjs",
     "smoke:donate": "node scripts/smoke-donate.mjs",
+    "smoke:ads": "node scripts/smoke-ads.mjs",
     "smoke:bot": "node scripts/smoke-bot.mjs"
   },
   "dependencies": {

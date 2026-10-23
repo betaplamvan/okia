@@ -1,6 +1,7 @@
 "use client";
 
-import { Avatar, Button, Container, Heading, HStack, Stack, Text } from "@chakra-ui/react";
+import { Avatar, Box, Button, Container, Heading, HStack, Stack, Text } from "@chakra-ui/react";
+import { AdSlot } from "@/components/ads/adsense";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { LuRefreshCw, LuSwords } from "react-icons/lu";
@@ -123,6 +124,10 @@ export function Leaderboard() {
           </Button>
         </HStack>
       </Stack>
+      {/* Ô quảng cáo cuối trang (docs/10): ngoài màn chơi; người ủng hộ không thấy. */}
+      <Box mt={4}>
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_PAGE} name="leaderboard" />
+      </Box>
     </Container>
   );
 }

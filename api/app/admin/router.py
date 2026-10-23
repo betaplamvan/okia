@@ -8,6 +8,7 @@
 - POST /admin/users/{id}/ban             khóa tới ngày (days) / mở khóa (null); thu hồi phiên,
                                          ngắt WS
 - PATCH /admin/users/{id}                đổi tên hiển thị
+- POST  /admin/users/{id}/ads            bật / tắt quảng cáo (ad_free) cho một người
 - GET  /admin/skins · PATCH /admin/skins/{id} (metadata) · PUT (manifest JSON) · DELETE
 - GET  /admin/skins/{id}/export (manifest JSON) · GET /admin/skins/{id}/package (zip gói)
 - POST /admin/skins/purge (xóa mọi skin không-default; sở hữu giữ nguyên)
@@ -45,6 +46,7 @@ from app.matchmaking import pending as mmp
 from app.matchmaking import queue as mmq
 from app.models import Inventory, Match, Rating, User, Wallet
 from app.models.admin import SkinRow
+from app.models.donate import Donation
 from app.rating import service as rating
 from app.skins import catalog, package
 
@@ -130,6 +132,9 @@ class AdminUserOut(CamelModel):
     flower: int
     points: int | None = None
     games: int | None = None
+    # Ủng hộ (docs/10 — Donate): không quảng cáo vĩnh viễn + Trống Đồng; số giao dịch có mã.
+    ad_free: bool = False
+    donations: int = 0
 
 
 class AdminMatchOut(CamelModel):
@@ -156,6 +161,9 @@ class AdminUserDetail(AdminUserOut):
 
 async def _user_out(db: AsyncSession, u: User, r: Rating | None = None) -> AdminUserOut:
     w = (await db.execute(select(Wallet).where(Wallet.user_id == u.id))).scalar_one_or_none()
+    donations = (
+        await db.execute(select(func.count()).select_from(Donation).where(Donation.user_id == u.id))
+    ).scalar_one()
     return AdminUserOut(
         id=u.id,
         display_name=u.display_name,
@@ -171,6 +179,8 @@ async def _user_out(db: AsyncSession, u: User, r: Rating | None = None) -> Admin
         flower=w.flower if w else 0,
         points=r.points if r else None,
         games=r.games if r else None,
+        ad_free=u.ad_free_at is not None,
+        donations=int(donations),
     )
 
 
@@ -329,6 +339,23 @@ async def ban(user_id: uuid.UUID, body: BanIn, db: Db, redis: Rd) -> AdminUserOu
     await ws_cache.invalidate(redis, u.id)
     if body.days is not None:
         await redis.publish(f"kick:{u.id}", "4401")
+    return await _user_out(db, u)
+
+
+class AdsIn(CamelModel):
+    ad_free: bool
+
+
+@router.post("/users/{user_id}/ads", response_model=AdminUserOut)
+async def user_ads(user_id: uuid.UUID, body: AdsIn, db: Db) -> AdminUserOut:
+    """Bật / tắt quảng cáo cho một người (docs/10): ad_free = true → không quảng cáo vĩnh viễn +
+    Trống Đồng như đã ủng hộ; false → thấy quảng cáo lại (cẩn thận với người đã ủng hộ thật)."""
+    u = await _load_user(db, user_id)
+    if body.ad_free and u.ad_free_at is None:
+        u.ad_free_at = datetime.now(UTC)
+    elif not body.ad_free:
+        u.ad_free_at = None
+    await db.commit()
     return await _user_out(db, u)
 
 

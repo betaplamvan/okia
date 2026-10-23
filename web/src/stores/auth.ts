@@ -22,6 +22,7 @@ import {
   type RewardOut,
   type TokenOut,
   type User,
+  type SiteConfig,
 } from "@/lib/api";
 
 const DEVICE_KEY = "okia:device";
@@ -38,6 +39,8 @@ type AuthState = {
   status: "idle" | "loading" | "ready" | "offline";
   user: User | null;
   accessToken: string | null;
+  /** Thông số public (GET /site): vùng quảng cáo giả đang bật? */
+  site: SiteConfig;
   expiresAt: number;
   locale: string;
   profileOpen: boolean;
@@ -118,6 +121,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   status: "idle",
   user: null,
   accessToken: null,
+  site: { adsMock: false },
   expiresAt: 0,
   locale: "vi",
   profileOpen: false,
@@ -146,6 +150,9 @@ export const useAuth = create<AuthState>()((set, get) => ({
     if (bootPromise) return bootPromise;
     bootPromise = (async () => {
       set({ status: "loading" });
+      void api<SiteConfig>("/site", { locale })
+        .then((site) => set({ site }))
+        .catch(() => {});
       // Catalog skin thật (DB) — không chặn đăng nhập; lỗi thì dùng bản biên dịch.
       void api<{ manifest: SkinManifest }[]>("/skins", { locale })
         .then((list) => useCatalog.getState().setCatalog(list.map((s) => s.manifest)))

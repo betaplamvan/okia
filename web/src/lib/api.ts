@@ -138,6 +138,9 @@ export type AdminUser = {
   flower: number;
   points: number | null;
   games: number | null;
+  /** Không quảng cáo (đã ủng hộ hoặc admin bật) + số giao dịch ủng hộ có mã tài khoản. */
+  adFree: boolean;
+  donations: number;
 };
 
 export type AdminUserPage = { items: AdminUser[]; total: number; limit: number; offset: number };
@@ -209,7 +212,11 @@ export type AdminConfigValues = {
   rarity_price: Record<string, Record<string, number>>;
   checkin_rewards: Record<string, number>[];
   mm_bot_after_seconds: number | null;
+  ads_mock: boolean;
 };
+
+/** GET /site — thông số public lúc boot (docs/10 — Quảng cáo). */
+export type SiteConfig = { adsMock: boolean };
 
 export type AdminConfigOut = { values: AdminConfigValues; defaults: AdminConfigValues };
 

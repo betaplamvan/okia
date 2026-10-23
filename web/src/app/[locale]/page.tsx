@@ -98,7 +98,7 @@ export default function Home() {
         <HomeActions />
 
         {/* Ô quảng cáo trang chủ (docs/10): dưới các thẻ chế độ, xa bàn cờ; người ủng hộ không thấy. */}
-        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} />
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} name="home" />
 
         <GuideArticle />
       </Stack>

@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.admin import config as appconfig
 from app.auth.deps import admin_user, optional_user
 from app.auth.schemas import CamelModel
 from app.config import get_settings
@@ -54,6 +55,17 @@ class DonateOut(CamelModel):
     my_code: str | None
     supporters: list[SupporterOut]
     count: int
+
+
+class SiteOut(CamelModel):
+    # Vùng quảng cáo giả "AD here" đang bật (thông số admin ads_mock).
+    ads_mock: bool
+
+
+@router.get("/site", response_model=SiteOut)
+async def site_info() -> SiteOut:
+    """Thông số public cho client lúc boot (docs/10 — Quảng cáo)."""
+    return SiteOut(ads_mock=bool(appconfig.get("ads_mock")))
 
 
 @router.get("/donate", response_model=DonateOut)

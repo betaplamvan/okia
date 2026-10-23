@@ -67,7 +67,7 @@
     "benefitsTitle": "Vì sao nên chơi?",
     "benefit1": "Một ván 3×3 chỉ mất một phút, vừa đủ cho giờ ra chơi.",
     "benefit2": "Luật đơn giản nhưng chiến thuật sâu, càng chơi càng thấy hay.",
-    "benefit3": "Hoàn toàn miễn phí, không quảng cáo, không mua đồ để thắng.",
+    "benefit3": "Hoàn toàn miễn phí, không mua đồ để thắng.",
     "ctaLine": "Sẵn sàng vẽ nét đầu tiên chưa?",
     "cta": "Chơi ngay"
   },
@@ -80,7 +80,7 @@
   "About": {
     "title": "Về Ô Kìa",
     "p1": "Ô Kìa là dự án cá nhân, làm vì nhớ những trang vở ô li bị vẽ kín ô vuông thời đi học. Mục tiêu rất đơn giản: đưa trò ăn ô lên web sao cho mở link là chơi được, chơi với máy hay với bạn bè đều mượt và \"đã tay\".",
-    "p2": "Game hoàn toàn miễn phí. Mọi vật phẩm trong game chỉ để trang trí và đều kiếm được bằng cách chơi; không có cổng nạp tiền, không quảng cáo, không trả tiền để thắng.",
+    "p2": "Game hoàn toàn miễn phí. Mọi vật phẩm trong game chỉ để trang trí và đều kiếm được bằng cách chơi; không có cổng nạp tiền, không trả tiền để thắng. Ô Kìa hiển thị một ít quảng cáo ngoài màn chơi để trả tiền máy chủ; tài khoản đã ủng hộ không thấy quảng cáo.",
     "p3": "Nếu bạn thích Ô Kìa, hãy rủ thêm một người bạn vào chơi. Đó là cách ủng hộ tốt nhất."
   },
   "Privacy": {
@@ -496,7 +496,18 @@
       "prev": "Trước",
       "next": "Sau",
       "notePlaceholder": "Lý do (ví dụ: đền bù lỗi ngày 22/10)",
-      "grantPreview": "Sẽ áp dụng: {lead} Ruột chì, {flower} Hoa điểm tốt."
+      "grantPreview": "Sẽ áp dụng: {lead} Ruột chì, {flower} Hoa điểm tốt.",
+      "donorBadge": "Đã ủng hộ ×{n}",
+      "adFreeBadge": "Không quảng cáo",
+      "adsField": "Quảng cáo",
+      "adsHintDonor": "Đã ủng hộ {n} lần → không quảng cáo vĩnh viễn, có Trống Đồng Tri Ân. Bật lại quảng cáo cho người này là sai cam kết.",
+      "adsHintManual": "Không quảng cáo do admin bật tay (chưa có giao dịch ủng hộ).",
+      "adsHintNormal": "Đang thấy quảng cáo (chưa ủng hộ). Tắt quảng cáo = như đã ủng hộ: có Trống Đồng trong hồ sơ.",
+      "adsTurnOff": "Tắt quảng cáo cho người này",
+      "adsTurnOn": "Bật lại quảng cáo",
+      "adsConfirmOn": "Người này đã ủng hộ thật. Bật lại quảng cáo sẽ thu hồi quyền không quảng cáo và Trống Đồng. Chắc chắn?",
+      "adsNowOff": "Đã tắt quảng cáo cho người này.",
+      "adsNowOn": "Đã bật lại quảng cáo."
     },
     "skins": {
       "export": "Xuất tất cả (.zip)",
@@ -556,7 +567,11 @@
       "rarityPriceHint": "Ruột chì hoặc Hoa điểm tốt (hoặc cả hai). Áp dụng ngay cho shop.",
       "checkinRewards": "Thưởng điểm danh 7 ngày",
       "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền.",
-      "resetDefaults": "Về mặc định"
+      "resetDefaults": "Về mặc định",
+      "adsMock": "Vùng quảng cáo giả (AD here)",
+      "adsMockHint": "Hiện khung \"AD here\" ở đúng các vị trí quảng cáo (trang chủ, Shop, Bảng xếp hạng) để thử trải nghiệm khi AdSense chưa duyệt. Người đã ủng hộ vẫn không thấy. Có hiệu lực sau khi Lưu, tối đa 15 giây trên mọi tiến trình; người chơi cần tải lại trang.",
+      "adsMockOn": "Đang bật — bấm để tắt",
+      "adsMockOff": "Đang tắt — bấm để bật"
     },
     "cancel": "Hủy",
     "donations": {
@@ -614,5 +629,8 @@
     "legal": "Khoản ủng hộ là tự nguyện và không hoàn lại; không hiện số tiền của từng người.",
     "copied": "Đã chép {what}.",
     "copyFailed": "Không chép được, hãy chọn và sao chép tay."
+  },
+  "Ads": {
+    "mock": "AD here · {name}"
   }
 }

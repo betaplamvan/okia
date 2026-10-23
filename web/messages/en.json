@@ -67,7 +67,7 @@
     "benefitsTitle": "Why play?",
     "benefit1": "A 3×3 game takes one minute, perfect for a short break.",
     "benefit2": "Simple rules, deep strategy — it gets better the more you play.",
-    "benefit3": "Completely free, no ads, nothing to buy to win.",
+    "benefit3": "Completely free, nothing to buy to win.",
     "ctaLine": "Ready to draw the first line?",
     "cta": "Play now"
   },
@@ -80,7 +80,7 @@
   "About": {
     "title": "About Ô Kìa",
     "p1": "Ô Kìa is a personal project born from nostalgia for grid-paper notebooks covered in little squares. The goal is simple: bring the box-capturing game to the web so that opening a link is enough to play, smoothly and satisfyingly, against the bot or with friends.",
-    "p2": "The game is completely free. Every item is cosmetic and earned by playing; there is no top-up, no ads and no paying to win.",
+    "p2": "The game is completely free. Every item is cosmetic and earned by playing; there is no top-up and no paying to win. Ô Kìa shows a few ads outside of matches to pay for the server; accounts that have supported see no ads.",
     "p3": "If you enjoy Ô Kìa, invite one more friend to play. That is the best support we could ask for."
   },
   "Privacy": {
@@ -496,7 +496,18 @@
       "prev": "Prev",
       "next": "Next",
       "notePlaceholder": "Reason (e.g. compensation for the Oct 22 outage)",
-      "grantPreview": "Will apply: {lead} lead, {flower} flowers."
+      "grantPreview": "Will apply: {lead} lead, {flower} flowers.",
+      "donorBadge": "Supported ×{n}",
+      "adFreeBadge": "Ad-free",
+      "adsField": "Ads",
+      "adsHintDonor": "Supported {n} times → ad-free forever with the Bronze Drum. Turning ads back on breaks that promise.",
+      "adsHintManual": "Ad-free set manually by admin (no donation on record).",
+      "adsHintNormal": "Sees ads (has not supported). Turning ads off = treated as a supporter: Bronze Drum in profile.",
+      "adsTurnOff": "Turn ads off for this user",
+      "adsTurnOn": "Turn ads back on",
+      "adsConfirmOn": "This user really supported. Turning ads back on revokes ad-free status and the Bronze Drum. Sure?",
+      "adsNowOff": "Ads turned off for this user.",
+      "adsNowOn": "Ads turned back on."
     },
     "skins": {
       "export": "Export all (.zip)",
@@ -556,7 +567,11 @@
       "rarityPriceHint": "Lead or flowers (or both). Applies to the shop immediately.",
       "checkinRewards": "7-day check-in rewards",
       "checkinRewardsHint": "At least one currency per day.",
-      "resetDefaults": "Reset to defaults"
+      "resetDefaults": "Reset to defaults",
+      "adsMock": "Mock ad zones (AD here)",
+      "adsMockHint": "Show \"AD here\" frames at the real ad positions (home, Shop, Leaderboard) to test the experience before AdSense approval. Supporters still see nothing. Takes effect after Save, within 15 s on all workers; players need to reload.",
+      "adsMockOn": "On — click to turn off",
+      "adsMockOff": "Off — click to turn on"
     },
     "cancel": "Cancel",
     "donations": {
@@ -614,5 +629,8 @@
     "legal": "Contributions are voluntary and non-refundable; individual amounts are never shown.",
     "copied": "Copied {what}.",
     "copyFailed": "Could not copy; please select and copy manually."
+  },
+  "Ads": {
+    "mock": "AD here · {name}"
   }
 }

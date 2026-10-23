@@ -72,15 +72,19 @@ export function AdminUsers() {
   const [note, setNote] = useState("");
   const [name, setName] = useState("");
 
-  const load = useCallback(
-    (query: string, k: Kind, off: number) =>
-      adminCall<AdminUserPage>("/admin/users", {
-        query: { q: query, kind: k, limit: String(PAGE), offset: String(off) },
+  // Mỗi lần tải một số thứ tự: phản hồi cũ về muộn (vd danh sách mặc định về sau lệnh tìm) bị bỏ,
+  // không ghi đè kết quả mới hơn.
+  const reqId = useRef(0);
+  const load = useCallback((query: string, k: Kind, off: number) => {
+    const id = ++reqId.current;
+    return adminCall<AdminUserPage>("/admin/users", {
+      query: { q: query, kind: k, limit: String(PAGE), offset: String(off) },
+    })
+      .then((p) => {
+        if (id === reqId.current) setPage(p);
       })
-        .then(setPage)
-        .catch(() => {}),
-    [],
-  );
+      .catch(() => {});
+  }, []);
   useEffect(() => {
     void load("", "account", 0);
   }, [load]);
@@ -112,6 +116,18 @@ export function AdminUsers() {
     });
     toaster.success({ title: t("users.granted") });
     await refreshSel(u);
+  }
+  // Bật / tắt quảng cáo cho một người (docs/10): tắt quảng cáo = như đã ủng hộ (có Trống Đồng);
+  // bật lại cho người đã ủng hộ thật thì hỏi lại cho chắc.
+  async function toggleAds(u: AdminUser) {
+    const adFree = !u.adFree;
+    if (!adFree && u.donations > 0 && !window.confirm(t("users.adsConfirmOn"))) return;
+    const next = await adminCall<AdminUser>(`/admin/users/${u.id}/ads`, {
+      method: "POST",
+      body: { adFree },
+    });
+    toaster.success({ title: adFree ? t("users.adsNowOff") : t("users.adsNowOn") });
+    await refreshSel(next);
   }
   async function ban(days: number | null) {
     if (!sel) return;
@@ -214,6 +230,16 @@ export function AdminUsers() {
                       {u.bannedUntil && new Date(u.bannedUntil) > new Date() ? (
                         <Badge bg="coral" color="ink">
                           {t("users.bannedBadge")}
+                        </Badge>
+                      ) : null}{" "}
+                      {u.donations > 0 ? (
+                        <Badge bg="mint" color="ink" data-testid="user-donor">
+                          {t("users.donorBadge", { n: String(u.donations) })}
+                        </Badge>
+                      ) : null}{" "}
+                      {u.adFree ? (
+                        <Badge bg="sun" color="ink" data-testid="user-adfree">
+                          {t("users.adFreeBadge")}
                         </Badge>
                       ) : null}
                     </Text>
@@ -367,6 +393,26 @@ export function AdminUsers() {
                   {t("users.grantDo")}
                 </Button>
               </Stack>
+            </Field>
+            <Field
+              label={t("users.adsField")}
+              hint={
+                sel.donations > 0
+                  ? t("users.adsHintDonor", { n: String(sel.donations) })
+                  : sel.adFree
+                    ? t("users.adsHintManual")
+                    : t("users.adsHintNormal")
+              }
+            >
+              <Button
+                variant="sticker"
+                size="sm"
+                bg={sel.adFree ? "coral" : "mint"}
+                onClick={() => void toggleAds(sel)}
+                data-testid="user-ads-toggle"
+              >
+                {sel.adFree ? t("users.adsTurnOn") : t("users.adsTurnOff")}
+              </Button>
             </Field>
             <Field
               label={t("users.ban")}

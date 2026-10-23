@@ -68,6 +68,15 @@ async def test_nguoi_choi_tim_cong_tien_khoa(client: AsyncClient) -> None:
     r = await client.patch(f"/admin/users/{uid}", json={"displayName": "Bé Na"}, headers=admin)
     assert r.json()["displayName"] == "Bé Na"
 
+    # Quảng cáo theo người (docs/10): danh sách có adFree / donations; bật tắt được.
+    assert r.json()["adFree"] is False and r.json()["donations"] == 0
+    r = await client.post(f"/admin/users/{uid}/ads", json={"adFree": True}, headers=admin)
+    assert r.status_code == 200 and r.json()["adFree"] is True
+    assert (await client.get("/me", headers=victim)).json()["adFree"] is True
+    r = await client.post(f"/admin/users/{uid}/ads", json={"adFree": False}, headers=admin)
+    assert r.json()["adFree"] is False
+    assert (await client.get("/me", headers=victim)).json()["adFree"] is False
+
     # Khóa: token cũ hết hiệu lực ngay (token_version), refresh bị BANNED, đăng nhập lại cũng bị.
     r = await client.post(f"/admin/users/{uid}/ban", json={"days": 7}, headers=admin)
     assert r.status_code == 200 and r.json()["bannedUntil"]
@@ -198,6 +207,15 @@ async def test_thong_so(client: AsyncClient) -> None:
     )
     assert r.status_code == 200, r.text
     assert r.json()["values"]["ranked_win_lead"] == 45
+    # Vùng quảng cáo giả: thông số bool, public qua GET /site.
+    assert (await client.get("/site")).json() == {"adsMock": False}
+    r = await client.put("/admin/config", json={"ads_mock": True}, headers=admin)
+    assert r.status_code == 200 and r.json()["values"]["ads_mock"] is True
+    assert (await client.get("/site")).json() == {"adsMock": True}
+    assert (
+        await client.put("/admin/config", json={"ads_mock": 1}, headers=admin)
+    ).status_code == 400
+    await client.put("/admin/config", json={"ads_mock": False}, headers=admin)
     assert appconfig.get_int("ranked_win_lead", 30) == 45
     assert catalog.get_skin("pen_marker").price == {"lead": 250}  # type: ignore[union-attr]
     assert catalog.rarity_price()["common"] == {"lead": 120}

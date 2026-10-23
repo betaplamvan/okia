@@ -37,6 +37,9 @@ DEFAULTS: dict[str, Any] = {
     ],
     # Ghép máy sau bao nhiêu giây chờ (0 = tắt); None = theo biến môi trường MM_BOT_AFTER_SECONDS.
     "mm_bot_after_seconds": None,
+    # Vùng quảng cáo giả "AD here" (docs/10 — Quảng cáo): thử trải nghiệm khi AdSense chưa duyệt;
+    # người đã ủng hộ (adFree) vẫn không thấy. Public qua GET /site.
+    "ads_mock": False,
 }
 
 _cache: dict[str, Any] = {}
@@ -61,6 +64,10 @@ def snapshot() -> dict[str, Any]:
 def _validate(key: str, value: Any) -> Any:
     if key not in DEFAULTS:
         raise AppError("BAD_CONFIG_KEY", 400, key=key)
+    if key == "ads_mock":
+        if not isinstance(value, bool):
+            raise AppError("BAD_CONFIG_VALUE", 400, key=key)
+        return value
     if key == "ranked_win_lead":
         if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 10_000:
             raise AppError("BAD_CONFIG_VALUE", 400, key=key)
