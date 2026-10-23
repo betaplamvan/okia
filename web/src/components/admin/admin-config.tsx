@@ -35,6 +35,7 @@ const INT_GROUPS: { group: Group; keys: { key: IntKey; min: number; max: number 
       { key: "mm_accept_seconds", min: 5, max: 60 },
       { key: "mm_rematch_grace_seconds", min: 0, max: 120 },
       { key: "mm_unlimited_after_seconds", min: 0, max: 600 },
+      { key: "disconnect_grace_seconds", min: 10, max: 300 },
     ],
   },
   {

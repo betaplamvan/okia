@@ -8,7 +8,7 @@ import { AcceptDialog } from "@/components/ranked/accept-dialog";
 import { toaster } from "@/components/ui/toaster";
 import { audio } from "@/game/audio/audio-manager";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { serverNow, wsClient } from "@/net/ws-client";
+import { serverNow, useActiveRoom, wsClient } from "@/net/ws-client";
 import { isActive, useMatchmaking } from "@/stores/matchmaking";
 
 // Gắn một lần trong AppShell (docs/07): hộp chấp nhận trận ở bất kỳ trang nào, cửa sổ thu nhỏ
@@ -47,9 +47,18 @@ export function MatchmakingHost() {
     if (active) void wsClient.connect();
   }, [active]);
 
+  // Đang dở trận (welcome.activeRoomId) mà không ở trong phòng → ô "Vào lại" ở mọi trang; báo
+  // "đang dở một trận" (xếp hàng khi đang dở) → đưa thẳng vào phòng (docs/04 — Kết nối lại).
+  const activeRoomId = useActiveRoom();
+  const inRoom = pathname.startsWith("/r/");
+  useEffect(() => {
+    if (notice?.key === "inGame" && activeRoomId && !inRoom) router.push(`/r/${activeRoomId}`);
+  }, [notice, activeRoomId, inRoom, router]);
+
   const onRanked = pathname === "/ranked";
   return (
     <>
+      {activeRoomId && !inRoom ? <ActiveGamePill roomId={activeRoomId} /> : null}
       {search.phase === "found" ? (
         <AcceptDialog
           open
@@ -66,6 +75,35 @@ export function MatchmakingHost() {
         <SearchPill since={search.phase === "searching" ? search.since : null} onCancel={cancel} />
       ) : null}
     </>
+  );
+}
+
+// Ô "Bạn đang dở một trận — Vào lại": góc dưới trái, hiện ở mọi trang trừ phòng đang chơi.
+function ActiveGamePill({ roomId }: { roomId: string }) {
+  const t = useTranslations("Ranked");
+  return (
+    <Box
+      position="fixed"
+      left={{ base: 3, md: 5 }}
+      bottom={{ base: 3, md: 5 }}
+      zIndex="toast"
+      layerStyle="sticker"
+      bg="sun"
+      color="ink"
+      px={3}
+      py={2}
+      maxW="calc(100vw - 92px)"
+      data-testid="active-game-pill"
+    >
+      <HStack gap={3}>
+        <Text fontWeight="700" fontSize="sm" lineHeight="1.1">
+          {t("activeGame")}
+        </Text>
+        <Button asChild variant="sticker" size="xs" bg="mint" data-sfx="open">
+          <Link href={`/r/${roomId}`}>{t("rejoin")}</Link>
+        </Button>
+      </HStack>
+    </Box>
   );
 }
 

@@ -106,7 +106,7 @@ Kết quả trả về: `{ state, captured: number[] }`.
 - Mỗi lần được đi tiếp (sau khi ăn ô), đồng hồ **đặt lại**.
 - Hết giờ: server tự vẽ một cạnh **ngẫu nhiên trong số cạnh hợp lệ** cho người đó (`reason: "timeout"`).
 - **3 lần hết giờ liên tiếp** → xử thua (`reason: "afk"`).
-- Mất kết nối: đồng hồ vẫn chạy; có 60 giây để kết nối lại trước khi hệ thống chỉ còn tự đi theo luật hết giờ.
+- Mất kết nối (2026-10-24, [04](04-giao-thuc-ws.md#kết-nối-lại-viết-lại-2026-10-24)): tới lượt mà đang rớt thì đồng hồ **dừng**, có 60 giây (thông số admin) để nối lại; nối lại được thì lượt mới trọn vẹn; không → thua `reason: "abandon"`.
 
 ## Fixtures dùng chung
 

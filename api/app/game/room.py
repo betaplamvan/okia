@@ -1,7 +1,9 @@
 """Phòng đấu trong Redis (docs/04, docs/03 — Timer). Server quyết định mọi kết quả.
 
 Khóa: `room:{id}` (JSON), `lock:room:{id}` (SET NX PX), `user:{uid}:room`, `deadlines` (zset score =
-epoch ms), `presence:{id}` (hash user_id → số kết nối). Mã phòng 6 ký tự vừa là id vừa là mã mời.
+epoch ms), `presence:{id}` (zset "user|conn" → lần cuối thấy ms; kết nối không ping quá
+PRESENCE_STALE_MS coi như rớt — tự sạch sau khi API restart, docs/04 — Kết nối lại). Mã phòng 6 ký
+tự vừa là id vừa là mã mời.
 """
 
 import asyncio
@@ -34,6 +36,17 @@ ROOM_TTL_OVER = 10 * 60
 PLAYING_KEY = "rooms:playing"
 MAX_TIMEOUTS = 3
 RANKED_TURN_SECONDS = 30
+# Kết nối không ping quá chừng này (client ping 20 s) → coi như rớt.
+PRESENCE_STALE_MS = 60_000
+# Người rớt mạng có chừng này giây (từ lúc tới lượt / từ lúc rớt với phòng không giới hạn giờ) để
+# nối lại; hết → xử thua "abandon". Thông số admin `disconnect_grace_seconds`.
+DISCONNECT_GRACE_SECONDS = 60
+
+
+def disconnect_grace_ms() -> int:
+    from app.admin import config as appconfig
+
+    return appconfig.get_int("disconnect_grace_seconds", DISCONNECT_GRACE_SECONDS) * 1000
 
 
 def ranked_turn_seconds() -> int:
@@ -85,6 +98,10 @@ class Room:
     show_last_move: bool = True
     # Phòng có máy (docs/07 — ghép bot khi chờ lâu): độ mạnh bot; None = không có máy.
     bot_strength: float | None = None
+    # Ân hạn rớt mạng (docs/04 — Kết nối lại): ghế đang rớt và hạn nối lại (epoch ms); hết hạn mà
+    # vẫn rớt → thua "abandon". Trong lúc ân hạn đồng hồ lượt của người đó dừng.
+    grace_seat: int | None = None
+    grace_until: int | None = None
 
     # ----- (de)serialize -----
 
@@ -383,8 +400,13 @@ async def create_vs_bot(redis: Redis, a: "Entry", strength: float) -> Room:
 @dataclass
 class MoveOutcome:
     room: Room
-    moved: m.Moved
+    # None khi không có nước đi (timer bắt đầu ân hạn / xử thua abandon / trả lượt mới).
+    moved: m.Moved | None
     over: m.GameOver | None
+    # Timer vừa bắt đầu ân hạn cho ghế rớt (gửi opponent_status kèm graceUntil).
+    grace_started: bool = False
+    # Người rớt đã trở lại → lượt mới (gửi room_state cho cả phòng).
+    resumed: bool = False
 
 
 async def play_bot_move(redis: Redis, room_id: str) -> MoveOutcome | None:
@@ -483,20 +505,101 @@ async def leave(redis: Redis, *, room_id: str, user_id: str) -> Room | None:
 
 
 async def timeout_move(redis: Redis, room_id: str) -> MoveOutcome | None:
-    """Hết giờ: đi ngẫu nhiên một cạnh hợp lệ cho người đang có lượt (docs/03)."""
+    """Hết giờ (docs/03): đi ngẫu nhiên một cạnh hợp lệ cho người đang có lượt. Người đó đang rớt
+    mạng (docs/04 — Kết nối lại) → KHÔNG đi hộ: bắt đầu ân hạn `disconnect_grace_seconds` (đồng hồ
+    dừng, đối thủ thấy đếm ngược); hết ân hạn mà vẫn rớt → thua "abandon"; trở lại → lượt mới.
+    Phòng không giới hạn giờ chỉ có deadline khi có người rớt (note_offline)."""
     async with RoomLock(redis, room_id):
         room = await load(redis, room_id)
         if room is None or room.status != "playing" or not room.deadline:
             await redis.zrem(DEADLINES_KEY, room_id)
             return None
-        if room.deadline > now_ms():
+        now = now_ms()
+        if room.deadline > now:
             await redis.zadd(DEADLINES_KEY, {room.id: room.deadline})
             return None
+        online = await online_map(redis, room.id)
+
+        def offline(seat: int | None) -> Player | None:
+            p = room.player_at(seat) if seat is not None else None
+            return p if p and not p.is_bot and not online.get(p.user_id) else None
+
+        if room.turn_seconds is None:
+            # Deadline chỉ tồn tại vì có người rớt: hết ân hạn → abandon, đã quay lại → bỏ hạn.
+            gone = offline(room.grace_seat)
+            if gone is not None and room.grace_until and now >= room.grace_until:
+                over = await _finish(room, 1 - gone.seat, "abandon")
+                await save(redis, room)
+                return MoveOutcome(room, None, over)
+            room.grace_seat = room.grace_until = room.deadline = None
+            await save(redis, room)
+            return None
+
+        seat = room.state.turn
+        gone = offline(seat)
+        if gone is not None:
+            if room.grace_seat == seat and room.grace_until and now >= room.grace_until:
+                over = await _finish(room, 1 - seat, "abandon")
+                await save(redis, room)
+                return MoveOutcome(room, None, over)
+            if room.grace_seat != seat or not room.grace_until:
+                room.grace_seat = seat
+                room.grace_until = now + disconnect_grace_ms()
+                room.deadline = room.grace_until
+                await save(redis, room)
+                return MoveOutcome(room, None, None, grace_started=True)
+            await redis.zadd(DEADLINES_KEY, {room.id: room.grace_until})
+            return None
+        if room.grace_seat is not None:
+            # Người rớt đã trở lại (nối lại không qua presence) → lượt mới, xoá bỏ lượt đã đếm.
+            p = room.player_at(room.grace_seat)
+            if p:
+                p.timeouts = 0
+            room.grace_seat = room.grace_until = None
+            room.deadline = room.next_deadline()
+            await save(redis, room)
+            return MoveOutcome(room, None, None, resumed=True)
         legal = rules.legal_moves(room.state)
         if not legal:  # pragma: no cover
             return None
         edge = random.choice(legal)
         return await _apply(redis, room, room.state.turn, edge, "timeout")
+
+
+async def note_offline(redis: Redis, room_id: str, user_id: str) -> int | None:
+    """Người này vừa mất kết nối cuối cùng. Phòng không giới hạn giờ đang chơi → đặt hạn nối lại
+    (deadline = now + ân hạn) để timer xử thua abandon nếu không quay lại. Trả `grace_until`."""
+    async with RoomLock(redis, room_id):
+        room = await load(redis, room_id)
+        if room is None or room.status != "playing" or room.turn_seconds is not None:
+            return None
+        seat = room.seat_of(user_id)
+        if seat is None or room.grace_seat is not None:
+            return room.grace_until if room is not None and room.grace_seat == seat else None
+        room.grace_seat = seat
+        room.grace_until = now_ms() + disconnect_grace_ms()
+        room.deadline = room.grace_until
+        await save(redis, room)
+        return room.grace_until
+
+
+async def resume_after_reconnect(redis: Redis, room_id: str, user_id: str) -> Room | None:
+    """Người đang trong ân hạn nối lại → bỏ ân hạn, lượt mới trọn vẹn (phòng có giờ) và xoá số lần
+    bỏ lượt đã đếm. Trả phòng nếu có thay đổi (gửi room_state cho cả phòng)."""
+    async with RoomLock(redis, room_id):
+        room = await load(redis, room_id)
+        if room is None or room.status != "playing":
+            return None
+        seat = room.seat_of(user_id)
+        if seat is None or room.grace_seat != seat:
+            return None
+        p = room.player_at(seat)
+        if p:
+            p.timeouts = 0
+        room.grace_seat = room.grace_until = None
+        room.deadline = room.next_deadline()
+        await save(redis, room)
+        return room
 
 
 async def _finish(
@@ -642,23 +745,41 @@ async def _record_match(room: Room, over: m.GameOver) -> None:
 # ---------- Presence ----------
 
 
-async def presence_add(redis: Redis, room_id: str, user_id: str) -> int:
-    n = await redis.hincrby(f"presence:{room_id}", user_id, 1)
-    await redis.expire(f"presence:{room_id}", ROOM_TTL_PLAYING)
-    return int(n)
+def _presence_key(room_id: str) -> str:
+    return f"presence:{room_id}"
 
 
-async def presence_remove(redis: Redis, room_id: str, user_id: str) -> int:
-    n = await redis.hincrby(f"presence:{room_id}", user_id, -1)
-    if n <= 0:
-        await redis.hdel(f"presence:{room_id}", user_id)
-        return 0
-    return int(n)
+async def _fresh_members(redis: Redis, room_id: str) -> list[str]:
+    key = _presence_key(room_id)
+    now = now_ms()
+    await redis.zremrangebyscore(key, "-inf", now - PRESENCE_STALE_MS)
+    return [str(x) for x in await redis.zrangebyscore(key, now - PRESENCE_STALE_MS, "+inf")]
+
+
+async def _fresh_count(redis: Redis, room_id: str, user_id: str) -> int:
+    return sum(1 for x in await _fresh_members(redis, room_id) if x.split("|", 1)[0] == user_id)
+
+
+async def presence_add(redis: Redis, room_id: str, user_id: str, conn_id: str) -> int:
+    """Kết nối `conn_id` của người này vào phòng; trả số kết nối còn "tươi" của người đó."""
+    key = _presence_key(room_id)
+    await redis.zadd(key, {f"{user_id}|{conn_id}": now_ms()})
+    await redis.expire(key, ROOM_TTL_PLAYING)
+    return await _fresh_count(redis, room_id, user_id)
+
+
+async def presence_touch(redis: Redis, room_id: str, user_id: str, conn_id: str) -> None:
+    """Ping định kỳ: làm mới mốc "lần cuối thấy" (kết nối treo không ping → tự coi là rớt)."""
+    await redis.zadd(_presence_key(room_id), {f"{user_id}|{conn_id}": now_ms()})
+
+
+async def presence_remove(redis: Redis, room_id: str, user_id: str, conn_id: str) -> int:
+    await redis.zrem(_presence_key(room_id), f"{user_id}|{conn_id}")
+    return await _fresh_count(redis, room_id, user_id)
 
 
 async def online_map(redis: Redis, room_id: str) -> dict[str, bool]:
-    h = await redis.hgetall(f"presence:{room_id}")
-    return {k: int(v) > 0 for k, v in h.items()}
+    return {x.split("|", 1)[0]: True for x in await _fresh_members(redis, room_id)}
 
 
 def room_state_msg(room: Room, online: dict[str, bool]) -> m.RoomState:
@@ -686,4 +807,6 @@ def room_state_msg(room: Room, online: dict[str, bool]) -> m.RoomState:
         deadline=room.deadline,
         result=m.GameOver(**room.result) if room.result else None,
         loadouts={p.user_id: p.loadout for p in room.players if p.loadout},
+        grace_seat=room.grace_seat,  # type: ignore[arg-type]
+        grace_until=room.grace_until,
     )

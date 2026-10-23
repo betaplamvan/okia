@@ -98,8 +98,12 @@ bind 127.0.0.1) được miễn giới hạn số kết nối.
 cấp token mới, bỏ khách khi gộp) xóa cache. Trước đó mỗi kết nối tra Postgres — 300 kết nối cùng lúc làm
 welcome p50 2 s.
 
-## Kết nối lại
+## Kết nối lại (viết lại 2026-10-24)
 
-- Server lưu `user:{id}:room` (TTL bằng thời gian còn lại của trận + 5 phút).
-- Khi WS kết nối lại, `welcome.activeRoomId` có giá trị → client tự `room_join` → nhận `room_state` đầy đủ.
-- Trong lúc mất kết nối, timer vẫn chạy theo [luật hết giờ](03-luat-choi.md#timer--bỏ-lượt-chỉ-chế-độ-online).
+- Server lưu `user:{id}:room` (TTL = TTL phòng). Khi WS kết nối lại, `welcome.activeRoomId` có giá trị → client tự `room_join` → nhận `room_state` đầy đủ; `MatchmakingHost` hiện ô "Bạn đang dở một trận — Vào lại" ở mọi trang khác.
+- **Hiện diện** (`presence:{room}` zset `"user|conn"` → lần cuối thấy ms): mỗi kết nối có id riêng; `ping` 20 giây làm mới mốc; không ping quá 60 giây (`PRESENCE_STALE_MS`) coi như rớt — socket treo / API restart không để lại bộ đếm sai như hash cũ. Chỉ kết nối **đã vào phòng** mới trừ hiện diện khi đóng.
+- `opponent_status {userId, online, graceUntil?}` gửi cho cả phòng; client bỏ qua tin về chính mình.
+- **Ân hạn rớt mạng** (`disconnect_grace_seconds`, mặc định 60, thông số admin): người có lượt đang rớt thì timer **không đi hộ** — bắt đầu ân hạn (`grace_seat`/`grace_until` trong phòng và `room_state`), đồng hồ lượt dừng, đối thủ thấy đếm ngược "bạn thắng sau N giây". Nối lại trong ân hạn → `room_state` mới với lượt trọn vẹn và số lần bỏ lượt về 0. Hết ân hạn mà vẫn rớt → `game_over reason: "abandon"` (người kia thắng; xếp hạng chốt điểm như thường). Phòng không giới hạn giờ: ân hạn bắt đầu ngay lúc rớt (trước đây treo mãi, không ai thắng).
+- Server phát hiện socket chết bằng ping giao thức uvicorn 10 s / timeout 10 s (`api/Dockerfile`) → tối đa ~20 giây sau khi mất mạng đối thủ thấy "mất kết nối".
+- Phòng đang dở lưu thêm ở `sessionStorage["okia-active-room"]` (ghi khi nhận `room_state` đang chơi, xoá khi ván xong / rời / phòng không còn; `welcome` ghi đè) → ô "Vào lại" hiện ngay cả khi trang vừa tải lại chưa nối WS.
+- Client (`net/ws-client.ts`): một socket duy nhất (gọi `connect()` khi đang mở dở không mở thêm); mở lại ngay khi tab hiện lại / có mạng (`visibilitychange`, `online`, `pageshow`, `focus`) thay vì chờ backoff; ping có **chờ pong 8 giây** (socket treo → tự đóng và nối lại); refresh token lỗi mạng thì thử lại chứ không rơi xuống tài khoản khách. `NetworkController`: `moved` lệch `moveNo` hoặc `STALE_SEQ` → `room_join` lấy ảnh chụp; nước đang chờ xác nhận quá 5 giây → hoàn tác và đồng bộ lại.

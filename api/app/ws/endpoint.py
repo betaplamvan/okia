@@ -120,16 +120,17 @@ async def ws_endpoint(ws: WebSocket, token: str = "", lang: str | None = None) -
         hub.remove(conn)
         # Server (hoặc TestClient) có thể hủy task handler ngay khi socket đóng: tách phần dọn dẹp
         # thành task riêng được shield để presence/opponent_status vẫn được cập nhật.
-        cleanup = asyncio.create_task(_on_disconnect(hub, user_id, watched))
+        cleanup = asyncio.create_task(_on_disconnect(hub, user_id, watched, conn.id))
         with contextlib.suppress(asyncio.CancelledError):
             await asyncio.shield(cleanup)
 
 
-async def _on_disconnect(hub: Hub, user_id: str, watched: list[str]) -> None:
+async def _on_disconnect(hub: Hub, user_id: str, watched: list[str], conn_id: str) -> None:
     try:
-        rooms_ = watched or await _rooms_of(hub.redis, user_id)
-        for rid in rooms_:
-            await _presence_leave(hub, rid, user_id)
+        # Chỉ các phòng kết nối NÀY đã vào (trước đây tab chưa vào phòng đóng cũng trừ presence
+        # của tab đang chơi → đối thủ thấy "mất kết nối" oan).
+        for rid in watched:
+            await _presence_leave(hub, rid, user_id, conn_id)
         # Tab cuối của người này đóng → rời hàng chờ (client sẽ tự vào lại khi nối lại) và offline.
         if user_id not in hub.by_user:
             await mmq.dequeue(hub.redis, user_id)
@@ -139,24 +140,33 @@ async def _on_disconnect(hub: Hub, user_id: str, watched: list[str]) -> None:
         log.exception("dọn dẹp kết nối %s", user_id)
 
 
-async def _rooms_of(redis, user_id: str) -> list[str]:
-    rid = await redis.get(rooms.user_key(user_id))
-    return [rid] if rid else []
-
-
 async def _presence_join(hub: Hub, conn: Connection, room_id: str) -> None:
     if room_id in conn.rooms:
         return
     hub.watch(conn, room_id)
-    n = await rooms.presence_add(hub.redis, room_id, conn.user_id)
+    n = await rooms.presence_add(hub.redis, room_id, conn.user_id, conn.id)
     if n == 1:
-        await hub.publish(room_id, m.OpponentStatus(room_id=room_id, online=True))
+        await hub.publish(
+            room_id, m.OpponentStatus(room_id=room_id, online=True, user_id=conn.user_id)
+        )
+        # Đang trong ân hạn rớt mạng → bỏ ân hạn, lượt mới; cả phòng nhận ảnh chụp mới.
+        room = await rooms.resume_after_reconnect(hub.redis, room_id, conn.user_id)
+        if room is not None:
+            await hub.publish(
+                room_id, rooms.room_state_msg(room, await rooms.online_map(hub.redis, room_id))
+            )
 
 
-async def _presence_leave(hub: Hub, room_id: str, user_id: str) -> None:
-    n = await rooms.presence_remove(hub.redis, room_id, user_id)
+async def _presence_leave(hub: Hub, room_id: str, user_id: str, conn_id: str) -> None:
+    n = await rooms.presence_remove(hub.redis, room_id, user_id, conn_id)
     if n == 0:
-        await hub.publish(room_id, m.OpponentStatus(room_id=room_id, online=False))
+        grace_until = await rooms.note_offline(hub.redis, room_id, user_id)
+        await hub.publish(
+            room_id,
+            m.OpponentStatus(
+                room_id=room_id, online=False, user_id=user_id, grace_until=grace_until
+            ),
+        )
 
 
 async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> None:
@@ -165,6 +175,8 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
     match msg:
         case m.Ping():
             await mmq.touch_online(redis, uid)
+            for rid in list(conn.rooms):
+                await rooms.presence_touch(redis, rid, uid, conn.id)
             await conn.send(m.Pong())
 
         case m.ChatWatch():
@@ -203,7 +215,7 @@ async def handle(hub: Hub, conn: Connection, name: str, msg: m.ClientMsg) -> Non
         case m.RoomLeave():
             room = await rooms.leave(redis, room_id=msg.room_id, user_id=uid)
             hub.unwatch(conn, msg.room_id)
-            await rooms.presence_remove(redis, msg.room_id, uid)
+            await rooms.presence_remove(redis, msg.room_id, uid, conn.id)
             if room is None:
                 await redis.delete(f"presence:{msg.room_id}")
 

@@ -874,6 +874,7 @@
       "type": "object"
     },
     "OpponentStatus": {
+      "description": "Một người trong phòng rớt / trở lại. Gửi cho CẢ PHÒNG (kể cả chính người đó khi nối lại) →\nclient bỏ qua khi `userId` là mình. `graceUntil`: hạn nối lại (epoch ms) khi đang rớt và đã bắt\nđầu ân hạn; hết hạn → thua \"abandon\" (docs/04 — Kết nối lại).",
       "properties": {
         "t": {
           "const": "opponent_status",
@@ -888,6 +889,30 @@
         "online": {
           "title": "Online",
           "type": "boolean"
+        },
+        "userId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Userid"
+        },
+        "graceUntil": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Graceuntil"
         }
       },
       "required": [
@@ -1406,6 +1431,34 @@
           },
           "title": "Loadouts",
           "type": "object"
+        },
+        "graceSeat": {
+          "anyOf": [
+            {
+              "enum": [
+                0,
+                1
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Graceseat"
+        },
+        "graceUntil": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Graceuntil"
         }
       },
       "required": [

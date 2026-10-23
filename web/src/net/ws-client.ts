@@ -1,7 +1,12 @@
 /**
  * WebSocket client (docs/04, P1-17): một kết nối cho cả tab, tự kết nối lại với backoff,
  * tự làm mới access token trước khi nối, ping mỗi 20 giây, store trạng thái kết nối (zustand).
+ *
+ * Độ bền (2026-10-24, docs/04 — Kết nối lại): không mở socket thứ hai khi đang mở dở; tab hiện
+ * lại / có mạng → nối lại NGAY (không chờ backoff); ping chờ pong 8 giây — socket treo (mạng di
+ * động, máy ngủ) tự đóng và nối lại; refresh token lỗi mạng → thử lại, không rơi xuống khách.
  */
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import type { ClientMsg, ServerMsg } from "@/game/ws-types";
 import { WS_URL } from "@/lib/api";
@@ -26,7 +31,48 @@ export const useConnection = create<ConnectionState>()(() => ({
 
 type Listener = (msg: ServerMsg) => void;
 
+// Phòng đang dở (docs/04 — Kết nối lại): server chỉ gửi `welcome.activeRoomId` lúc kết nối, mà trang
+// khác có thể chưa nối WS → lưu thêm vào sessionStorage để ô "Bạn đang dở một trận" hiện ngay sau
+// khi tải lại; `welcome` là nguồn chuẩn (null → xoá bản lưu).
+const ACTIVE_ROOM_KEY = "okia-active-room";
+const ACTIVE_ROOM_EVENT = "okia-active-room";
+
+export function readActiveRoom(): string | null {
+  try {
+    return sessionStorage.getItem(ACTIVE_ROOM_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setActiveRoom(id: string | null): void {
+  try {
+    if (id) sessionStorage.setItem(ACTIVE_ROOM_KEY, id);
+    else sessionStorage.removeItem(ACTIVE_ROOM_KEY);
+  } catch {
+    // Không có storage: chỉ còn giá trị trong store.
+  }
+  useConnection.setState({ activeRoomId: id });
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(ACTIVE_ROOM_EVENT));
+}
+
+function subscribeActiveRoom(cb: () => void): () => void {
+  window.addEventListener(ACTIVE_ROOM_EVENT, cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener(ACTIVE_ROOM_EVENT, cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+
+/** Phòng đang dở theo bản lưu (hydrate = null, rồi cập nhật ở client). */
+export function useActiveRoom(): string | null {
+  return useSyncExternalStore(subscribeActiveRoom, readActiveRoom, () => null);
+}
+
 const PING_MS = 20_000;
+/** Gửi ping mà quá chừng này không có tin nào về → coi socket đã chết. */
+const PONG_TIMEOUT_MS = 8_000;
 const MAX_BACKOFF_MS = 30_000;
 const CLOSE_UNAUTHORIZED = 4401;
 /** Tài khoản đăng nhập nơi khác (docs/13). Refresh: cùng trình duyệt thì cookie mới vẫn dùng được,
@@ -39,7 +85,9 @@ export class WsClient {
   private wanted = false;
   private attempt = 0;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
+  private pongTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private wakeBound = false;
   private opening = false;
   private waiters: Array<() => void> = [];
   /** Server vừa từ chối token (4401/4409) → lần nối sau phải refresh dù token chưa hết hạn. */
@@ -48,10 +96,36 @@ export class WsClient {
   /** Bật kết nối (idempotent). Trả promise xong khi đã online lần này. */
   connect(): Promise<void> {
     this.wanted = true;
+    this.bindWake();
     if (this.ws?.readyState === WebSocket.OPEN) return Promise.resolve();
     const p = new Promise<void>((resolve) => this.waiters.push(resolve));
-    void this.open();
+    // Đang mở dở (CONNECTING) → chỉ chờ, không mở thêm socket thứ hai.
+    if (!(this.ws && this.ws.readyState === WebSocket.CONNECTING)) void this.open();
     return p;
+  }
+
+  /** Tab hiện lại / có mạng / focus: đang offline thì nối lại ngay; đang online thì ping để kiểm
+   *  tra socket còn sống (máy ngủ dậy socket thường đã chết mà trình duyệt chưa biết). */
+  private bindWake(): void {
+    if (this.wakeBound || typeof window === "undefined") return;
+    this.wakeBound = true;
+    const wake = () => {
+      if (!this.wanted) return;
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (this.online) {
+        this.ping();
+        return;
+      }
+      if (this.ws?.readyState === WebSocket.CONNECTING) return;
+      if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+      this.attempt = 0;
+      void this.open();
+    };
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("online", wake);
+    window.addEventListener("pageshow", wake);
+    window.addEventListener("focus", wake);
   }
 
   disconnect(): void {
@@ -79,6 +153,7 @@ export class WsClient {
 
   private async open(): Promise<void> {
     if (this.opening || !this.wanted) return;
+    if (this.ws && this.ws.readyState <= WebSocket.OPEN) return;
     this.opening = true;
     useConnection.setState({ status: "connecting" });
     try {
@@ -86,7 +161,9 @@ export class WsClient {
       await auth.boot(auth.locale);
       let s = useAuth.getState();
       if (this.stale || !s.accessToken || Date.now() > s.expiresAt - 30_000) {
-        const user = await s.refresh().catch(() => null);
+        // refresh(): 401 → null (phiên hết) → khách; lỗi mạng / 5xx → ném ra → thử lại sau backoff
+        // (trước đây mọi lỗi đều rơi xuống khách → tài khoản thật vào phòng bị ROOM_FULL).
+        const user = await s.refresh();
         if (!user) await s.guest();
         s = useAuth.getState();
         this.stale = false;
@@ -105,6 +182,9 @@ export class WsClient {
         w.forEach((r) => r());
       };
       ws.onmessage = (ev) => {
+        // Bất kỳ tin nào về cũng chứng tỏ socket sống.
+        if (this.pongTimer) clearTimeout(this.pongTimer);
+        this.pongTimer = null;
         let msg: ServerMsg;
         try {
           msg = JSON.parse(String(ev.data)) as ServerMsg;
@@ -114,9 +194,9 @@ export class WsClient {
         if (msg.t === "welcome") {
           useConnection.setState({
             clockOffset: msg.serverTime - Date.now(),
-            activeRoomId: msg.activeRoomId ?? null,
             userId: msg.userId,
           });
+          setActiveRoom(msg.activeRoomId ?? null);
         }
         for (const l of this.listeners) l(msg);
       };
@@ -151,13 +231,28 @@ export class WsClient {
 
   private startPing(): void {
     this.clearTimers();
-    this.pingTimer = setInterval(() => this.send({ t: "ping" }), PING_MS);
+    this.pingTimer = setInterval(() => this.ping(), PING_MS);
+  }
+
+  /** Ping + chờ pong: không có tin nào về trong PONG_TIMEOUT_MS → đóng để nối lại ngay. */
+  private ping(): void {
+    if (!this.send({ t: "ping" })) return;
+    if (this.pongTimer) return;
+    this.pongTimer = setTimeout(() => {
+      this.pongTimer = null;
+      const ws = this.ws;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      this.attempt = 0;
+      ws.close(4000, "pong timeout");
+    }, PONG_TIMEOUT_MS);
   }
 
   private clearTimers(): void {
     if (this.pingTimer) clearInterval(this.pingTimer);
+    if (this.pongTimer) clearTimeout(this.pongTimer);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.pingTimer = null;
+    this.pongTimer = null;
     this.reconnectTimer = null;
   }
 }

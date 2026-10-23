@@ -22,7 +22,9 @@ USER okia
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4).status == 200 else 1)"
+# ws-ping 10 s / timeout 10 s (mặc định 20/20): socket chết (mất mạng không kịp đóng) được phát hiện
+# sau ~20 giây thay vì ~40 → đối thủ thấy "mất kết nối" sớm hơn (docs/04 — Kết nối lại).
 # uvicorn lấy số worker từ WEB_CONCURRENCY (ghi đè bằng biến môi trường lúc deploy). Hub dùng Redis
 # pub/sub, timer/ghép trận có khóa Redis nên nhiều tiến trình chạy song song được (docs/02 — Tải).
 # --ws-max-size 64 KB: tin của client chỉ vài trăm byte; chặn frame lớn ngay ở tầng giao thức.
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*' --ws-max-size 65536"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*' --ws-max-size 65536 --ws-ping-interval 10 --ws-ping-timeout 10"]

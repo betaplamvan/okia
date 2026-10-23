@@ -72,6 +72,8 @@ export interface OnlineInfo {
   /** Hạn lượt hiện tại, epoch ms theo giờ server. */
   deadline: number | null;
   opponentOnline: boolean;
+  /** Đối thủ đang rớt và server đã bắt đầu ân hạn: hạn nối lại (epoch ms server); hết → mình thắng. */
+  graceUntil: number | null;
   /** Nước đi của mình đang chờ server xác nhận (animate lạc quan). */
   pendingEdge: number | null;
 }

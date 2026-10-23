@@ -11,6 +11,7 @@ tài khoản đăng nhập nơi khác (docs/13 — Một phiên mỗi tài kho�
 import asyncio
 import contextlib
 import logging
+import secrets
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -28,6 +29,8 @@ class Connection:
     user_id: str
     locale: str
     ip: str = ""
+    # Định danh kết nối (presence theo zset "user|conn", docs/04 — Kết nối lại).
+    id: str = field(default_factory=lambda: secrets.token_hex(4))
     rooms: set[str] = field(default_factory=set)
     # Token bucket chống spam tin (docs/04 — Giới hạn): nạp `rate` tin/giây, tối đa `burst`.
     tokens: float = 0.0
@@ -95,35 +98,39 @@ class Hub:
             await asyncio.sleep(interval)
 
     async def _listen(self) -> None:
-        pubsub = self.redis.pubsub()
-        await pubsub.psubscribe("room:*", "user:*", "kick:*", "chat:*")
-        try:
-            async for item in pubsub.listen():
-                if item.get("type") != "pmessage":
-                    continue
-                channel = item["channel"]
-                kind, target = channel.split(":", 1)
-                data = item["data"]
-                if kind == "kick":
-                    await self._close_user(target, int(data))
-                    continue
-                if kind == "chat":
-                    receivers: list[Connection] = list(self.chat)
-                else:
-                    targets = self.by_room if kind == "room" else self.by_user
-                    receivers = list(targets.get(target, ()))
-                for conn in receivers:
-                    try:
-                        await conn.ws.send_text(data)
-                    except Exception:  # noqa: BLE001
-                        pass
-        except asyncio.CancelledError:
-            raise
-        except Exception:  # noqa: BLE001
-            log.exception("pub/sub listener dừng")
-        finally:
-            with contextlib.suppress(Exception):
-                await pubsub.aclose()
+        """Vòng nghe pub/sub; Redis rớt / lỗi bất kỳ → nối lại sau 1 giây (trước 2026-10-24 task
+        chết im: socket vẫn mở nhưng không ai nhận moved / game_over)."""
+        while True:
+            pubsub = self.redis.pubsub()
+            try:
+                await pubsub.psubscribe("room:*", "user:*", "kick:*", "chat:*")
+                async for item in pubsub.listen():
+                    if item.get("type") != "pmessage":
+                        continue
+                    channel = item["channel"]
+                    kind, target = channel.split(":", 1)
+                    data = item["data"]
+                    if kind == "kick":
+                        await self._close_user(target, int(data))
+                        continue
+                    if kind == "chat":
+                        receivers: list[Connection] = list(self.chat)
+                    else:
+                        targets = self.by_room if kind == "room" else self.by_user
+                        receivers = list(targets.get(target, ()))
+                    for conn in receivers:
+                        try:
+                            await conn.ws.send_text(data)
+                        except Exception:  # noqa: BLE001
+                            pass
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # noqa: BLE001
+                log.exception("pub/sub listener lỗi — nối lại sau 1 giây")
+            finally:
+                with contextlib.suppress(Exception):
+                    await pubsub.aclose()
+            await asyncio.sleep(1)
 
     # ----- kết nối & phòng -----
 

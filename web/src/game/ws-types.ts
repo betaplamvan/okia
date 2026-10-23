@@ -184,6 +184,8 @@ export interface RoomState {
       [k: string]: string;
     };
   };
+  graceSeat?: (0 | 1) | null;
+  graceUntil?: number | null;
 }
 export interface PlayerOut {
   userId: string;
@@ -244,10 +246,17 @@ export interface Moved {
   deadline?: number | null;
   reason?: "player" | "timeout";
 }
+/**
+ * Một người trong phòng rớt / trở lại. Gửi cho CẢ PHÒNG (kể cả chính người đó khi nối lại) →
+ * client bỏ qua khi `userId` là mình. `graceUntil`: hạn nối lại (epoch ms) khi đang rớt và đã bắt
+ * đầu ân hạn; hết hạn → thua "abandon" (docs/04 — Kết nối lại).
+ */
 export interface OpponentStatus {
   t: "opponent_status";
   roomId: string;
   online: boolean;
+  userId?: string | null;
+  graceUntil?: number | null;
 }
 export interface EmoteOut {
   t: "emote";

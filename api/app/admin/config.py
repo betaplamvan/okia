@@ -48,6 +48,8 @@ DEFAULTS: dict[str, Any] = {
     "mm_accept_seconds": 20,
     "mm_unlimited_after_seconds": 90,
     "ranked_turn_seconds": 30,
+    # Rớt mạng giữa ván: có N giây để nối lại (đồng hồ lượt dừng), hết → thua "abandon" (docs/04).
+    "disconnect_grace_seconds": 60,
     # Chat tổng (docs/15): bật/tắt (tắt → chỉ đọc), độ dài tối đa, giãn cách tối thiểu giữa hai tin,
     # số tin mỗi phút, chặn lặp đúng nội dung trong N giây.
     "chat_enabled": True,
@@ -66,6 +68,7 @@ INT_RANGES: dict[str, tuple[int, int]] = {
     "mm_accept_seconds": (5, 60),
     "mm_unlimited_after_seconds": (0, 600),
     "ranked_turn_seconds": (10, 120),
+    "disconnect_grace_seconds": (10, 300),
     "chat_max_len": (20, 2000),
     "chat_min_interval_seconds": (0, 60),
     "chat_per_minute": (1, 120),
