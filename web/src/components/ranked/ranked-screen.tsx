@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LuSwords, LuTrophy, LuX } from "react-icons/lu";
 import { RankCard } from "@/components/ranked/rank-card";
+import { TierLadder } from "@/components/ranked/tier-ladder";
 import { Link, useRouter } from "@/i18n/navigation";
 import { serverNow, useConnection, wsClient } from "@/net/ws-client";
 import { useAuth } from "@/stores/auth";
@@ -137,6 +138,9 @@ export function RankedScreen() {
             ) : null}
           </Stack>
         </Grid>
+
+        {/* Các bậc hạng + huy hiệu từng bậc; đánh dấu hạng hiện tại. */}
+        <TierLadder rank={rank?.rank} />
       </Stack>
     </Container>
   );
