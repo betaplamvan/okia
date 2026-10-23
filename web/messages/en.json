@@ -569,7 +569,7 @@
       "checkinRewardsHint": "At least one currency per day.",
       "resetDefaults": "Reset to defaults",
       "adsMock": "Mock ad zones (AD here)",
-      "adsMockHint": "Show \"AD here\" frames at the real ad positions (home, Shop, Leaderboard) to test the experience before AdSense approval. Supporters still see nothing. Takes effect after Save, within 15 s on all workers; players need to reload.",
+      "adsMockHint": "Show \"AD here\" frames at the real ad positions: between home cards, end of Shop / Leaderboard, side rails on wide PC screens, and an interstitial on New game every 3 bot games. Non-supporters and admins see them. Takes effect after Save (within 15 s); players need to reload.",
       "adsMockOn": "On — click to turn off",
       "adsMockOff": "Off — click to turn on"
     },
@@ -631,6 +631,9 @@
     "copyFailed": "Could not copy; please select and copy manually."
   },
   "Ads": {
-    "mock": "AD here · {name}"
+    "mock": "AD here · {name}",
+    "interstitialHint": "An ad between games every {n} games. Support Ô Kìa to turn ads off forever.",
+    "skipIn": "Skip in {s}s",
+    "skip": "Skip"
   }
 }

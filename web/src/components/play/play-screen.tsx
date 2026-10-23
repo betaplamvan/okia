@@ -14,6 +14,7 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { LuBot, LuFlag, LuMap, LuRotateCcw, LuUser } from "react-icons/lu";
+import { afterFinishedGame, useInterstitialOpen } from "@/components/ads/adsense";
 import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
 import { MapPicker, ShowLastMoveToggle, useMapName } from "@/components/play/map-picker";
@@ -44,6 +45,7 @@ export function PlayScreen() {
   const [pickedMap, setPickedMap] = useState(DEFAULT_MAP_ID);
   // Kết quả chỉ hiện sau khi renderer đếm xong ô (P0-14); có dự phòng nếu renderer không báo.
   const [settled, setSettled] = useState<GameResult | null>(null);
+  const adOpen = useInterstitialOpen();
   const [controller] = useState(() => new LocalBotController({ mapId: DEFAULT_MAP_ID }));
   const settings = useSyncExternalStore(subscribeSettings, getSettings, getServerSettings);
 
@@ -104,8 +106,12 @@ export function PlayScreen() {
     controller.setShowLastMove(on);
   };
 
+  // Ván đã kết thúc → có thể chen quảng cáo xen (cứ 3 ván một lần, docs/10) rồi mới mở ván mới.
   const newGame = () => {
-    controller.newGame();
+    if (controller.getSession().result) {
+      // Hộp kết quả (Dialog modal) tự đóng khi quảng cáo xen hiện (adOpen), không mở lại.
+      afterFinishedGame(() => controller.newGame());
+    } else controller.newGame();
   };
 
   const { state, human, bot, thinking, result, combo } = session;
@@ -320,7 +326,7 @@ export function PlayScreen() {
       <Dialog.Root
         placement="center"
         motionPreset="slide-in-bottom"
-        open={!!result && settled === result}
+        open={!!result && settled === result && !adOpen}
       >
         <Portal>
           <Dialog.Backdrop bg="rgba(26, 40, 38, 0.6)" />

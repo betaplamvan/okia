@@ -569,7 +569,7 @@
       "checkinRewardsHint": "Mỗi ngày ít nhất một loại tiền.",
       "resetDefaults": "Về mặc định",
       "adsMock": "Vùng quảng cáo giả (AD here)",
-      "adsMockHint": "Hiện khung \"AD here\" ở đúng các vị trí quảng cáo (trang chủ, Shop, Bảng xếp hạng) để thử trải nghiệm khi AdSense chưa duyệt. Người đã ủng hộ vẫn không thấy. Có hiệu lực sau khi Lưu, tối đa 15 giây trên mọi tiến trình; người chơi cần tải lại trang.",
+      "adsMockHint": "Hiện khung \"AD here\" ở đúng các vị trí quảng cáo: giữa các thẻ trang chủ, cuối Shop / Bảng xếp hạng, hai bên lề trên PC rộng, và lớp phủ xen khi bấm Ván mới sau mỗi 3 ván chơi với máy. Người chưa ủng hộ và admin thấy. Có hiệu lực sau khi Lưu (tối đa 15 giây); người chơi cần tải lại trang.",
       "adsMockOn": "Đang bật — bấm để tắt",
       "adsMockOff": "Đang tắt — bấm để bật"
     },
@@ -631,6 +631,9 @@
     "copyFailed": "Không chép được, hãy chọn và sao chép tay."
   },
   "Ads": {
-    "mock": "AD here · {name}"
+    "mock": "AD here · {name}",
+    "interstitialHint": "Quảng cáo xen sau mỗi {n} ván. Ủng hộ Ô Kìa để tắt quảng cáo vĩnh viễn.",
+    "skipIn": "Bỏ qua sau {s} giây",
+    "skip": "Bỏ qua"
   }
 }

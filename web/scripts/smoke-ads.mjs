@@ -38,7 +38,8 @@ try {
   await setMock(false);
   await page.goto(base + "/", { waitUntil: "networkidle" });
   await page.getByTestId("player-pill").waitFor({ timeout: 15000 });
-  if (await page.getByTestId("ad-mock").count()) problems.push("mock tắt mà vẫn có khung");
+  if (await page.locator("[data-testid=ad-mock]:visible").count())
+    problems.push("mock tắt mà vẫn có khung");
 
   // Mock bật: khách thấy khung ở 3 trang.
   await setMock(true);
@@ -48,13 +49,61 @@ try {
     ["/leaderboard", "leaderboard"],
   ]) {
     await page.goto(base + path, { waitUntil: "networkidle" });
-    await page.getByTestId("ad-mock").waitFor({ timeout: 15000 });
-    const txt = await page.getByTestId("ad-mock").innerText();
+    await page.locator("[data-testid=ad-mock]:visible").first().waitFor({ timeout: 15000 });
+    const txt = await page.locator("[data-testid=ad-mock]:visible").first().innerText();
     if (!txt.includes(name)) problems.push(`khung ${path} ghi "${txt}"`);
   }
   await page.goto(base + "/", { waitUntil: "networkidle" });
-  await page.getByTestId("ad-mock").waitFor();
+  await page.locator("[data-testid=ad-mock]:visible").first().waitFor();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByTestId("ad-rail-left").waitFor({ timeout: 5000 });
+  await page.getByTestId("ad-rail-right").waitFor();
   await page.screenshot({ path: ".shots/ads-mock-home.png", fullPage: true });
+  await page.goto(base + "/play", { waitUntil: "networkidle" });
+  if (await page.getByTestId("ad-rail-left").count()) problems.push("có cột quảng cáo ở màn chơi");
+  await page.setViewportSize({ width: 1000, height: 900 });
+  // Quảng cáo xen: bộ đếm = 2 ván → chơi hết một ván 5×5 → "Chơi lại" (ván thứ 3) → lớp phủ.
+  // "Ván mới" khi ván CHƯA kết thúc thì không có quảng cáo.
+  await page.evaluate(() => localStorage.setItem("okia-ad-games", "2"));
+  await page.getByRole("application").locator("canvas").waitFor({ timeout: 20000 });
+  await page.getByRole("button", { name: "Ván mới" }).click();
+  await page.waitForTimeout(400);
+  if (await page.getByTestId("ad-interstitial").count()) problems.push("xen QC khi ván chưa xong");
+  await page.getByRole("button", { name: "Đổi bàn" }).click();
+  await page.getByRole("radio", { name: "5×5" }).click();
+  await page.getByRole("button", { name: "Chơi bàn này" }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await page.waitForTimeout(300);
+  const N = 5;
+  const box = await page.getByRole("application").locator("canvas").boundingBox();
+  const size = Math.min(box.width, box.height);
+  const pad = size * 0.02;
+  const cell = (size - pad * 2) / (N + 1.3);
+  const offX = box.x + (box.width - N * cell) / 2;
+  const offY = box.y + (box.height - N * cell) / 2;
+  const edges = [];
+  for (let r = 0; r <= N; r++)
+    for (let c = 0; c < N; c++) edges.push({ x: offX + (c + 0.5) * cell, y: offY + r * cell });
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c <= N; c++) edges.push({ x: offX + c * cell, y: offY + (r + 0.5) * cell });
+  const dialog = page.getByRole("dialog");
+  for (let i = 0; i < 300; i++) {
+    if (await dialog.isVisible()) break;
+    const text = (await page.getByRole("status").first().innerText()).trim();
+    if (!text.includes("Đến lượt bạn")) {
+      await page.waitForTimeout(100);
+      continue;
+    }
+    const e = edges[i % edges.length];
+    await page.mouse.click(e.x, e.y);
+    await page.waitForTimeout(100);
+  }
+  await dialog.getByRole("button", { name: "Chơi lại" }).click({ timeout: 20000 });
+  await page.getByTestId("ad-interstitial").waitFor({ timeout: 5000 });
+  await page.screenshot({ path: ".shots/ads-interstitial.png" });
+  await page.getByTestId("ad-interstitial-close").click({ timeout: 8000 });
+  await page.getByTestId("ad-interstitial").waitFor({ state: "hidden" });
+  console.log("quảng cáo xen: không khi ván chưa xong; có ở lần Chơi lại thứ 3, bỏ qua sau 5 giây");
   console.log("mock bật: khách thấy AD here ở trang chủ / shop / bảng xếp hạng");
 
   // Người dùng thật → admin tắt quảng cáo cho người này → không thấy khung, có Trống Đồng.
@@ -71,8 +120,8 @@ try {
     { apiBase, email: `ads-${stamp}@example.com` },
   );
   if (st !== 200) throw new Error(`dev-login → ${st}`);
-  await page.reload({ waitUntil: "networkidle" });
-  await page.getByTestId("ad-mock").waitFor({ timeout: 15000 });
+  await page.goto(base + "/", { waitUntil: "networkidle" });
+  await page.locator("[data-testid=ad-mock]:visible").first().waitFor({ timeout: 15000 });
 
   const tok = await adminToken();
   const list = await (
@@ -90,7 +139,8 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.getByTestId("player-pill").waitFor({ timeout: 15000 });
   await page.waitForTimeout(800);
-  if (await page.getByTestId("ad-mock").count()) problems.push("đã tắt QC mà vẫn thấy khung");
+  if (await page.locator("[data-testid=ad-mock]:visible").count())
+    problems.push("đã tắt QC mà vẫn thấy khung");
   await page.getByTestId("player-pill").click();
   await page.getByTestId("donor-badge").waitFor({ timeout: 10000 });
   await page.keyboard.press("Escape");
