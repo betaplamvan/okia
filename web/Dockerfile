@@ -16,8 +16,13 @@ COPY web /app/web
 # Để trống → client tự gọi http://<hostname-của-trang>:8000 (xem src/lib/api.ts).
 ARG NEXT_PUBLIC_API_URL=""
 ARG NEXT_PUBLIC_WS_URL=""
+# Quảng cáo AdSense (docs/10): rỗng → không tải script, không ô nào.
+ARG NEXT_PUBLIC_ADSENSE_CLIENT=""
+ARG NEXT_PUBLIC_ADSENSE_SLOT_HOME=""
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL \
+    NEXT_PUBLIC_ADSENSE_CLIENT=$NEXT_PUBLIC_ADSENSE_CLIENT \
+    NEXT_PUBLIC_ADSENSE_SLOT_HOME=$NEXT_PUBLIC_ADSENSE_SLOT_HOME \
     NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1
 # chakra typegen sinh type cho recipe tùy biến (variant "sticker"...) — thiếu thì `next build` lỗi type.

@@ -40,3 +40,12 @@
 - Không dùng tên, logo, kiểu dáng đặc trưng của thương hiệu thật (Thiên Long, Hồng Hà…) trong skin.
 - Âm thanh, font, hình ảnh: chỉ dùng nguồn có giấy phép rõ ràng (CC0, tự làm, hoặc mua bản quyền). Ghi nguồn trong `docs/credits.md` khi bắt đầu thêm asset.
 - Tên hiển thị người chơi: lọc từ ngữ thô tục cơ bản; không có chat tự do (chỉ emote cố định).
+
+## Quảng cáo
+
+Quyết định 2026-10-23: dùng **Google AdSense** (tài khoản nhà xuất bản chung với AdMob của chủ dự án, `ca-pub-7700803097684690`). Ủng hộ → không quảng cáo vĩnh viễn (xem Donate).
+
+- Code: `web/src/components/ads/adsense.tsx` — `AdSenseScript` (nạp `adsbygoogle.js` sau khi trang tương tác, chỉ khi build có `NEXT_PUBLIC_ADSENSE_CLIENT` **và** người dùng không `adFree`; người ủng hộ không tải script), `AdSlot` (ô responsive, `data-ad-slot` từ `NEXT_PUBLIC_ADSENSE_SLOT_HOME`, trống → không render). `web/public/ads.txt` khai báo nhà xuất bản.
+- Vị trí: trang chủ dưới các thẻ chế độ. **Không** đặt gần bàn cờ đang chơi (bấm nhầm, vi phạm chính sách bố trí). Sau này: ô ở màn kết quả, quảng cáo xen qua Ad Placement API khi "Ván mới" (giới hạn tần suất).
+- Chính sách: trang Quyền riêng tư nêu cookie / mã định danh quảng cáo của Google và cách tắt cá nhân hóa; tắt **Quảng cáo tự động** trong AdSense để Google không tự chèn; tuyệt đối không tự bấm / rủ bấm; khách EU phải có hộp đồng ý (dùng công cụ của AdSense khi cần).
+- Thu nhập AdSense về tài khoản cá nhân là thu nhập chịu thuế TNCN — cùng lưu ý như Donate.

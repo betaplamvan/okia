@@ -14,7 +14,7 @@ export default function PrivacyPage() {
     <TextPage
       title={t("title")}
       note={t("updated")}
-      paragraphs={[t("p1"), t("p2"), t("p3"), t("p4")]}
+      paragraphs={[t("p1"), t("p2"), t("p3"), t("p4"), t("p5")]}
     />
   );
 }

@@ -1,5 +1,6 @@
 import { Box, Container, Flex, HStack, Image } from "@chakra-ui/react";
 import { Suspense } from "react";
+import { AdSenseScript } from "@/components/ads/adsense";
 import { AudioProvider } from "@/components/audio-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { UserButton } from "@/components/auth/user-button";
@@ -28,6 +29,8 @@ export function AppShell({ children }: AppShellProps) {
         <AuthProvider />
         {/* Tìm trận toàn cục: hộp chấp nhận, cửa sổ thu nhỏ, vào phòng khi ghép (docs/07). */}
         <MatchmakingHost />
+        {/* AdSense (docs/10 — Quảng cáo): chỉ khi build có mã và người dùng chưa ủng hộ. */}
+        <AdSenseScript />
       </Suspense>
       <Toaster />
       <Box as="header">

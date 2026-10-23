@@ -85,11 +85,12 @@
   },
   "Privacy": {
     "title": "Chính sách quyền riêng tư",
-    "updated": "Bản nháp, cập nhật lần cuối: tháng 10/2026.",
+    "updated": "Bản nháp, cập nhật lần cuối: 23/10/2026.",
     "p1": "Khi chơi với tư cách khách, Ô Kìa chỉ lưu một mã thiết bị ngẫu nhiên trên trình duyệt của bạn để nhớ phiên chơi. Không cần tên, email hay số điện thoại.",
     "p2": "Khi đăng nhập bằng Google, chúng tôi lưu tên hiển thị, ảnh đại diện (nếu có), email và mã định danh Google. Email chỉ dùng để nhận diện tài khoản và gửi thư chào mừng/bảo mật; không có mật khẩu để lưu. Không gửi email tiếp thị.",
     "p3": "Ô Kìa dùng dịch vụ gửi email giao dịch và công cụ theo dõi lỗi của bên thứ ba có máy chủ ở nước ngoài. Dữ liệu gửi đi chỉ ở mức tối thiểu cần thiết để các dịch vụ này hoạt động.",
-    "p4": "Bạn có thể xóa tài khoản bất cứ lúc nào trong phần cài đặt; dữ liệu sẽ bị ẩn ngay và xóa hẳn sau 30 ngày."
+    "p4": "Bạn có thể xóa tài khoản bất cứ lúc nào trong phần cài đặt; dữ liệu sẽ bị ẩn ngay và xóa hẳn sau 30 ngày.",
+    "p5": "Ô Kìa hiển thị quảng cáo của Google AdSense để trang trải chi phí máy chủ. Google và các đối tác dùng cookie và mã định danh quảng cáo để chọn quảng cáo theo lượt truy cập của bạn trên trang này và các trang khác; bạn có thể tắt quảng cáo cá nhân hóa tại Cài đặt quảng cáo của Google (adssettings.google.com). Tài khoản đã ủng hộ Ô Kìa không thấy quảng cáo và không tải mã quảng cáo."
   },
   "Terms": {
     "title": "Điều khoản sử dụng",

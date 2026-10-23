@@ -79,6 +79,7 @@ TEST_DATABASE_URL=$LOCAL_TEST_DATABASE_URL TEST_REDIS_URL=$LOCAL_TEST_REDIS_URL 
 
 | Loại | Tên | Ghi chú |
 |---|---|---|
+| Variable | `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_ADSENSE_SLOT_HOME` | Google AdSense ([docs/10](../docs/10-phap-ly.md#quảng-cáo)): mã `ca-pub-…` và `data-ad-slot` của ô trang chủ. Nhúng lúc build; rỗng → không có quảng cáo |
 | Variable | `NEXT_PUBLIC_API_URL` | URL public của API, ví dụ `https://api.okia.vn`. Nhúng vào bundle lúc build. Để trống → web gọi `http(s)://<hostname-của-trang>:8000` |
 | Variable | `NEXT_PUBLIC_WS_URL` | Tùy chọn; mặc định suy ra từ API URL (`ws(s)://…/ws`) |
 | Variable | `CI_RUNNER` | Tùy chọn: `auto` (mặc định) / `github` / `minisforum` |

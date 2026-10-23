@@ -55,6 +55,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           api-url: ${{ vars.NEXT_PUBLIC_API_URL }}
           ws-url: ${{ vars.NEXT_PUBLIC_WS_URL }}
+          adsense-client: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
+          adsense-slot-home: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_HOME }}
 
   build-fallback:
     name: Build (minisforum, dự phòng)
@@ -77,6 +79,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           api-url: ${{ vars.NEXT_PUBLIC_API_URL }}
           ws-url: ${{ vars.NEXT_PUBLIC_WS_URL }}
+          adsense-client: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT }}
+          adsense-slot-home: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT_HOME }}
 
   deploy:
     name: Deploy (minisforum)

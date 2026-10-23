@@ -14,6 +14,14 @@ inputs:
   api-url:
     description: NEXT_PUBLIC_API_URL nhúng vào bundle (rỗng → <hostname-của-trang>:8000)
     default: ""
+  adsense-client:
+    description: NEXT_PUBLIC_ADSENSE_CLIENT (ca-pub-…; rỗng → không có quảng cáo)
+    required: false
+    default: ""
+  adsense-slot-home:
+    description: NEXT_PUBLIC_ADSENSE_SLOT_HOME (data-ad-slot ô trang chủ; rỗng → không đặt ô)
+    required: false
+    default: ""
   ws-url:
     description: NEXT_PUBLIC_WS_URL (rỗng → suy ra từ API URL)
     default: ""
@@ -96,5 +104,7 @@ runs:
         build-args: |
           NEXT_PUBLIC_API_URL=${{ inputs.api-url }}
           NEXT_PUBLIC_WS_URL=${{ inputs.ws-url }}
+          NEXT_PUBLIC_ADSENSE_CLIENT=${{ inputs.adsense-client }}
+          NEXT_PUBLIC_ADSENSE_SLOT_HOME=${{ inputs.adsense-slot-home }}
         cache-from: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=web' || '' }}
         cache-to: ${{ inputs.self-hosted != 'true' && 'type=gha,scope=web,mode=max' || '' }}

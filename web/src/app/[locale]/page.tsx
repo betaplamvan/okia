@@ -1,6 +1,7 @@
 import { Box, Circle, Container, Heading, Image, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import { LuBot, LuSwords, LuTrophy, LuUsers } from "react-icons/lu";
+import { AdSlot } from "@/components/ads/adsense";
 import { GuideArticle } from "@/components/guide-article";
 import { HomeActions } from "@/components/home-actions";
 import { PlayerPill } from "@/components/player-pill";
@@ -95,6 +96,9 @@ export default function Home() {
         </SimpleGrid>
 
         <HomeActions />
+
+        {/* Ô quảng cáo trang chủ (docs/10): dưới các thẻ chế độ, xa bàn cờ; người ủng hộ không thấy. */}
+        <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME} />
 
         <GuideArticle />
       </Stack>

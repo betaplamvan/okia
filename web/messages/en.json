@@ -85,11 +85,12 @@
   },
   "Privacy": {
     "title": "Privacy policy",
-    "updated": "Draft, last updated: October 2026.",
+    "updated": "Draft, last updated: 23 Oct 2026.",
     "p1": "When you play as a guest, Ô Kìa only stores a random device id in your browser to remember your session. No name, email or phone number is required.",
     "p2": "When you sign in with Google we store your display name, avatar (if any), email and Google id. Email is only used to identify your account and send welcome/security mail; there is no password to store. No marketing email.",
     "p3": "Ô Kìa uses third-party services for transactional email and error monitoring, hosted outside Vietnam. Only the minimum data needed for those services to work is sent.",
-    "p4": "You can delete your account at any time from the settings; data is hidden immediately and permanently deleted after 30 days."
+    "p4": "You can delete your account at any time from the settings; data is hidden immediately and permanently deleted after 30 days.",
+    "p5": "Ô Kìa shows Google AdSense ads to cover server costs. Google and its partners use cookies and advertising identifiers to pick ads based on your visits to this and other sites; you can opt out of personalised ads at Google Ads Settings (adssettings.google.com). Accounts that have supported Ô Kìa see no ads and load no ad code."
   },
   "Terms": {
     "title": "Terms of use",
