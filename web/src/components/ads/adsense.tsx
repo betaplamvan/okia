@@ -6,7 +6,7 @@ import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { usePathname } from "@/i18n/navigation";
-import { useAuth } from "@/stores/auth";
+import { type AuthState, useAuth } from "@/stores/auth";
 
 /**
  * Quảng cáo Google AdSense (docs/10 — Quảng cáo). Bật khi build có `NEXT_PUBLIC_ADSENSE_CLIENT`
@@ -42,27 +42,31 @@ declare global {
   }
 }
 
+type AdsInput = Pick<AuthState, "user" | "status" | "site">;
+
 /**
  * Người này có quảng cáo không. `real`: AdSense thật (có mã, chưa ủng hộ); `mock`: vùng giả.
- * Chưa biết người dùng (đang boot) → chưa hiện, tránh nháy quảng cáo với người đã ủng hộ.
+ * Đang boot (chưa biết người dùng) → chưa hiện, tránh nháy quảng cáo với người đã ủng hộ. Boot xong mà
+ * không có phiên (tạo khách lỗi / quá giới hạn theo IP — mạng 4G chung IP) → coi như khách chưa ủng hộ.
  */
-export function useAdsEnabled(): { real: boolean; mock: boolean } {
-  const user = useAuth((s) => s.user);
-  const adsMock = useAuth((s) => s.site.adsMock);
-  const eligible = !!user && !user.adFree;
+function adsFor({ user, status, site }: AdsInput): { real: boolean; mock: boolean } {
+  const known = !!user || status === "ready" || status === "offline";
+  const eligible = known && !user?.adFree;
   return {
     real: eligible && !!ADSENSE_CLIENT,
-    mock: adsMock && !!user && (eligible || !!user.isAdmin),
+    mock: site.adsMock && known && (eligible || !!user?.isAdmin),
   };
 }
 
+export function useAdsEnabled(): { real: boolean; mock: boolean } {
+  const user = useAuth((s) => s.user);
+  const status = useAuth((s) => s.status);
+  const site = useAuth((s) => s.site);
+  return adsFor({ user, status, site });
+}
+
 function adsState() {
-  const { user, site } = useAuth.getState();
-  const eligible = !!user && !user.adFree;
-  return {
-    real: eligible && !!ADSENSE_CLIENT,
-    mock: site.adsMock && !!user && (eligible || !!user.isAdmin),
-  };
+  return adsFor(useAuth.getState());
 }
 
 /** Nạp script AdSense một lần (AppShell), sau khi trang tương tác được; khai báo Ad Placement API. */

@@ -53,6 +53,22 @@ try {
     const txt = await page.locator("[data-testid=ad-mock]:visible").first().innerText();
     if (!txt.includes(name)) problems.push(`khung ${path} ghi "${txt}"`);
   }
+  // Không tạo được phiên khách (quá giới hạn theo IP — 4G chung IP) → vẫn coi là khách, vẫn thấy khung.
+  {
+    const ctx = await browser.newContext({ locale: "vi-VN" });
+    const p2 = await ctx.newPage();
+    await p2.route("**/auth/guest", (r) =>
+      r.fulfill({ status: 429, contentType: "application/json", body: '{"code":"RATE_LIMITED"}' }),
+    );
+    await p2.goto(base + "/", { waitUntil: "networkidle" });
+    try {
+      await p2.locator("[data-testid=ad-mock]:visible").first().waitFor({ timeout: 15000 });
+      console.log("không tạo được phiên khách: vẫn thấy khung");
+    } catch {
+      problems.push("không có phiên (tạo khách lỗi) thì không thấy khung");
+    }
+    await ctx.close();
+  }
   await page.goto(base + "/", { waitUntil: "networkidle" });
   await page.locator("[data-testid=ad-mock]:visible").first().waitFor();
   await page.setViewportSize({ width: 1440, height: 900 });

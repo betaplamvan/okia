@@ -35,7 +35,7 @@ export type ProfileTab = "overview" | "rank" | "account";
 /** Hộp "Quà mỗi ngày" (nút hộp quà trang chủ): điểm danh / nhiệm vụ. */
 export type GiftTab = "checkin" | "quests";
 
-type AuthState = {
+export type AuthState = {
   status: "idle" | "loading" | "ready" | "offline";
   user: User | null;
   accessToken: string | null;
@@ -67,6 +67,8 @@ type AuthState = {
   replacedInOtherTab(): Promise<void>;
   dismissSessionReplaced(): void;
   guest(): Promise<void>;
+  /** Tải lại thông số public (GET /site) — lúc boot và mỗi lần quay lại tab. */
+  loadSite(): Promise<void>;
   logout(): Promise<void>;
   logoutAll(): Promise<void>;
   updateMe(patch: { displayName?: string; locale?: "vi" | "en" }): Promise<User>;
@@ -150,9 +152,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
     if (bootPromise) return bootPromise;
     bootPromise = (async () => {
       set({ status: "loading" });
-      void api<SiteConfig>("/site", { locale })
-        .then((site) => set({ site }))
-        .catch(() => {});
+      void get().loadSite();
       // Catalog skin thật (DB) — không chặn đăng nhập; lỗi thì dùng bản biên dịch.
       void api<{ manifest: SkinManifest }[]>("/skins", { locale })
         .then((list) => useCatalog.getState().setCatalog(list.map((s) => s.manifest)))
@@ -193,7 +193,17 @@ export const useAuth = create<AuthState>()((set, get) => ({
     return refreshPromise;
   },
 
+  async loadSite() {
+    try {
+      set({ site: await api<SiteConfig>("/site", { locale: get().locale }) });
+    } catch {
+      // Mạng lỗi: giữ giá trị cũ, lần quay lại tab sau thử lại.
+    }
+  },
+
   async checkSession() {
+    // Admin vừa bật / tắt vùng quảng cáo giả → tab đang mở cũng cập nhật, không cần tải lại trang.
+    void get().loadSite();
     const u = get().user;
     if (!u || u.isGuest) return;
     try {
