@@ -95,8 +95,14 @@ def test_bot_moi_thang_bot_tham_lam_va_dung_ngan_sach() -> None:
 
 
 def test_strength_theo_rating_an() -> None:
-    assert bot.strength_for_rating(1500, 350) == 0.65  # mới hoàn toàn: chưa tin rating
-    assert bot.strength_for_rating(1000, 60) == 0.5
-    assert bot.strength_for_rating(1475, 60) == 0.75
-    assert bot.strength_for_rating(1900, 60) == 1.0
-    assert bot.strength_for_rating(1900, 260) == 0.86  # tin 60 %
+    """2026-10-26: người mới gặp máy dễ (0,3), tăng dần theo MMR thật (docs/03, docs/07)."""
+    assert bot.strength_for_rating(1500, 350) == 0.3  # mới hoàn toàn: chưa tin rating
+    assert bot.strength_for_rating(1000, 60) == 0.15
+    assert bot.strength_for_rating(1500, 60) == 0.35
+    assert bot.strength_for_rating(1600, 60) == 0.5
+    assert bot.strength_for_rating(1700, 60) == 0.65
+    assert bot.strength_for_rating(2000, 60) == 0.95
+    assert bot.strength_for_rating(1900, 260) == 0.69  # tin 60 %: 0,3 + 0,65 × 0,6
+    # Tăng dần theo MMR (không bao giờ khó hơn khi MMR thấp hơn).
+    vals = [bot.strength_for_rating(m, 60) for m in range(1000, 2001, 50)]
+    assert vals == sorted(vals)

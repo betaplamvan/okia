@@ -20,7 +20,10 @@ page.on("console", (m) => {
 page.on("pageerror", (e) => problems.push(`[pageerror] ${String(e.message).slice(0, 200)}`));
 
 await page.goto(base + "/", { waitUntil: "networkidle" });
-await page.getByRole("link", { name: /Chơi với máy/ }).click();
+await page
+  .getByRole("link", { name: /Chơi với máy/ })
+  .first()
+  .click();
 await page.waitForURL(/\/play$/);
 await page.getByRole("application").locator("canvas").waitFor({ timeout: 20000 });
 await page.getByRole("button", { name: "Đổi bàn" }).click();

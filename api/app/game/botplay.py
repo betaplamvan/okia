@@ -33,7 +33,9 @@ def schedule(redis: Redis, hub: Hub, room: rooms.Room) -> None:
     cur = _active.get(room.id)
     if cur is not None and not cur.done():
         return
-    task = asyncio.create_task(_run(redis, hub, room.id), name=f"bot-{room.id}")
+    # Máy đi nước đầu ván → chờ thêm cho người chơi đọc màn "Máy đi trước" (docs/03).
+    opening = room.state.move_no == 0
+    task = asyncio.create_task(_run(redis, hub, room.id, opening), name=f"bot-{room.id}")
     _active[room.id] = task
     task.add_done_callback(lambda _t: _active.pop(room.id, None))
 
@@ -43,12 +45,18 @@ def _delay() -> float:
     return base * random.uniform(0.6, 1.4)
 
 
-async def _run(redis: Redis, hub: Hub, room_id: str) -> None:
+# Thêm trước nước đầu ván của máy (màn thông báo ai đi trước ~1,8 giây ở client).
+OPENING_PAUSE_S = 2.0
+
+
+async def _run(redis: Redis, hub: Hub, room_id: str, opening: bool = False) -> None:
     try:
+        first = True
         while True:
-            await asyncio.sleep(_delay())
+            await asyncio.sleep(_delay() + (OPENING_PAUSE_S if first and opening else 0.0))
+            first = False
             out = await rooms.play_bot_move(redis, room_id)
-            if out is None:
+            if out is None or out.moved is None:
                 return
             await hub.publish(room_id, out.moved)
             if out.over:
