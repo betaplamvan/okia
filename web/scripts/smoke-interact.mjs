@@ -17,6 +17,67 @@ async function page(viewport = { width: 1000, height: 900 }) {
   p.on("pageerror", (e) => problems.push(`[pageerror] ${String(e.message).slice(0, 200)}`));
   return p;
 }
+/**
+ * Bấm `trigger` rồi lấy mẫu tâm món đồ đang bay (`throw-fly`) mỗi ~40 ms. Kiểm tra: điểm đầu gần
+ * chip người ném, điểm cuối gần chip đích, quỹ đạo cong lên (có điểm cao hơn cả hai đầu), có chuyển
+ * động thật (không đứng yên ở góc trên trái).
+ */
+async function checkFlight(p, trigger, fromSeat, where) {
+  const center = (seat) =>
+    p.evaluate((s) => {
+      const r = document.querySelector(`[data-hud-seat="${s}"]`).getBoundingClientRect();
+      const m = 48;
+      return {
+        x: Math.min(innerWidth - m, Math.max(m, r.left + r.width / 2)),
+        y: Math.min(innerHeight - m, Math.max(m, r.top + r.height / 2)),
+      };
+    }, seat);
+  await trigger();
+  // Đo SAU khi bấm (bấm nút dưới bàn có thể cuộn trang); chip ngoài màn hình → kẹp vào khung nhìn.
+  const from = await center(fromSeat);
+  const to = await center(1 - fromSeat);
+  const pts = await p.evaluate(async () => {
+    const out = [];
+    const t0 = performance.now();
+    while (performance.now() - t0 < 900) {
+      const el = document.querySelector("[data-testid=throw-fly]");
+      if (el) {
+        const r = el.getBoundingClientRect();
+        out.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+      } else if (out.length) break;
+      await new Promise((r) => setTimeout(r, 40));
+    }
+    return out;
+  });
+  // Mẫu cuối lấy trước khi món đồ biến mất ≤ 40 ms (≈ 94 % quãng bay) → nới ngưỡng điểm cuối.
+  const near = (a, b, tol) => Math.hypot(a.x - b.x, a.y - b.y) <= tol;
+  if (pts.length < 5) return problems.push(`${where}: chỉ lấy được ${pts.length} mẫu đường bay`);
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const top = Math.min(...pts.map((q) => q.y));
+  if (!near(first, from, 60))
+    problems.push(
+      `${where}: điểm xuất phát lệch ${JSON.stringify(first)} vs chip ${JSON.stringify(from)}`,
+    );
+  if (!near(last, to, 110))
+    problems.push(`${where}: điểm cuối lệch ${JSON.stringify(last)} vs chip ${JSON.stringify(to)}`);
+  // Vòng cung (lên hoặc võng xuống khi sát mép trên): lệch khỏi đường thẳng nối hai đầu > 20 px.
+  const bend = Math.max(
+    ...pts.map((q) => {
+      const t = (q.x - first.x) / (last.x - first.x || 1);
+      return Math.abs(q.y - (first.y + (last.y - first.y) * t));
+    }),
+  );
+  if (!(bend > 20))
+    problems.push(`${where}: không có vòng cung (lệch tối đa ${Math.round(bend)} px)`);
+  const offTop = Math.min(...pts.map((q) => q.y)) < 0;
+  if (offTop) problems.push(`${where}: món đồ bay ra ngoài mép trên màn hình`);
+  if (first.x < 5 && first.y < 5) problems.push(`${where}: món đồ ở góc trên trái`);
+  console.log(
+    `${where}: bay ${pts.length} mẫu, từ (${Math.round(first.x)},${Math.round(first.y)}) tới (${Math.round(last.x)},${Math.round(last.y)}), đỉnh y=${Math.round(top)}`,
+  );
+}
+
 async function login(p, email, displayName, wallet) {
   await p.goto(base + "/", { waitUntil: "networkidle" });
   const st = await p.evaluate(
@@ -53,7 +114,19 @@ try {
   console.log(`phòng ${code}: thanh tương tác hiện ở cả hai`);
 
   // A ném giấy vo → cả hai thấy món bay rồi hiệu ứng trúng; chip đối thủ của A rung.
-  await A.getByTestId("throw-throw_paper").click();
+  const mySeatA = await A.evaluate(() =>
+    Number(
+      [...document.querySelectorAll("[data-hud-seat]")]
+        .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left)[0]
+        .getAttribute("data-hud-seat"),
+    ),
+  );
+  await checkFlight(
+    A,
+    () => A.getByTestId("throw-throw_paper").click(),
+    mySeatA,
+    "trong phòng (A)",
+  );
   await B.getByTestId("throw-splat").waitFor({ timeout: 8000 });
   await A.getByTestId("throw-splat").waitFor({ timeout: 8000 });
   if ((await B.getByTestId("throw-splat").getAttribute("data-item")) !== "throw_paper")
@@ -83,7 +156,9 @@ try {
   await A.getByRole("tab", { name: "Đồ ném" }).click();
   await A.getByTestId("skin-throw_tomato").waitFor({ timeout: 10000 });
   await A.getByTestId("skin-throw_tomato").getByRole("button", { name: "Thử" }).click();
-  await A.getByTestId("try-throw").click();
+  await A.getByTestId("try-throw").waitFor();
+  await A.waitForTimeout(400); // hộp thoại mở xong (animation)
+  await checkFlight(A, () => A.getByTestId("try-throw").click(), 0, "thử ném ở Shop");
   await A.getByTestId("throw-splat").waitFor({ timeout: 8000 });
   await A.screenshot({ path: ".shots/interact-shop-try.png" });
   await A.keyboard.press("Escape");

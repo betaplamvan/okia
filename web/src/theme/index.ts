@@ -93,6 +93,58 @@ const config = defineConfig({
   },
   theme: {
     keyframes: {
+      // Keyframes PHẢI khai báo ở đây (theme.keyframes): viết lồng `"@keyframes x"` trong prop `css`
+      // của Chakra thì CSS sinh ra rỗng (`@keyframes x { }`) → animation chạy mà không làm gì (2026-10-26).
+      okiaAura: {
+        "0%, 100%": { opacity: 0.55, transform: "scale(0.96)" },
+        "50%": { opacity: 0.95, transform: "scale(1.04)" },
+      },
+      okiaEmber: {
+        "0%": { transform: "translateY(0)", opacity: 0 },
+        "20%": { opacity: 1 },
+        "100%": { transform: "translateY(-34px)", opacity: 0 },
+      },
+      okiaEmote: {
+        "0%": { transform: "translate(-50%, 0) scale(0.4)", opacity: 0 },
+        "15%": { transform: "translate(-50%, -8px) scale(1.1)", opacity: 1 },
+        "85%": { transform: "translate(-50%, -8px) scale(1)", opacity: 1 },
+        "100%": { transform: "translate(-50%, -20px) scale(0.9)", opacity: 0 },
+      },
+      okiaFirstTurn: {
+        "0%": { transform: "scale(0.6) rotate(-4deg)", opacity: 0 },
+        "12%": { transform: "scale(1.08) rotate(1deg)", opacity: 1 },
+        "22%": { transform: "scale(1) rotate(0)", opacity: 1 },
+        "85%": { transform: "scale(1)", opacity: 1 },
+        "100%": { transform: "scale(0.94)", opacity: 0 },
+      },
+      okiaFlame: {
+        "0%": { transform: "scale(0.9, 0.82) skewX(-5deg)" },
+        "50%": { transform: "scale(1.05, 1.06) skewX(3deg)" },
+        "100%": { transform: "scale(0.96, 1.16) skewX(-2deg)" },
+      },
+      okiaNudge: {
+        "0%, 100%": { transform: "translateX(0)" },
+        "50%": { transform: "translateX(3px)" },
+      },
+      okiaRankDown: {
+        "0%": { transform: "translateY(-14px)", opacity: 0 },
+        "100%": { transform: "translateY(0)", opacity: 1 },
+      },
+      okiaRankUp: {
+        "0%": { transform: "scale(0.5) rotate(-8deg)", opacity: 0 },
+        "60%": { transform: "scale(1.15) rotate(3deg)", opacity: 1 },
+        "100%": { transform: "scale(1) rotate(0)", opacity: 1 },
+      },
+      okiaShine: {
+        "0%": { transform: "skewX(-20deg) translateX(0)" },
+        "55%, 100%": { transform: "skewX(-20deg) translateX(210px)" },
+      },
+      okiaSplat: {
+        "0%": { transform: "translate(-50%, -50%) scale(0.2)", opacity: 1 },
+        "25%": { transform: "translate(-50%, -50%) scale(1.15)", opacity: 1 },
+        "70%": { transform: "translate(-50%, -50%) scale(1)", opacity: 0.95 },
+        "100%": { transform: "translate(-50%, -40%) scale(1.05)", opacity: 0 },
+      },
       okiaHit: {
         "0%, 100%": { transform: "translate(0,0) rotate(0)" },
         "20%": { transform: "translate(-4px, 2px) rotate(-3deg)" },

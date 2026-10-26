@@ -78,13 +78,6 @@ export function FirstTurnBanner({
         textAlign="center"
         css={{
           animation: `okiaFirstTurn ${SHOW_MS}ms ease-out forwards`,
-          "@keyframes okiaFirstTurn": {
-            "0%": { transform: "scale(0.6) rotate(-4deg)", opacity: 0 },
-            "12%": { transform: "scale(1.08) rotate(1deg)", opacity: 1 },
-            "22%": { transform: "scale(1) rotate(0)", opacity: 1 },
-            "85%": { transform: "scale(1)", opacity: 1 },
-            "100%": { transform: "scale(0.94)", opacity: 0 },
-          },
           "@media (prefers-reduced-motion: reduce)": { animation: "none" },
         }}
       >
