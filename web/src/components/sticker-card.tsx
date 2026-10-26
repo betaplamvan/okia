@@ -87,12 +87,6 @@ export function ModeCard({ title, description, icon, tone, badge, href, ...rest 
             : undefined
         }
         _motionReduce={{ "& > svg": { animation: "none !important" } }}
-        css={{
-          "@keyframes okiaNudge": {
-            "0%, 100%": { transform: "translateX(0)" },
-            "50%": { transform: "translateX(3px)" },
-          },
-        }}
       >
         <LuArrowRight />
       </Circle>

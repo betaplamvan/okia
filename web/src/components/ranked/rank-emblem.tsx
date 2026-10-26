@@ -193,24 +193,6 @@ const BLAZE_CSS = {
   },
   "& .ember": { animation: "okiaEmber 1.8s ease-out infinite" },
   "& .shine": { transformBox: "fill-box", animation: "okiaShine 3.2s ease-in-out infinite" },
-  "@keyframes okiaAura": {
-    "0%, 100%": { opacity: 0.55, transform: "scale(0.96)" },
-    "50%": { opacity: 0.95, transform: "scale(1.04)" },
-  },
-  "@keyframes okiaFlame": {
-    "0%": { transform: "scale(0.9, 0.82) skewX(-5deg)" },
-    "50%": { transform: "scale(1.05, 1.06) skewX(3deg)" },
-    "100%": { transform: "scale(0.96, 1.16) skewX(-2deg)" },
-  },
-  "@keyframes okiaEmber": {
-    "0%": { transform: "translateY(0)", opacity: 0 },
-    "20%": { opacity: 1 },
-    "100%": { transform: "translateY(-34px)", opacity: 0 },
-  },
-  "@keyframes okiaShine": {
-    "0%": { transform: "skewX(-20deg) translateX(0)" },
-    "55%, 100%": { transform: "skewX(-20deg) translateX(210px)" },
-  },
   "@media (prefers-reduced-motion: reduce)": {
     "& .aura, & .flame, & .ember, & .shine": { animation: "none" },
     "& .ember, & .shine": { opacity: 0 },

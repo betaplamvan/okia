@@ -396,15 +396,6 @@ export function RoomScreen({ code }: { code: string }) {
                                 : tierShift < 0
                                   ? "okiaRankDown 0.6s ease-out both"
                                   : undefined,
-                            "@keyframes okiaRankUp": {
-                              "0%": { transform: "scale(0.5) rotate(-8deg)", opacity: 0 },
-                              "60%": { transform: "scale(1.15) rotate(3deg)", opacity: 1 },
-                              "100%": { transform: "scale(1) rotate(0)", opacity: 1 },
-                            },
-                            "@keyframes okiaRankDown": {
-                              "0%": { transform: "translateY(-14px)", opacity: 0 },
-                              "100%": { transform: "translateY(0)", opacity: 1 },
-                            },
                             "@media (prefers-reduced-motion: reduce)": { animation: "none" },
                           }}
                         >
