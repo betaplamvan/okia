@@ -57,6 +57,8 @@ def ranked_turn_seconds() -> int:
 
 
 DEADLINES_KEY = "deadlines"
+# Lượt đầu ván được thêm chừng này (client hiện màn "Ai đi trước" ~1,8 giây, docs/03 — Lượt đi đầu).
+OPENING_EXTRA_MS = 2500
 
 Status = Literal["waiting", "playing", "over"]
 
@@ -141,6 +143,11 @@ class Room:
 
     def next_deadline(self) -> int | None:
         return now_ms() + self.turn_seconds * 1000 if self.turn_seconds else None
+
+    def opening_deadline(self) -> int | None:
+        """Hạn lượt đầu: thêm OPENING_EXTRA_MS cho màn thông báo ai đi trước."""
+        d = self.next_deadline()
+        return d + OPENING_EXTRA_MS if d else None
 
 
 def state_dict(s: rules.GameState) -> dict[str, Any]:
@@ -302,13 +309,13 @@ async def join(
         other = await active_room_id(redis, user_id)
         if other and other != room_id:
             raise AppError("ALREADY_IN_GAME", 409)
-        # Chủ phòng đi trước hay sau: ngẫu nhiên cho công bằng.
+        # Ai đi trước: ngẫu nhiên (ghế 0 đi trước, docs/03 — Lượt đi đầu).
         host = room.players[0]
         host.seat = random.randint(0, 1)
         room.players.append(Player(user_id=user_id, name=name, seat=1 - host.seat, loadout=loadout))
         room.status = "playing"
         room.started_at = now_ms()
-        room.deadline = room.next_deadline()
+        room.deadline = room.opening_deadline()
         await save(redis, room)
         return JoinResult(room, True)
 
@@ -347,7 +354,7 @@ async def create_ranked(redis: Redis, a: "Entry", b: "Entry") -> Room:
         state=maps.create_game(game_map),
         started_at=now_ms(),
     )
-    room.deadline = room.next_deadline()
+    room.deadline = room.opening_deadline()
     await save(redis, room)
     return room
 
@@ -392,7 +399,7 @@ async def create_vs_bot(redis: Redis, a: "Entry", strength: float) -> Room:
         started_at=now_ms(),
         bot_strength=strength,
     )
-    room.deadline = room.next_deadline()
+    room.deadline = room.opening_deadline()
     await save(redis, room)
     return room
 

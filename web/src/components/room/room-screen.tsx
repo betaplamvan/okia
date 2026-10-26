@@ -19,6 +19,7 @@ import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
 import { useMapName } from "@/components/play/map-picker";
 import { InteractionBar } from "@/components/play/interaction-bar";
+import { FirstTurnBanner } from "@/components/play/first-turn-banner";
 import { InteractionLayer } from "@/components/play/interaction-layer";
 import { useCatalog } from "@/stores/catalog";
 import { PlayerChip } from "@/components/play/player-chip";
@@ -182,6 +183,7 @@ export function RoomScreen({ code }: { code: string }) {
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
       <InteractionLayer source={controller} />
+      <FirstTurnBanner session={session} opponentName={theirName} />
       <GameLayout
         me={
           <PlayerChip
@@ -189,7 +191,7 @@ export function RoomScreen({ code }: { code: string }) {
             icon={<LuUser />}
             name={myName}
             score={numberFormat.format(state.scores[human])}
-            tone={human === 0 ? "pen.blue" : "pen.red"}
+            tone="pen.blue"
             active={yourTurn}
             sub={ranked ? <TierBadge rank={online.ranks[human]} size="sm" /> : undefined}
           />
@@ -200,7 +202,7 @@ export function RoomScreen({ code }: { code: string }) {
             icon={online.bots[bot] ? <LuBot /> : <LuUser />}
             name={theirName}
             score={numberFormat.format(state.scores[bot])}
-            tone={bot === 0 ? "pen.blue" : "pen.red"}
+            tone="pen.red"
             active={!yourTurn && !result}
             reverse
             sub={
@@ -246,15 +248,7 @@ export function RoomScreen({ code }: { code: string }) {
               <TurnTimer
                 deadline={result ? null : online.deadline}
                 turnSeconds={online.turnSeconds}
-                tone={
-                  state.turn === human
-                    ? human === 0
-                      ? "pen.blue"
-                      : "pen.red"
-                    : bot === 0
-                      ? "pen.blue"
-                      : "pen.red"
-                }
+                tone={state.turn === human ? "pen.blue" : "pen.red"}
                 label={t("timeLeft")}
               />
             ) : null}

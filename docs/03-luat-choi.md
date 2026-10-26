@@ -76,7 +76,9 @@ moveNo:  số nước đã đi
 finished: bool
 ```
 
-Người đi trước là `0`. Trong trận online, server chọn ngẫu nhiên ai là `0`.
+Người đi trước là `0`. **Lượt đi đầu ngẫu nhiên ở mọi chế độ** (2026-10-26): online (phòng riêng, xếp hạng, xếp hạng với máy) server bốc ngẫu nhiên ai ngồi ghế `0`; chơi với máy client bốc mỗi ván (`LocalBotController`, `humanFirst: "random"`). Đầu ván hiện màn **"Bạn đi trước!" / "{tên} đi trước"** ~1,8 giây (`FirstTurnBanner`, nền xanh khi mình đi trước, đỏ khi đối thủ); lượt đầu được cộng thêm 2,5 giây (`room.OPENING_EXTRA_MS`) và máy chờ thêm ~2 giây trước nước đầu để người chơi kịp đọc.
+
+**Mình luôn bên trái, màu Xanh; đối thủ luôn bên phải, màu Đỏ** — trên màn hình của mỗi người, bất kể ngồi ghế nào: `GameLayout` đặt chip mình bên trái; nét / ô / chữ đếm trên bàn dùng hình thái `mine` (tông lạnh) của bút cho mình và `opponent` (tông nóng) cho đối thủ; chip và đồng hồ lượt cũng tô theo mình/đối thủ (trước 2026-10-26 chip tô theo ghế nên ai ngồi ghế 1 thấy chip mình màu đỏ).
 
 ## Luật một nước đi
 
@@ -169,15 +171,22 @@ Bot luôn chạy đầy đủ chiến thuật, rồi một tham số `strength �
 | 1.0 | thắng 20 | 20 | 20 |
 | 0.8 (mặc định) | 18 | 17 | 14 |
 | 0.6 | 15 | 14 | 12 |
-| 0.4 (sàn) | 4 | 3 | 2 |
+| 0.4 | 4 | 3 | 2 |
+| 0.35 (khởi điểm người mới, 2026-10-26) | 2 | — | — |
+| 0.2 | 0 | — | — |
+| 0.1 (sàn) | 0 | — | — |
+
+Đo lại 5×5 ngày 2026-10-26 (`BENCH=1 pnpm exec vitest run src/game/bot-strength.bench.test.ts`): 1.0 → 19, 0.8 → 18, 0.6 → 13, 0.4 → 3, 0.35 → 2, 0.2 → 0, 0.1 → 0. Bot tham lam đã là mức "biết không vẽ cạnh thứ ba"; người mới thường yếu hơn mức đó nên khởi điểm 0.35 và tự giảm khi thua.
 
 Thời gian một nước (Node, máy dev): trung bình 9–29 ms, tối đa ≈ 160 ms (ngân sách 20 000 nút hoặc 150 ms, quá thì quay về luật 1–3).
 
 ### Tự điều chỉnh độ mạnh
 
-- Người chơi mới: `strength = 0.8` (từ 2026-10-22; trước là 0.65 — người chơi thắng quá dễ). Sàn 0.4.
-- Có MMR (sau khi chơi xếp hạng): `strength` tăng tuyến tính từ 0.35 (MMR ≤ 1100) đến 0.95 (MMR ≥ 1850).
-- Chuỗi kết quả với bot: thua bot 3 ván liên tiếp → `-0.1`; thắng bot 3 ván liên tiếp → `+0.1` (giới hạn trong [0.4, 1]).
+Thang mới 2026-10-26 (người mới thua máy liên tục ở 0.8 — mức 0.4 đã yếu hơn cả bot tham lam, còn người mới thì yếu hơn bot tham lam nhiều):
+
+- **Chơi với máy**: người mới bắt đầu ở `strength = 0.35` (`START_STRENGTH`), sàn **0.1** (nước ngớ ngẩn ~25 % mỗi quyết định). Cài đặt cũ còn đúng mặc định 0.8 (chưa từng tự điều chỉnh) được chuyển về 0.35.
+- Tự điều chỉnh: **thua 2 ván liên tiếp → −0.1**, thắng 3 ván liên tiếp → +0.1 (xuống nhanh hơn lên), kẹp trong [0.1, 1].
+- **Máy trong xếp hạng** (ghép khi chờ lâu, `bot.strength_for_rating`): nội suy theo MMR ẩn — ≤ 1100 → 0.15 · 1500 → 0.35 · 1700 → 0.65 · ≥ 1900 → 0.95; rating chưa chắc (rd ≥ 200) kéo về 0.3, người mới hoàn toàn (1500 / rd 350) gặp máy **0.3** (trước là 0.65).
 - `strength` **không hiển thị** cho người chơi. *Các con số là giá trị khởi điểm.*
 
 ### Bot chạy ở đâu

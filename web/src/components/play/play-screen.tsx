@@ -19,6 +19,7 @@ import { BoardCanvas } from "@/components/play/board-canvas";
 import { GameLayout } from "@/components/play/game-layout";
 import { MapPicker, ShowLastMoveToggle, useMapName } from "@/components/play/map-picker";
 import { InteractionBar } from "@/components/play/interaction-bar";
+import { FirstTurnBanner } from "@/components/play/first-turn-banner";
 import { InteractionLayer } from "@/components/play/interaction-layer";
 import { useCatalog } from "@/stores/catalog";
 import { PlayerChip } from "@/components/play/player-chip";
@@ -177,6 +178,7 @@ export function PlayScreen() {
   return (
     <Container maxW="6xl" px={{ base: 2, md: 4 }} py={{ base: 2, md: 4 }} flex="1">
       <InteractionLayer source={controller} />
+      <FirstTurnBanner session={session} opponentName={t("bot")} />
       <GameLayout
         me={
           <PlayerChip
@@ -184,7 +186,7 @@ export function PlayScreen() {
             icon={<LuUser />}
             name={t("you")}
             score={youScore}
-            tone={human === 0 ? "pen.blue" : "pen.red"}
+            tone="pen.blue"
             active={yourTurn}
           />
         }
@@ -194,7 +196,7 @@ export function PlayScreen() {
             icon={<LuBot />}
             name={t("bot")}
             score={botScore}
-            tone={bot === 0 ? "pen.blue" : "pen.red"}
+            tone="pen.red"
             active={!yourTurn && !result}
             reverse
           />

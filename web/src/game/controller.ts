@@ -53,6 +53,8 @@ export interface GameSession {
   result: GameResult | null;
   /** Chỉ có ở ván online (NetworkController). */
   online?: OnlineInfo;
+  /** Số thứ tự ván trong controller (màn "Ai đi trước" hiện một lần mỗi ván). */
+  round?: number;
 }
 
 export interface OnlineInfo {
@@ -97,8 +99,8 @@ export interface GameController {
 export interface NewGameOptions {
   /** Id map trong bể hoặc "random" (bốc lại mỗi ván mới). */
   mapId: string;
-  /** Người chơi đi trước? */
-  humanFirst: boolean;
+  /** Người chơi đi trước? `"random"` (mặc định) = bốc ngẫu nhiên mỗi ván (docs/03 — Lượt đi đầu). */
+  humanFirst: boolean | "random";
 }
 
 export interface LocalBotOptions extends NewGameOptions {
@@ -109,9 +111,12 @@ export interface LocalBotOptions extends NewGameOptions {
   random: () => number;
 }
 
+/** Thêm trước nước đầu ván của máy (màn thông báo ai đi trước). */
+export const OPENING_PAUSE_MS = 1700;
+
 const DEFAULTS: LocalBotOptions = {
   mapId: DEFAULT_MAP_ID,
-  humanFirst: true,
+  humanFirst: "random",
   showLastMove: true,
   strength: 0.7,
   delayMs: [450, 900],
@@ -126,15 +131,27 @@ export class LocalBotController implements GameController {
   private destroyed = false;
   private interactionListeners = new Set<(e: Interaction) => void>();
   private replyTimer: ReturnType<typeof setTimeout> | null = null;
+  private round = 0;
 
   constructor(opts: Partial<LocalBotOptions> = {}) {
     this.opts = { ...DEFAULTS, ...opts };
-    this.session = this.freshSession();
+    // Lượt đầu ngẫu nhiên: KHÔNG bốc trong constructor — constructor chạy cả lúc prerender phía
+    // server (Next.js), bốc ở đó thì server/client lệch (hydration). Ván đầu ở trạng thái "chờ
+    // bốc" (round 0, mình ghế 0); `resume()` (effect phía client) bốc thật.
+    this.session = this.freshSession(this.opts.humanFirst !== "random");
     this.scheduleBot();
   }
 
-  private freshSession(): GameSession {
-    const human: Player = this.opts.humanFirst ? 0 : 1;
+  /** `roll = false`: ván chờ bốc (round 0, mình đi trước) — chỉ dùng cho constructor. */
+  private freshSession(roll = true): GameSession {
+    // Ghế 0 luôn đi trước; bốc ngẫu nhiên ai ngồi ghế 0.
+    const first = !roll
+      ? true
+      : this.opts.humanFirst === "random"
+        ? this.opts.random() < 0.5
+        : this.opts.humanFirst;
+    const human: Player = first ? 0 : 1;
+    if (roll) this.round += 1;
     const mapId = resolveMapId(this.opts.mapId, this.opts.random);
     return {
       mapId,
@@ -147,6 +164,7 @@ export class LocalBotController implements GameController {
       combo: 0,
       thinking: false,
       result: null,
+      round: this.round,
     };
   }
 
@@ -197,7 +215,9 @@ export class LocalBotController implements GameController {
     const s = this.session;
     if (this.destroyed || s.result || s.state.turn !== s.bot) return;
     const [min, max] = this.opts.delayMs;
-    const delay = min + this.opts.random() * Math.max(0, max - min);
+    // Máy đi nước đầu ván → chờ màn "Máy đi trước" (FirstTurnBanner ~1,8 giây).
+    const opening = s.state.moveNo === 0 ? OPENING_PAUSE_MS : 0;
+    const delay = opening + min + this.opts.random() * Math.max(0, max - min);
     this.emit({ thinking: true });
     this.timer = setTimeout(() => {
       this.timer = null;
@@ -297,6 +317,12 @@ export class LocalBotController implements GameController {
   /** Chạy lại sau pause(); nếu đến lượt bot thì bot đi tiếp. */
   resume(): void {
     this.destroyed = false;
+    // Ván đầu còn chờ bốc lượt (xem constructor) → bốc ngay ở client.
+    const s = this.session;
+    if ((s.round ?? 0) === 0 && s.state.moveNo === 0 && !s.result) {
+      this.session = this.freshSession();
+      for (const l of this.listeners) l();
+    }
     this.scheduleBot();
   }
 

@@ -66,6 +66,7 @@ export class NetworkController implements GameController {
       combo: 0,
       thinking: false,
       result: null,
+      round: 1,
       online: {
         roomId,
         mode: "private",

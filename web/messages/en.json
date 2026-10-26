@@ -141,7 +141,10 @@
     "emote": "Emote",
     "throwItem": "Throw {name}",
     "cooldown": "Wait {s}s",
-    "moreItems": "Get more throwables"
+    "moreItems": "Get more throwables",
+    "firstYou": "You go first!",
+    "firstThem": "{name} goes first",
+    "firstHint": "First turn is random · you are Blue"
   },
   "NotFound": {
     "title": "Page not found",

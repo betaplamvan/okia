@@ -141,7 +141,10 @@
     "emote": "Biểu cảm",
     "throwItem": "Ném {name}",
     "cooldown": "Chờ {s} giây",
-    "moreItems": "Mua thêm đồ ném"
+    "moreItems": "Mua thêm đồ ném",
+    "firstYou": "Bạn đi trước!",
+    "firstThem": "{name} đi trước",
+    "firstHint": "Lượt đầu bốc ngẫu nhiên · bạn là đội Xanh"
   },
   "NotFound": {
     "title": "Không tìm thấy trang",

@@ -373,15 +373,36 @@ def choose_move(
     return _pick(legal, random)
 
 
-def strength_for_rating(mmr: float, rd: float = 350.0) -> float:
-    """Độ mạnh máy khi ghép trận theo **rating ẩn** (docs/07 — Ghép máy).
+# Mốc (MMR ẩn, độ mạnh) — nội suy tuyến tính giữa các mốc, kẹp hai đầu (2026-10-26: người mới
+# 1500 / rd 350 gặp máy 0,3 thay vì 0,65 — trước đó người mới thua máy liên tục).
+STRENGTH_BY_MMR: tuple[tuple[float, float], ...] = (
+    (1100.0, 0.15),
+    (1500.0, 0.35),
+    (1700.0, 0.65),
+    (1900.0, 0.95),
+)
+# Rating chưa chắc (rd cao: người mới, lâu không chơi) → kéo về mức dễ này.
+UNSURE_STRENGTH = 0.3
 
-    Tuyến tính: MMR 1100 → 0,5 tới 1850 → 1,0. Rating chưa chắc (rd ≥ 200: người mới hoặc lâu
-    không chơi) thì kéo dần về 0,65; rd 350 (mới hoàn toàn) là 0,65 bất kể mmr. Không dùng bậc
-    rank hiển thị vì điểm hạng tăng theo số ván chơi (+24/−16), không chỉ theo trình độ.
+
+def strength_for_rating(mmr: float, rd: float = 350.0) -> float:
+    """Độ mạnh máy khi ghép trận theo **rating ẩn** (docs/07 — Ghép máy, docs/03 — Tự điều chỉnh).
+
+    Nội suy theo STRENGTH_BY_MMR: MMR ≤ 1100 → 0,15 · 1500 (mặc định) → 0,35 · 1700 → 0,65 ·
+    ≥ 1900 → 0,95. Rating chưa chắc (rd ≥ 200) kéo dần về UNSURE_STRENGTH (rd 350 = người mới hoàn
+    toàn → 0,3) để người mới bắt đầu không gặp máy quá khó. Không dùng bậc rank hiển thị vì điểm
+    hạng tăng theo số ván chơi, không chỉ theo trình độ.
     """
-    lo, hi = 1100.0, 1850.0
-    t = min(1.0, max(0.0, (mmr - lo) / (hi - lo)))
-    base = 0.5 + 0.5 * t
+    pts = STRENGTH_BY_MMR
+    if mmr <= pts[0][0]:
+        base = pts[0][1]
+    elif mmr >= pts[-1][0]:
+        base = pts[-1][1]
+    else:
+        base = pts[-1][1]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:], strict=False):
+            if x0 <= mmr <= x1:
+                base = y0 + (y1 - y0) * (mmr - x0) / (x1 - x0)
+                break
     trust = 1.0 - min(1.0, max(0.0, (rd - 200.0) / 150.0))
-    return round(0.65 + (base - 0.65) * trust, 2)
+    return round(UNSURE_STRENGTH + (base - UNSURE_STRENGTH) * trust, 2)
