@@ -26,7 +26,7 @@ Một kết nối WS duy nhất mỗi tab: `wss://<domain>/ws?token=<JWT>&lang=v
 |---|---|---|
 | `welcome` | `userId`, `activeRoomId?` | Sau khi kết nối; có `activeRoomId` nếu đang dở trận → client gửi `room_join` |
 | `queued` | `mode`, `board`, `since` | Đã vào hàng chờ |
-| `queue_status` | `mode`, `waiting`, `online`, `since`, `widened` | Worker gửi mỗi giây cho người đang chờ: số người chờ, số online, đã mở hết cửa sổ (trận lệch chỉ ±1) |
+| `queue_status` | `mode`, `waiting`, `online`, `since`, `widened` | Worker gửi mỗi giây cho người đang chờ: số người chờ, số online, đã mở hết cửa sổ (trận lệch cộng/trừ ít điểm) |
 | `match_found` | `matchId`, `mode`, `expiresAt`, `acceptSeconds` | Đã ghép được đối thủ, cả hai có 20 giây để `match_accept` (client hiện vòng đếm ngược) |
 | `match_update` | `matchId`, `accepted` | Số người đã chấp nhận thay đổi ("đối thủ đã sẵn sàng") |
 | `match_cancelled` | `matchId`, `reason: declined\|timeout\|left`, `byMe`, `requeued` | Trận chờ bị hủy; `requeued = true` → server đã trả về hàng chờ với thời điểm xếp hàng cũ và gửi `queued` ngay sau |

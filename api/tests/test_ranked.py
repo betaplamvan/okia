@@ -42,23 +42,68 @@ def test_rank_of_theo_diem() -> None:
     assert rank_of(5000).tier == "valedictorian"
 
 
-def test_delta_tran_can_va_tran_lech() -> None:
-    # Cân 50/50: thắng +24, thua −16.
-    assert points.delta(0.5, 1.0, 0) == 24
-    assert points.delta(0.5, 0.0, 0) == -16
-    # Chênh ít (≤150) vẫn cược đủ.
-    assert points.stake(150) == 1.0
-    # Lệch nhiều (≥500): cược chỉ còn 10% → kẻ mạnh thắng chỉ +1, kẻ yếu thua chỉ −1.
+def test_delta_tran_can_theo_hang() -> None:
+    # Trận cân 50/50, chưa có chuỗi: hạng thấp thắng nhiều thua ít, hạng cao thua mất nhiều hơn.
+    table = {0: (45, -8), 300: (36, -14), 600: (30, -20), 900: (30, -24), 1200: (30, -28)}
+    for pts, (win, loss) in table.items():
+        assert points.delta(0.5, 1.0, 0, points=pts) == win
+        assert points.delta(0.5, 0.0, 0, points=pts) == loss
+        assert points.delta(0.5, 0.5, 0, points=pts) == 0
+    # Thắng liền từ trận thứ 3 (2 trận thắng trước đó) → +5.
+    assert points.delta(0.5, 1.0, 0, streak=1) == 45
+    assert points.delta(0.5, 1.0, 0, streak=2) == 50
+    assert points.delta(0.5, 1.0, 0, points=600, streak=7) == 35
+    # Trận với máy 75 %.
+    assert points.delta(0.5, 1.0, 0, mult=0.75) == 34
+    assert points.delta(0.5, 0.0, 0, mult=0.75) == -6
+    # Thông số admin.
+    assert points.delta(0.5, 1.0, 0, points=600, win_base=40) == 40
+    assert points.delta(0.5, 1.0, 0, streak=5, streak_bonus=0) == 45
+    # 50 % thắng ở Giấy nháp vẫn leo đều (+18,5 mỗi trận) — không kẹt như bộ cũ (+4).
+    assert points.delta(0.5, 1.0, 0) + points.delta(0.5, 0.0, 0) > 30
+    # Không bao giờ âm.
+    assert points.apply(5, -16) == 0
+
+
+def test_delta_tran_lech() -> None:
+    # Chênh ≤ 250 vẫn cược đủ; ≥ 600 còn 25 %.
+    assert points.stake(250) == 1.0
+    assert points.stake(600) == 0.25
     strong, weak = glicko2.Glicko(2000, 50), glicko2.Glicko(1500, 50)
     e_strong = glicko2.expected(strong, weak)
     assert e_strong > 0.9
-    assert points.delta(e_strong, 1.0, 500) == 1
-    assert points.delta(1 - e_strong, 0.0, 500) == -1
-    # Kẻ yếu thắng ngược vẫn được nhiều hơn kẻ mạnh thua mất (cược giảm cho cả hai).
-    assert points.delta(1 - e_strong, 1.0, 500) > 1
-    assert -5 <= points.delta(e_strong, 0.0, 500) <= -1
-    # Không bao giờ âm.
-    assert points.apply(5, -16) == 0
+    # Kẻ mạnh thắng được ít, kẻ yếu thua mất ít; kẻ yếu thắng ngược được nhiều, kẻ mạnh thua
+    # mất nhiều.
+    win_strong = points.delta(e_strong, 1.0, 500, points=700)
+    loss_weak = points.delta(1 - e_strong, 0.0, 500, points=700)
+    win_weak = points.delta(1 - e_strong, 1.0, 500, points=700)
+    loss_strong = points.delta(e_strong, 0.0, 500, points=700)
+    assert 1 <= win_strong < win_weak and loss_strong < loss_weak <= -1
+    assert (win_strong, loss_weak, win_weak, loss_strong) == (8, -5, 20, -13)
+    # So với trận cân cùng hạng: kẻ mạnh thắng được ít hơn hẳn.
+    assert win_strong < points.delta(0.5, 1.0, 0, points=700) / 3
+
+
+def test_leo_hang_nhanh_hon_khi_thang_nhieu() -> None:
+    """Mô phỏng tất định: thắng 60 % qua Giấy nháp trong vòng ~15 trận, thắng 40 % chậm hơn."""
+
+    def games_to(target: int, pattern: list[bool]) -> int:
+        pts, streak = 0, 0
+        for i in range(500):
+            win = pattern[i % len(pattern)]
+            d = points.delta(0.5, 1.0 if win else 0.0, 0, points=pts, streak=streak)
+            pts = points.apply(pts, d)
+            streak = streak + 1 if win else 0
+            if pts >= target:
+                return i + 1
+        return 999
+
+    p60 = [True, False, True, True, False]
+    p40 = [False, True, False, True, False]
+    assert games_to(300, p60) <= 15
+    assert games_to(300, p60) < games_to(300, p40) < 40
+    # Lên Thủ khoa thắng 50 % thì lâu hơn nhiều (không chỉ cày số trận).
+    assert games_to(1200, [True, False]) > 100
 
 
 # ---------- Đơn vị: hàng chờ ----------
@@ -263,9 +308,9 @@ def test_ghep_tran_va_chot_ket_qua(client: TestClient) -> None:
     rk = over["ranked"]
     assert rk is not None
     w = over["winner"]
-    # Trận cân (cả hai 1500/350): thắng +24, thua −16 nhưng không âm → 0.
-    assert rk["pointsDelta"][w] == 24 and rk["pointsDelta"][1 - w] == -16
-    assert rk["points"][w] == 24 and rk["points"][1 - w] == 0
+    # Trận cân (cả hai 1500/350) ở Giấy nháp: thắng +45, thua −8 nhưng không âm → 0.
+    assert rk["pointsDelta"][w] == 45 and rk["pointsDelta"][1 - w] == -8
+    assert rk["points"][w] == 45 and rk["points"][1 - w] == 0
     assert rk["rewards"][w] == {"lead": 30} and rk["rewards"][1 - w] == {}
     assert rk["placementLeft"] == [PLACEMENT_GAMES - 1] * 2
     assert rk["ranks"] == [None, None]
@@ -276,11 +321,11 @@ def test_ghep_tran_va_chot_ket_qua(client: TestClient) -> None:
     assert client.get("/me", headers=bearer(tok_w)).json()["wallet"]["lead"] == 30
     assert client.get("/me", headers=bearer(tok_l)).json()["wallet"]["lead"] == 0
     mw = client.get("/me/rank", headers=bearer(tok_w)).json()
-    assert mw["games"] == 1 and mw["wins"] == 1 and mw["points"] == 24 and mw["streak"] == 1
+    assert mw["games"] == 1 and mw["wins"] == 1 and mw["points"] == 45 and mw["streak"] == 1
     assert mw["placementLeft"] == PLACEMENT_GAMES - 1 and mw["position"] is None
     assert len(mw["history"]) == 1
     h = mw["history"][0]
-    assert h["won"] is True and h["pointsDelta"] == 24 and h["reason"] == "complete"
+    assert h["won"] is True and h["pointsDelta"] == 45 and h["reason"] == "complete"
     assert h["opponentName"] in ("an", "binh")
     # BXH: chưa ai qua phân hạng → trống.
     lb = client.get("/leaderboard").json()
@@ -294,7 +339,7 @@ def test_ghep_tran_va_chot_ket_qua(client: TestClient) -> None:
         try:
             m = await conn.fetchrow("SELECT * FROM matches")
             assert m["mode"] == "ranked" and m["season_id"] is not None
-            assert sorted(m["points_delta"]) == [-16, 24]
+            assert sorted(m["points_delta"]) == [-8, 45]
             assert m["rating_delta"][w] > 0 > m["rating_delta"][1 - w]
             rows = await conn.fetch("SELECT * FROM ratings")
             assert len(rows) == 2 and all(r["games"] == 1 for r in rows)
@@ -363,7 +408,8 @@ def test_ghep_may_khi_cho_lau(client: TestClient) -> None:
     assert rk is not None
     my_delta = rk["pointsDelta"][me["seat"]]
     won = over["winner"] == me["seat"]
-    assert my_delta == (12 if won else (0 if over["winner"] is None else -8))
+    # Máy 75 % trận cân, Giấy nháp: +34 / −6.
+    assert my_delta == (34 if won else (0 if over["winner"] is None else -6))
     assert rk["pointsDelta"][bot["seat"]] == 0 and rk["ranks"][bot["seat"]] is None
     r = client.get("/me/rank", headers=bearer(ta))
     assert r.status_code == 200
@@ -627,9 +673,10 @@ async def test_settle_tran_lech_cuoc_nho_va_khong_thuong_khi_afk() -> None:
             now=now,
         )
         await db.commit()
-        # Lệch 600 → cược 10%: mạnh thắng +1, yếu thua −1; afk → không ai nhận Ruột chì.
-        assert st.points_delta == [1, -1]
-        assert st.points == [1, 199]
+        # Lệch 600 → cược 25 %: mạnh thắng chỉ +6 (thay vì +45), yếu thua −1; afk → không ai
+        # nhận Ruột chì.
+        assert st.points_delta == [6, -1]
+        assert st.points == [6, 199]
         assert st.rewards == [{}, {}]
         assert await wallet.balances(db, strong) == {"lead": 0, "flower": 0}
         # Đầu hàng sau nước 10 vẫn có thưởng; trước nước 10 thì không.

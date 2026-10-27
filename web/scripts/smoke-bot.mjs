@@ -1,7 +1,7 @@
 // Smoke ghép máy khi chờ lâu (docs/07): một tài khoản xếp hàng một mình → rời sang trang chủ vẫn
 // thấy cửa sổ thu nhỏ "đang tìm", /play bị khóa → sau MM_BOT_AFTER_SECONDS (api/.env local: 5) hộp
 // chấp nhận bật lên (đối thủ: Máy) ngay trên trang khác → Chơi luôn → phòng hiện chip "Máy", máy tự
-// đi, chơi tới hết ván → hộp kết quả có điểm hạng ±12/−8.
+// đi, chơi tới hết ván → hộp kết quả có điểm hạng +34 / −6 (75 % trận cân, Giấy nháp).
 //   node scripts/smoke-bot.mjs [http://localhost:3000]
 import { chromium } from "playwright";
 
@@ -46,7 +46,7 @@ await page.getByTestId("accept-bot").waitFor();
 await page.screenshot({ path: ".shots/bot-accept.png" });
 await page.getByTestId("accept-match").click();
 await page.waitForURL(/\/r\/[A-Z0-9]{6}$/, { timeout: 30000 });
-const botChip = page.getByText("Máy · điểm hạng ½");
+const botChip = page.getByText("Máy · ít điểm hạng hơn");
 await botChip.waitFor({ timeout: 10000 });
 console.log("ghép máy sau khi chờ:", page.url());
 
@@ -82,8 +82,8 @@ console.log(
   "| máy đã đi (nhịp chờ):",
   botMoves > 0,
 );
-if (!/\+12|−8|-8|\+0|0/.test(m ? m[1] : ""))
-  problems.push("điểm hạng không phải ±½ trận cân: " + (m ? m[1] : "?"));
+if (!/^(\+34|−6|-6|\+0|0)$/.test(m ? m[1] : ""))
+  problems.push("điểm hạng không phải 75 % trận cân (+34 / −6): " + (m ? m[1] : "?"));
 await page.screenshot({ path: ".shots/bot-match-result.png" });
 
 for (const p of problems) console.log("  " + p);

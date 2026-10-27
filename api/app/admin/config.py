@@ -48,6 +48,12 @@ DEFAULTS: dict[str, Any] = {
     "mm_accept_seconds": 20,
     "mm_unlimited_after_seconds": 90,
     "ranked_turn_seconds": 30,
+    # Điểm hạng (docs/07 — Điểm hạng hiển thị): thắng / thua trận cân 50/50 trước hệ số hạng, thưởng
+    # mỗi trận khi thắng liền từ trận thứ 3, trận với máy được bao nhiêu % trận với người.
+    "rank_win_points": 30,
+    "rank_loss_points": 20,
+    "rank_streak_bonus": 5,
+    "rank_bot_stake_pct": 75,
     # Rớt mạng giữa ván: có N giây để nối lại (đồng hồ lượt dừng), hết → thua "abandon" (docs/04).
     "disconnect_grace_seconds": 60,
     # Chat tổng (docs/15): bật/tắt (tắt → chỉ đọc), độ dài tối đa, giãn cách tối thiểu giữa hai tin,
@@ -68,6 +74,10 @@ INT_RANGES: dict[str, tuple[int, int]] = {
     "mm_accept_seconds": (5, 60),
     "mm_unlimited_after_seconds": (0, 600),
     "ranked_turn_seconds": (10, 120),
+    "rank_win_points": (1, 200),
+    "rank_loss_points": (1, 200),
+    "rank_streak_bonus": (0, 100),
+    "rank_bot_stake_pct": (0, 100),
     "disconnect_grace_seconds": (10, 300),
     "chat_max_len": (20, 2000),
     "chat_min_interval_seconds": (0, 60),
