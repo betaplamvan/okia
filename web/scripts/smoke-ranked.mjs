@@ -1,7 +1,7 @@
 // Smoke test xếp hạng (M2.2–M2.4) trên Edge thật với HAI trình duyệt độc lập:
 // A và B đăng nhập (dev-login) → /ranked thấy "Đang phân hạng" → cả hai bấm "Tìm trận" → worker ghép →
 // cùng vào /r/<id> (huy hiệu hạng trên chip) → chơi hết ván trên map ngẫu nhiên → hộp kết quả có
-// "Điểm hạng" +24 / −16 và +30 Ruột chì cho người thắng → "Tìm trận mới" về /ranked với thẻ hạng đã
+// "Điểm hạng" +45 / −8 (trận cân ở Giấy nháp) và +30 Ruột chì cho người thắng → "Tìm trận mới" về /ranked với thẻ hạng đã
 // cập nhật → tab Hạng trong hồ sơ có lịch sử → /leaderboard mở được.
 // Cần web (3000) và api (8000, ngoài production để có /auth/dev-login) đang chạy.
 //
@@ -153,28 +153,28 @@ for (const [name, p] of [
 }
 console.log(`điểm hạng: A ${deltas.A}, B ${deltas.B}`);
 const sorted = Object.values(deltas).sort();
-if (sorted.join(" ") !== "+24 -16" && sorted.join(" ") !== "-16 +24")
-  problems.push(`điểm hạng không như kỳ vọng (+24 / -16): ${JSON.stringify(deltas)}`);
-const winner = deltas.A === "+24" ? A : B;
+if (sorted.join(" ") !== "+45 -8" && sorted.join(" ") !== "-8 +45")
+  problems.push(`điểm hạng không như kỳ vọng (+45 / -8): ${JSON.stringify(deltas)}`);
+const winner = deltas.A === "+45" ? A : B;
 const loser = winner === A ? B : A;
 if (!(await dialog(winner).getByText("30").first().isVisible()))
   problems.push("người thắng không thấy +30 Ruột chì");
 
-// Người thắng: "Tìm trận mới" → /ranked, thẻ hạng 24 điểm, còn 4 trận phân hạng.
+// Người thắng: "Tìm trận mới" → /ranked, thẻ hạng 45 điểm, còn 4 trận phân hạng.
 await dialog(winner).getByRole("button", { name: "Tìm trận mới" }).click();
 await winner.waitForURL(/\/ranked$/, { timeout: 10000 });
 const main = winner.getByRole("main");
 await main.getByText("Còn 4 trận phân hạng").waitFor({ timeout: 10000 });
 const pts = (await main.getByTestId("rank-points").innerText()).trim();
-if (pts !== "24") problems.push(`thẻ hạng người thắng hiện ${pts} điểm, kỳ vọng 24`);
+if (pts !== "45") problems.push(`thẻ hạng người thắng hiện ${pts} điểm, kỳ vọng 45`);
 await winner.waitForTimeout(500);
 await winner.screenshot({ path: ".shots/ranked-after-390.png" });
 // Hộp kết quả của phòng cũ không được còn hiện trên /ranked.
 if (await winner.getByTestId("ranked-result").isVisible())
   problems.push("hộp kết quả phòng cũ vẫn hiện trên /ranked");
-console.log("về /ranked sau ván: ok (24 điểm, còn 4 trận phân hạng)");
+console.log("về /ranked sau ván: ok (45 điểm, còn 4 trận phân hạng)");
 
-// Người thua: hồ sơ → tab Hạng → lịch sử có 1 trận "Thua" −16; ví người thắng 30 Ruột chì.
+// Người thua: hồ sơ → tab Hạng → lịch sử có 1 trận "Thua" −8; ví người thắng 30 Ruột chì.
 await dialog(loser).getByRole("link", { name: "Trang chủ" }).click();
 await loser.waitForURL(/\/$/, { timeout: 10000 });
 await loser.getByTestId("player-pill").click();
@@ -182,9 +182,9 @@ const dlg = loser.getByRole("dialog");
 await dlg.getByRole("tab", { name: "Hạng" }).click();
 await dlg.getByText("Trận gần đây").waitFor({ timeout: 10000 });
 await dlg.getByText("Thua", { exact: true }).first().waitFor();
-await dlg.getByText("-16").waitFor();
+await dlg.getByText("-8").waitFor();
 await loser.screenshot({ path: ".shots/ranked-profile-tab-390.png" });
-console.log("tab Hạng trong hồ sơ: ok (1 trận thua −16)");
+console.log("tab Hạng trong hồ sơ: ok (1 trận thua −8)");
 await winner.getByTestId("user-button").click();
 await winner.getByRole("dialog").getByText("30").first().waitFor({ timeout: 10000 });
 console.log("ví người thắng: 30 Ruột chì");

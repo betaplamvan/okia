@@ -13,14 +13,26 @@ Quyết định: [ADR-0012](adr/0012-diem-hang-hien-thi-tach-rating-an.md) — *
 
 Thứ người chơi nhìn thấy và leo (`ratings.points`, ≥ 0). Code: `api/app/rating/points.py`.
 
-| Tình huống | Thắng | Thua |
-|---|---|---|
-| Trận cân sức (kỳ vọng 50/50, chênh rating ẩn ≤ 150) | **+24** | **−16** |
-| Người được kỳ vọng thắng (E cao) | ít hơn, tối thiểu +1 | nhiều hơn, tối đa −30 |
-| Người bị kỳ vọng thua (E thấp) | nhiều hơn, tối đa +40 | ít hơn, tối thiểu −1 |
-| **Trận lệch trình độ** (ghép khi vắng người / chờ lâu) | tiền cược giảm: chênh ≥ 500 chỉ còn 10 % → người mạnh thắng **+1**, người yếu thua **−1** | |
+Chỉnh lại 2026-10-27 (bộ cũ +24/−16 không hệ số hạng: trận cân 50 % chỉ lãi +4/trận, cần ~75 trận mới qua một hạng → ai cũng kẹt Giấy nháp; rating ẩn người mới dao động mạnh nên nhiều trận bị coi là "lệch" → ±1).
 
-**Không công bố công thức cho người chơi** (màn `/ranked` chỉ nói định tính: trận cân cộng nhiều hơn trừ; chênh lệch càng lớn điểm đổi càng ít). Công thức nội bộ: `thắng = round(24 × 2 × (1 − E) × s)`, `thua = −round(16 × 2 × E × s)`, với `E` = kỳ vọng thắng từ Glicko-2 và `s` = tiền cược: `1` khi chênh ≤ 150, giảm tuyến tính tới `0.1` khi chênh ≥ 500. Luôn ≥ 1 điểm về trị tuyệt đối; điểm không âm. Trận cân có lợi cho người thắng (+24/−16) để leo hạng có cảm giác tiến lên; trận lệch gần như không đổi điểm nên ghép lệch "chấp nhận được" mà không ai bị ép thua oan hay cày người yếu.
+Trận cân (kỳ vọng 50/50, chênh rating ẩn ≤ 250), chưa có chuỗi thắng — hệ số theo **hạng trước trận**:
+
+| Hạng | Hệ số thắng / thua | Thắng | Thua | Với máy (75 %) |
+|---|---|---|---|---|
+| Giấy nháp | ×1,5 / ×0,4 | **+45** | **−8** | +34 / −6 |
+| Vở ô li | ×1,2 / ×0,7 | **+36** | **−14** | +27 / −10 |
+| Học sinh khá | ×1 / ×1 | **+30** | **−20** | +22 / −15 |
+| Học sinh giỏi | ×1 / ×1,2 | **+30** | **−24** | +22 / −18 |
+| Thủ khoa | ×1 / ×1,4 | **+30** | **−28** | +22 / −21 |
+
+- **Thưởng chuỗi**: thắng liền từ trận thứ 3 → +5 mỗi trận thắng.
+- **Kỳ vọng thắng** E (Glicko-2) chỉ tác động một nửa: `E' = 0,5 + (E − 0,5) × 0,5`, nên hệ số thắng `2(1 − E')` nằm trong [0,5; 1,5]: thắng đối thủ mạnh hơn được tới ×1,5, thắng đối thủ yếu hơn còn ×0,5 (rating ẩn người mới dao động mạnh, để nguyên E thì người yếu thắng một trận "bất ngờ" được gấp đôi).
+- **Trận lệch trình độ** (ghép khi vắng người / chờ lâu): tiền cược `s` = 1 khi chênh ≤ 250, giảm tuyến tính tới **0,25** khi chênh ≥ 600.
+- Hòa: `round((0,5 − E') × (thắng + thua cơ bản) × s)`, trận cân = 0.
+
+Công thức nội bộ: `thắng = round(W × 2(1 − E') × s × hệ số thắng hạng) + thưởng chuỗi`, `thua = −round(L × 2E' × s × hệ số thua hạng)`, luôn ≥ 1 về trị tuyệt đối; điểm không âm. **W = 30, L = 20, thưởng chuỗi 5, trận với máy 75 %** chỉnh được ở admin (`rank_win_points`, `rank_loss_points`, `rank_streak_bonus`, `rank_bot_stake_pct`); hệ số hạng nằm trong code (`points.TIER_MULT`). Nhịp leo ước tính (mô phỏng, trận cân với người): thắng 50 % qua Giấy nháp ~16 trận, tới Thủ khoa ~146 trận; thắng 60 % lần lượt ~13 / ~84; với máy chậm hơn khoảng 25 %. Hạng cao trừ nặng hơn để lên Thủ khoa phải thắng nhiều hơn thua, không chỉ cày số trận.
+
+**Không công bố công thức cho người chơi** (màn `/ranked` chỉ nói định tính: hạng thấp thắng nhiều thua ít, hạng cao thua mất nhiều hơn, có thưởng chuỗi; chênh lệch càng lớn điểm đổi càng ít).
 
 ### Hạng & bậc
 
@@ -66,14 +78,14 @@ Rớt mạng khi đang chờ → server bỏ khỏi hàng chờ; client tự g�
 
 ### Ghép máy khi chờ lâu (2026-10-22)
 
-Chờ quá `MM_BOT_AFTER_SECONDS` (mặc định 45 giây) mà không có ai hợp → worker bỏ người đó khỏi hàng chờ và tạo **trận chờ với máy** (`pending.create(bot_strength=…)`, `b` = Entry giả `BOT_ID`, máy đã chấp nhận sẵn; từ 2026-10-22 cũng qua vòng chấp nhận như người): client nhận `match_found` với `bot: true` + `match_update accepted=1`, hộp chấp nhận ghi "Đối thủ: Máy"; **Chơi luôn** → `worker.accept` mở phòng **người vs máy** (`room.create_vs_bot`) và gửi `matched`; **Từ chối** / hết giờ → rời hàng chờ như trận thường (máy không bao giờ xếp hàng, không nhận tin). Máy (`user_id = "bot"`, tên "Máy"/"Bot", `is_bot` trong `room_state.players`, luôn online, skin mặc định) đi qua task nền `botplay` sau mỗi nước của người (~0,9 giây ±40 %), bằng `app/game/bot.py` (bản Python của bot client, cùng fixtures). Độ mạnh theo **rating ẩn** (`bot.strength_for_rating`, thang 2026-10-26): MMR ≤ 1100 → 0,15 · 1500 → 0,35 · 1700 → 0,65 · ≥ 1900 → 0,95; rating chưa chắc (rd ≥ 200) kéo dần về 0,3, người mới hoàn toàn (rd 350) = 0,3 — người mới không gặp máy quá khó ([03](03-luat-choi.md#tự-điều-chỉnh-độ-mạnh)). Máy đi nước đầu thì chờ thêm ~2 giây (màn "Ai đi trước"). Không dùng bậc rank hiển thị vì điểm hạng tăng theo số ván (+24/−16), không phản ánh đúng trình độ. Chốt ván (`rating.settle_vs_bot`): điểm hạng cược **một nửa** trận cân (+12 / −8, hòa 0), thống kê games/wins/streak và thưởng 30 Ruột chì như thường, **rating ẩn không đổi**; `matches.player{0|1}` của máy = NULL, `bot_strength` ghi lại; lịch sử hiện đối thủ "Máy". Client: chip đối thủ icon máy + "Máy · điểm hạng ½". Hộp tìm trận **không hiện** số người chờ / online (trông nản khi ít người).
+Chờ quá `MM_BOT_AFTER_SECONDS` (mặc định 45 giây) mà không có ai hợp → worker bỏ người đó khỏi hàng chờ và tạo **trận chờ với máy** (`pending.create(bot_strength=…)`, `b` = Entry giả `BOT_ID`, máy đã chấp nhận sẵn; từ 2026-10-22 cũng qua vòng chấp nhận như người): client nhận `match_found` với `bot: true` + `match_update accepted=1`, hộp chấp nhận ghi "Đối thủ: Máy"; **Chơi luôn** → `worker.accept` mở phòng **người vs máy** (`room.create_vs_bot`) và gửi `matched`; **Từ chối** / hết giờ → rời hàng chờ như trận thường (máy không bao giờ xếp hàng, không nhận tin). Máy (`user_id = "bot"`, tên "Máy"/"Bot", `is_bot` trong `room_state.players`, luôn online, skin mặc định) đi qua task nền `botplay` sau mỗi nước của người (~0,9 giây ±40 %), bằng `app/game/bot.py` (bản Python của bot client, cùng fixtures). Độ mạnh theo **rating ẩn** (`bot.strength_for_rating`, thang 2026-10-26): MMR ≤ 1100 → 0,15 · 1500 → 0,35 · 1700 → 0,65 · ≥ 1900 → 0,95; rating chưa chắc (rd ≥ 200) kéo dần về 0,3, người mới hoàn toàn (rd 350) = 0,3 — người mới không gặp máy quá khó ([03](03-luat-choi.md#tự-điều-chỉnh-độ-mạnh)). Máy đi nước đầu thì chờ thêm ~2 giây (màn "Ai đi trước"). Không dùng bậc rank hiển thị vì điểm hạng tăng theo số ván (thắng cộng nhiều hơn thua trừ), không phản ánh đúng trình độ. Chốt ván (`rating.settle_vs_bot`): điểm hạng bằng **75 %** trận cân với người (admin `rank_bot_stake_pct`; vẫn có hệ số hạng và thưởng chuỗi; Giấy nháp +34 / −6, hòa 0), thống kê games/wins/streak và thưởng 30 Ruột chì như thường, **rating ẩn không đổi**; `matches.player{0|1}` của máy = NULL, `bot_strength` ghi lại; lịch sử hiện đối thủ "Máy". Client: chip đối thủ icon máy + "Máy · ít điểm hạng hơn". Hộp tìm trận **không hiện** số người chờ / online (trông nản khi ít người).
 
 ### Khi vắng người
 
 | Chế độ | Chờ lâu |
 |---|---|
 | Ghép trận thường (P2-06) | Hỏi "Chơi với máy trong lúc chờ?" — bot tự chỉnh độ mạnh theo rating ẩn (xem [03 — Bot](03-luat-choi.md#bot)), **ghi rõ là máy** |
-| Xếp hạng | Tiếp tục chờ, hiện số người online; sau 90 giây chấp nhận lệch trình độ, báo cho người chơi "trận lệch chỉ ±1 điểm" |
+| Xếp hạng | Tiếp tục chờ, hiện số người online; sau 90 giây chấp nhận lệch trình độ, báo cho người chơi "trận lệch cộng/trừ ít điểm hơn" |
 
 ## Chốt trận (`rating.service.settle`)
 

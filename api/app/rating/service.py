@@ -29,6 +29,24 @@ def ranked_win_lead() -> int:
     return appconfig.get_int("ranked_win_lead", RANKED_WIN_LEAD)
 
 
+def rank_tuning() -> dict[str, int]:
+    """Điểm hạng cơ bản thắng/thua và thưởng chuỗi (admin chỉnh được, mặc định trong points.py)."""
+    from app.admin import config as appconfig
+
+    return {
+        "win_base": appconfig.get_int("rank_win_points", points.WIN_BASE),
+        "loss_base": appconfig.get_int("rank_loss_points", points.LOSS_BASE),
+        "streak_bonus": appconfig.get_int("rank_streak_bonus", points.STREAK_BONUS),
+    }
+
+
+def bot_stake() -> float:
+    """Trận xếp hạng với máy: hệ số điểm so với trận cân với người."""
+    from app.admin import config as appconfig
+
+    return appconfig.get_int("rank_bot_stake_pct", points.BOT_STAKE_PCT) / 100.0
+
+
 MIN_MOVES_FOR_REWARD = 10  # đầu hàng trước nước 10 → không thưởng
 SOFT_RESET_RD = 150.0
 
@@ -188,8 +206,9 @@ async def settle(
     s0 = 0.5 if winner is None else (1.0 if winner == 0 else 0.0)
     s1 = 1.0 - s0
     gap = g0.mmr - g1.mmr
-    d0 = points.delta(glicko2.expected(g0, g1), s0, gap)
-    d1 = points.delta(glicko2.expected(g1, g0), s1, gap)
+    tun = rank_tuning()
+    d0 = points.delta(glicko2.expected(g0, g1), s0, gap, points=r0.points, streak=r0.streak, **tun)
+    d1 = points.delta(glicko2.expected(g1, g0), s1, gap, points=r1.points, streak=r1.streak, **tun)
     n0 = glicko2.update(g0, [(g1, s0)])
     n1 = glicko2.update(g1, [(g0, s1)])
     _apply(r0, n0, d0, s0, now)
@@ -238,9 +257,6 @@ async def settle(
     )
 
 
-BOT_STAKE = 0.5  # trận với máy: điểm hạng cược một nửa (docs/07)
-
-
 async def settle_vs_bot(
     db: AsyncSession,
     *,
@@ -256,15 +272,17 @@ async def settle_vs_bot(
     started_at: datetime,
     now: datetime | None = None,
 ) -> Settled:
-    """Trận xếp hạng với máy (docs/07): điểm hạng ± một nửa trận cân (+12/−8), thống kê và thưởng
-    như thường, **rating ẩn không đổi** (máy không có rating để ước lượng). Ghế của máy trong các
+    """Trận xếp hạng với máy (docs/07): điểm hạng như trận cân với người nhân `bot_stake()` (mặc
+    định 75 %; vẫn có hệ số hạng và thưởng chuỗi), thống kê và thưởng như thường, **rating ẩn
+    không đổi** (máy không có rating để ước lượng). Ghế của máy trong các
     danh sách trả về là 0 / None. Không commit."""
     now = now or datetime.now(UTC)
     season = await current_season(db, now)
     r = await get_or_create_rating(db, user_id, season, for_update=True)
     s = 0.5 if winner is None else (1.0 if winner == seat else 0.0)
-    full = points.delta(0.5, s, 0.0)
-    d = int(full * BOT_STAKE) if full >= 0 else -int(-full * BOT_STAKE)
+    d = points.delta(
+        0.5, s, 0.0, points=r.points, streak=r.streak, mult=bot_stake(), **rank_tuning()
+    )
     _apply_points(r, d, s, now)
 
     rewards: list[dict[str, int]] = [{}, {}]

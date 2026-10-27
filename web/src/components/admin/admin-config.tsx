@@ -23,7 +23,7 @@ type BoolKey = {
   [K in keyof AdminConfigValues]: AdminConfigValues[K] extends boolean ? K : never;
 }[keyof AdminConfigValues];
 
-type Group = "ranked" | "chat" | "ads" | "account";
+type Group = "ranked" | "rankPoints" | "chat" | "ads" | "account";
 
 /** Nhóm → các thông số số nguyên đơn (thứ tự hiển thị). Khoảng cho phép trùng api/app/admin/config.py. */
 const INT_GROUPS: { group: Group; keys: { key: IntKey; min: number; max: number }[] }[] = [
@@ -36,6 +36,15 @@ const INT_GROUPS: { group: Group; keys: { key: IntKey; min: number; max: number 
       { key: "mm_rematch_grace_seconds", min: 0, max: 120 },
       { key: "mm_unlimited_after_seconds", min: 0, max: 600 },
       { key: "disconnect_grace_seconds", min: 10, max: 300 },
+    ],
+  },
+  {
+    group: "rankPoints",
+    keys: [
+      { key: "rank_win_points", min: 1, max: 200 },
+      { key: "rank_loss_points", min: 1, max: 200 },
+      { key: "rank_streak_bonus", min: 0, max: 100 },
+      { key: "rank_bot_stake_pct", min: 0, max: 100 },
     ],
   },
   {
